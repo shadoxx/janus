@@ -23,3 +23,9 @@ dependencies/android/armeabi-v7a/libxul.so
 dependencies/android/armeabi/libxul.so
 **/.DS_Store
 *.pro.user.*
+*.o
+moc_*.cpp
+moc_*.h
+dist/
+janusvr
+.qmake.stash

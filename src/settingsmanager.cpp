@@ -88,6 +88,7 @@ void SettingsManager::LoadSettings()
 #endif
 
     QVector <QString> filename(2);
+
     filename[0] = MathUtil::GetAppDataPath() + "settings.json";
     filename[1] = MathUtil::GetApplicationPath() + "demo.json"; //packaged demo.json settings override
 
@@ -124,6 +125,7 @@ void SettingsManager::SaveSettings() {
     const QString filename = MathUtil::GetAppDataPath() + "settings.json";
     QFile file(filename);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+	qDebug() << "SettingsManager::SaveSettings() - unable to save " << filename;
         return;
     }
 

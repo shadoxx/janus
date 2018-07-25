@@ -61,29 +61,26 @@ Building on windows
 
 https://developer.microsoft.com/en-us/windows/hardware/windows-driver-kit
 
-Building on linux (Ubuntu 16.04 LTS; Debian 8.5)
+Building on linux (Ubuntu 18.04 LTS)
 ================================================
 
-1) Install Qt 5 and Qt Creator, g++, OpenGL libraries:
+=== Automated ===
 
-   - sudo apt-get install qtcreator qt5-default 
-build-essential mesa-common-dev git git-lfs
+1) Clone the repository using Git:
+	`git clone https://github.com/janusvr/janus`
 
-2) Clone the janusvr repository and enable git-lfs:
+2) Change to the source directory (`cd janus`) and run the automated build script:
+	`./build-janusvr-linux.sh`
 
-   - git clone https://github.com/JamesMcCrae/janus-vr.git
-   - cd janus-vr
-   - git lfs install
+3) Once completed, your new JanusVR build can be found inside `dist/linux/` in the root of your source repo.
+   To run Janus, just type `dist/linux/janusvr -render 2d`
 
-3) Install remaining library dependencies:
+=== Manual ===
 
-   - sudo apt-get install libbullet-dev
-libopenal-dev libopus-dev libvorbis-dev libudev-dev 
-libvlc-dev libopenexr-dev libudev-dev vlc zlib1g-dev
-qt5-default g++ mesa-common-dev libilmbase-dev
+For now, to compile manually please read the instructions found in the automated build script that
+is located in the root of the source repository (`build-janusvr-linux.sh`).
 
-
-4) (Optional, for reference) Build and install OpenEXR:
+(Optional, for reference) Build and install OpenEXR:
 
    - cd ./resources/openexr-2.2.0
    - ./configure
