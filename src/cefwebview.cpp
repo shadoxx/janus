@@ -428,7 +428,7 @@ void CEFWebView::keyPressEvent(QKeyEvent * e)
         CefKeyEvent keyevent2;
         keyevent2.type = KEYEVENT_CHAR;
         keyevent2.character = key_code; //60.0 - needed for Linux
-        keyevent2.windows_key_code = e->key() + (is_lowercase ? 32 : 0); //60.0 - needed for Windows
+        keyevent2.windows_key_code = (e->nativeVirtualKey() == 13 ? 13 : e->key() + (is_lowercase ? 32 : 0)); //60.0 - needed for Windows
         keyevent2.modifiers = mod;
         browser->GetHost()->SendKeyEvent(keyevent2);
     }

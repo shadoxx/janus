@@ -121,7 +121,7 @@ void Game::CheckInternetConnection(QNetworkReply *reply)
     if(reply->bytesAvailable() && !internet_connected)
     {
         internet_connected = true;
-        if (env) env->ReloadRoom();
+        //if (env) env->ReloadRoom();
     }
     else if (!reply->bytesAvailable() && internet_connected)
     {
@@ -369,7 +369,7 @@ void Game::Update()
     UpdateFollowMode();
 
     //update VOIP
-    UpdateMedia();
+    UpdateAudio();
 
     //update assets
     UpdateAssets();   
@@ -3836,9 +3836,7 @@ void Game::UpdateControllers()
     else if (controller_manager->GetUsingGamepad()) { //Note: 59.7 - currently has to be one or the other, might we want to support both at once?
         QPointer <QObject> c = qvariant_cast<QObject *>(player->GetProperties()->property("xbox"));
         if (c) {
-#ifdef __ANDROID__
-            c->setProperty("connected", JNIUtil::GetGamepadConnected());
-#endif
+            c->setProperty("connected", controller_manager->GetUsingGamepad());
             c->setProperty("left_stick_x", s[0].x);
             c->setProperty("left_stick_y", s[0].y);
             c->setProperty("left_trigger", s[0].t[0].value);
@@ -3864,6 +3862,13 @@ void Game::UpdateControllers()
             c->setProperty("right_stick_click", s[1].b[6].value);
         }
     }
+
+    if (!controller_manager->GetUsingGamepad()) { //Note: 59.7 - currently has to be one or the other, might we want to support both at once?
+        QPointer <QObject> c = qvariant_cast<QObject *>(player->GetProperties()->property("xbox"));
+        if (c) {
+            c->setProperty("connected", false);
+        }
+    }
     //59.7 - End Updated controller player states
 
     player->SetV("hand0_trackpad", QVector3D(s[0].x, s[0].y, 0.0f));
@@ -3874,20 +3879,11 @@ void Game::UpdateControllers()
     float x1 = s[1].x;
     float y1 = s[1].y;
 
-#if defined(OCULUS_SUBMISSION_BUILD) && defined(__ANDROID__)
-    // Headset trackpad is also used for locomotion
-    if (!JNIUtil::GetGamepadConnected()) {
-        x0 += x1;
-        y0 += y1;
-        x1 = 0.0f;
-        y1 = 0.0f;
-    }
-#endif
-
-    const float snapturn_axis_threshold = 0.8f;
 #ifndef __ANDROID__
+    const float snapturn_axis_threshold = 0.8f;
     const float axis_threshold = 0.2f; //state["threshold"].toFloat();
 #else
+    const float snapturn_axis_threshold = (JNIUtil::GetGamepadConnected())?0.8f:0.2f;
     const float axis_threshold = (player->GetS("hmd_type") == "gear" || player->GetS("hmd_type") == "go")?0.2f:0.5f; //state["threshold"].toFloat();
 #endif
 
@@ -5591,19 +5587,6 @@ void Game::UpdateMenuObject()
     multi_players->SetPartyMode(SettingsManager::GetPartyModeEnabled());
 
     WebAsset::SetUseCache(SettingsManager::GetCacheEnabled());
-}
-
-void Game::UpdateMedia()
-{
-    UpdateAudio();
-    if  (env && env->GetCurRoom())
-    {
-        QList <QPointer <Room> > visible_rooms = env->GetCurRoom()->GetVisibleRooms();
-        for  (int i=0; i<visible_rooms.size(); ++i) {
-            QPointer <Room> r = visible_rooms[i];
-            r->UpdateMedia(multi_players);
-        }
-    }
 }
 
 void Game::UpdateAudio()

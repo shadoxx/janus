@@ -1,5 +1,8 @@
 package org.janus;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import android.R;
 import android.app.Activity;
 import android.app.ActionBar;
@@ -27,6 +30,8 @@ public class GearManager implements SurfaceHolder.Callback
         boolean gear_ready = false;
         boolean gear_was_paused = false;
         boolean gear_setup = false;
+
+        Lock gear_lock = new ReentrantLock();
 
         public GearManager(Context c, SplashView s)
         {
@@ -60,6 +65,7 @@ public class GearManager implements SurfaceHolder.Callback
         protected Handler setGearLayoutHandler = new Handler() {
                 public void handleMessage(Message msg) {
                     //Log.i("SETVRLAYOUTHANDLER","HERE");
+                    gear_lock.lock();
                     if (surfaceViewGear == null && !gear_setup)
                     {
                         // Create and configure the surface view.
@@ -76,7 +82,7 @@ public class GearManager implements SurfaceHolder.Callback
                         params.leftMargin = 0;
                         params.bottomMargin = 0;
                         params.gravity = Gravity.TOP | Gravity.LEFT;
-                        surfaceViewGear.setVisibility(View.GONE);
+                        //surfaceViewGear.setVisibility(View.GONE);
 
                         mainLayout.addView(surfaceViewGear, params);
                         surfaceViewGear.getHolder().addCallback(GearManager.this);
@@ -110,10 +116,6 @@ public class GearManager implements SurfaceHolder.Callback
                             surfaceViewGear.setVisibility(View.GONE);
                             //Log.i("SETVRLAYOUTHANDLER","INVISIBLE");
                         }
-                        else {
-                            this.removeCallbacksAndMessages(null);
-                            showGear(false);
-                        }
 
                         showing_vr = false;
                         gear_ready = false;
@@ -133,13 +135,10 @@ public class GearManager implements SurfaceHolder.Callback
                             surfaceViewGear.setVisibility(View.VISIBLE);
                             //Log.i("SETVRLAYOUTHANDLER","VISIBLE");
                         }
-                        else {
-                            this.removeCallbacksAndMessages(null);
-                            showGear(true);
-                        }
 
                         showing_vr = true;
                     }
+                    gear_lock.unlock();
                 }
         };
 

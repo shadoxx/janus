@@ -159,7 +159,8 @@ public:
     QVariantMap GetJSONCode(const bool show_defaults = false) const;
     QString GetXMLCode(const bool show_defaults = false) const;
 
-    void Update(const double dt_sec);    
+    void Update(const double dt_sec);
+    void UpdateMedia();
 
     void DoLoadEffect() const;   
 
@@ -375,10 +376,6 @@ public:
     static QPointer <AssetImage> internet_connected_img;
     static QPointer <AssetImage> remove_headset_img;
 #endif
-
-public slots:
-
-    void UpdateMedia();
 
 protected:
 

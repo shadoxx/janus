@@ -1343,19 +1343,6 @@ void Room::UpdateAssets()
     }
 }
 
-void Room::UpdateMedia(MultiPlayerManager *multi_players)
-{
-    //do room/edits delets for multi_players
-    QList <QPointer <RoomObject> > ps = multi_players->GetPlayersInRoom(GetS("url"));
-    for (int i=0; i<ps.size(); ++i) {
-        ps[i]->UpdateMedia();
-    }
-
-    for (QPointer <RoomObject> & o : envobjects) {
-        o->UpdateMedia();
-    }
-}
-
 void Room::UpdateObjects(QPointer <Player> player, MultiPlayerManager *multi_players, const bool player_in_room)
 {
     page->Update();

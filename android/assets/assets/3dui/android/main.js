@@ -8,7 +8,7 @@ room.update = function(dt) {
   room.objects["foam"].scale.x += (Math.sin(timePassed*0.01)*0.001);
   room.objects["foam"].scale.z += (Math.sin(timePassed*0.01)*0.001);
 
-  if (player.xbox.connected) {
+  if (player.xbox.connected && room.objects["controls"].image_id != "controlsGamepad") {
       room.objects["controls"].image_id = "controlsGamepad";
   }
   else if ((player.hmd_type == "daydream" || player.hmd_type == "cardboard") && room.objects["controls"].image_id != "controlsDaydream"){

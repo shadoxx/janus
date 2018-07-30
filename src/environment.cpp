@@ -51,7 +51,7 @@ void Environment::SetupPocketspace()
 
     //portal->SetURL("", "http://usagii.net/other/personal/work/pocketspace3/space/index.html");
 #ifdef __ANDROID__
-    parent_portal->SetURL(MathUtil::GetApplicationURL(), "http://google.com");
+    parent_portal->SetURL(MathUtil::GetApplicationURL(), "https://vesta.janusvr.com");
     //parent_portal->SetURL(MathUtil::GetApplicationURL(), "http://janusvr.com");
     //parent_portal->SetURL(MathUtil::GetApplicationURL(), "https://vesta.janusvr.com/aussie/live-stream-abc-tv-australia-in-webvr");
     //parent_portal->SetURL(MathUtil::GetApplicationURL(), "https://vesta.janusvr.com/firefoxg/learn-about-pyramids-in-multiplayer-webvr");

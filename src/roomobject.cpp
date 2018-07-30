@@ -1307,6 +1307,8 @@ void RoomObject::Update(const double dt_sec)
             portal_last_title = GetTitle();
         }
     }
+
+    UpdateMedia();
 }
 
 void RoomObject::UpdateMedia()
@@ -1448,12 +1450,6 @@ void RoomObject::UpdateMedia()
         media_ctx.pitch = GetF("pitch");
         media_ctx.positional_sound = (positional_env && media_ctx.pos != QVector3D(0,0,0));
         media_ctx.audio_lock.unlock();
-    }
-
-    for (int i=0; i<child_objects.size(); ++i) {
-        if (child_objects[i]) {
-            child_objects[i]->UpdateMedia();
-        }
     }
 }
 

@@ -330,7 +330,7 @@ void ControllerManager::Update(const bool use_gamepad)
         UpdateGamepad();
         using_gamepad = true;
 #endif
-    }    
+    }
 
     UpdateAssets();
 }
@@ -379,14 +379,48 @@ void ControllerManager::UpdateControllers()
                 s[i].y = hmd_manager->GetControllerThumbpad(i).y();
             }
             else if (hmd_manager->GetHMDType() == "daydream" || hmd_manager->GetHMDType() == "go" || hmd_manager->GetHMDType() == "gear") {
-                //Thumbpad for moving
-                if (hmd_manager->GetControllerThumbpadTouched(i)){
-                    s[i].x = hmd_manager->GetControllerThumbpad(i).x();
-                    s[i].y = hmd_manager->GetControllerThumbpad(i).y();
+                //Thumbpad: use y for moving and x for turning
+                if (i == 0) {
+                    if (hmd_manager->GetControllerThumbpadTouched(0) && hmd_manager->GetControllerThumbpadPressed(0)){
+                        s[1].x = hmd_manager->GetControllerThumbpad(0).x();
+                    }
+                    //else if (hmd_manager->GetControllerThumbpadTouched(0)){
+                    //    s[0].x = hmd_manager->GetControllerThumbpad(0).x();
+                    //}
+                    else {
+                        //s[0].x = 0.0f;
+                        s[1].x = 0.0f;
+                    }
+
+                    if (hmd_manager->GetControllerThumbpadTouched(0)){
+                        s[i].y = (fabs(hmd_manager->GetControllerThumbpad(i).y()) > 0.35f)?hmd_manager->GetControllerThumbpad(i).y():0.0f;
+                    }
+                    else {
+                        s[i].y = 0.0f;
+                    }
                 }
-                else {
-                    s[i].x = 0.0f;
-                    s[i].y = 0.0f;
+                //Special case: Gear headset controller
+                else if (i == 1) {
+                    if (hmd_manager->GetControllerThumbpadTouched(i)){
+                        if (hmd_manager->GetControllerThumbpadTouched(0)){
+                            if (hmd_manager->GetControllerThumbpadPressed(0)){
+                                s[i].x += hmd_manager->GetControllerThumbpad(i).x();
+                            }
+                            s[0].y += hmd_manager->GetControllerThumbpad(i).y();
+                        }
+                        else{
+                            s[i].x = hmd_manager->GetControllerThumbpad(i).x();
+                            s[0].y = hmd_manager->GetControllerThumbpad(i).y();
+                        }
+                    }
+                    else {
+                        if (!hmd_manager->GetControllerThumbpadTouched(0)){
+                            s[0].y = 0.0f;
+                        }
+                        if (!hmd_manager->GetControllerThumbpadPressed(0)){
+                            s[i].x = 0.0f;
+                        }
+                    }
                 }
             }
             else if (hmd_manager->GetHMDType() == "wmxr") {

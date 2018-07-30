@@ -154,7 +154,7 @@ SOURCES += \
     src/webasset.cpp \
     src/gamepad.c
 
-unix:!macx:SOURCES += ./resources/cef/linux/libcef_dll/base/cef_atomicops_x86_gcc.cc
+unix:!android:!macx:SOURCES += ./resources/cef/linux/libcef_dll/base/cef_atomicops_x86_gcc.cc
 
 HEADERS += \
     src/abstracthmdmanager.h \

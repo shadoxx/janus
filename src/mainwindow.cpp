@@ -465,12 +465,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
                     QMouseEvent e2(QEvent::MouseButtonPress, url_bar_tab->tabBar()->mapFromGlobal(mapToGlobal(e->pos())), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
                     url_bar_tab->mousePressEvent(&e2);
                 }
-                /*else if (social_window_tab->tabBar()->tabAt(social_window_tab->tabBar()->mapFromGlobal(mapToGlobal(e->pos()))) < 0 &&
-                         url_bar_tab->tabBar()->tabAt(url_bar_tab->tabBar()->mapFromGlobal(mapToGlobal(e->pos()))) < 0)
-                    //Register events to glwidget if tab bar is pressed, but there is no tab under it
-                {
-                    glwidget->SetGrab(true);
-                }*/
 
                 if (glwidget->GetGrab() &&
                     (social_window_tab->tabBar()->tabAt(social_window_tab->tabBar()->mapFromGlobal(mapToGlobal(e->pos()))) >= 0 || //Clicked on tab
@@ -482,9 +476,13 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
                     glwidget->SetGrab(false); //Reset grab, allow users to register mouse events to URL bar and social window
                                               //Only if user clicks outside of glwidget, inside a tab or at the tab's widget
                 }
-                else
+                else if (!glwidget->GetGrab() &&
+                         !(social_window_tab->tabBar()->tabAt(social_window_tab->tabBar()->mapFromGlobal(mapToGlobal(e->pos()))) >= 0 || //Clicked on tab
+                          (social_window_tab->rect().contains(social_window_tab->mapFromGlobal(mapToGlobal(e->pos()))) && !social_window_tab->tabBar()->rect().contains(social_window_tab->tabBar()->mapFromGlobal(mapToGlobal(e->pos())))) || //Clicked on tab widget
+                         (url_bar_tab->tabBar()->tabAt(url_bar_tab->tabBar()->mapFromGlobal(mapToGlobal(e->pos()))) >= 0 ||
+                          (url_bar_tab->rect().contains(url_bar_tab->mapFromGlobal(mapToGlobal(e->pos()))) && !url_bar_tab->tabBar()->rect().contains(url_bar_tab->tabBar()->mapFromGlobal(mapToGlobal(e->pos())))))))
                 {
-                    glwidget->SetGrab(true);
+                    glwidget->SetGrab(true); //Grab on mouse press if user doesn't click on any tabs
                 }
 
                 JNIUtil::HideKeyboard();
@@ -511,23 +509,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             {
                 QMouseEvent e2(QEvent::MouseButtonPress, url_bar_tab->tabBar()->mapFromGlobal(mapToGlobal(e->pos())), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
                 url_bar_tab->mouseReleaseEvent(&e2);
-            }
-
-            if ((strcmp(obj->metaObject()->className(), "QOpenGLWidget") == 0 || strcmp(obj->metaObject()->className(), "QTabBar") == 0 || strcmp(obj->metaObject()->className(), "QTabWidget") == 0)
-                    && QApplication::focusWidget() && strcmp(QApplication::focusWidget()->metaObject()->className(), "QLineEdit") == 0) //Remove focus from a line edit if glwidget or tab is clicked
-            {
-                if (QApplication::focusWidget() == urlbar && urlbar->isModified()) urlbar->setModified(false);
-                QApplication::focusWidget()->clearFocus();
-                glwidget->SetGrab(true);
-            }
-
-            if (strcmp(obj->metaObject()->className(), "QLineEdit") == 0 && obj == urlbar) //Select all if URL bar is focused on
-            {
-                if (!urlbar->hasSelectedText() && !urlbar->isModified())
-                {
-                    urlbar->setModified(true);
-                    urlbar->selectAll();
-                }
             }
 
             if ((QWidget *) obj != settings_window && !settings_window->children().contains(obj)
@@ -572,22 +553,26 @@ void MainWindow::Update()
     }
 
 #ifdef __ANDROID__
+    // Need to always be in VR mode for Gear/Go
+    if (!paused && !require_permissions && hmd_manager && (hmd_manager->GetHMDType() == "go" || hmd_manager->GetHMDType() == "gear") && (!hmd_manager->GetEnabled() || !JNIUtil::GetShowingVR())) {
+        EnterVR();
+    }
 
     //Request user remove headset to accept permissions if user is still in MODE_GVR
     if (require_permissions){
         if (GLWidget::GetDisplayMode() == MODE_2D && !asked_permissions){
             //If user removed headset, request permissions
+            asked_permissions = true;
             JNIUtil::AskPermissions();
             game->SetRemoveHeadset(false);
-            asked_permissions = true;
         }
         else if (GLWidget::GetDisplayMode() == MODE_GVR && !asked_permissions){
             //Only show image requesting user to remove headset if in VR mode
             game->SetRemoveHeadset(true);
         }
         else if (GLWidget::GetDisplayMode() == MODE_GEAR && !asked_permissions){
-            JNIUtil::AskPermissions();
             asked_permissions = true;
+            JNIUtil::AskPermissions();
         }
 
         if (asked_permissions && JNIUtil::GetAnsweredPermissions()){
@@ -604,7 +589,7 @@ void MainWindow::Update()
             require_permissions = false;
             asked_permissions = false;
 
-            if (GLWidget::GetDisplayMode() == MODE_GEAR) {
+            if (hmd_manager && (hmd_manager->GetHMDType() == "go" || hmd_manager->GetHMDType() == "gear")) {
                 EnterVR();
             }
 #ifndef OCULUS_SUBMISSION_BUILD
@@ -657,11 +642,15 @@ void MainWindow::Update()
             JNIUtil::SetControlsVisible(true, SettingsManager::GetShowViewJoystick());
     }
 #endif
-#endif
-
+    if (!urlbar->hasFocus() && glwidget->GetGrab() && urlbar->text() != game->GetPlayer()->GetS("url")) {
+        urlbar->setText(game->GetPlayer()->GetS("url"));
+    }
+#else
     if (!urlbar->hasFocus() && urlbar->text() != game->GetPlayer()->GetS("url")) {
         urlbar->setText(game->GetPlayer()->GetS("url"));
     }
+#endif
+
 
     //59.3 - disable pocketspace toggle button if there is no other current viewed room to toggle to
     if (game->GetEnvironment()->GetLastRoom().isNull() && button_home->isVisible()) {
@@ -806,7 +795,11 @@ void MainWindow::TimeOut()
     RendererInterface::m_pimpl->ConfigureSamples(sampleCount);
 
     //Check for changes to enhanced depth precision setting
+#ifdef __ANDROID__
+    RendererInterface::m_pimpl->SetIsUsingEnhancedDepthPrecision(false);
+#else
     RendererInterface::m_pimpl->SetIsUsingEnhancedDepthPrecision(SettingsManager::GetEnhancedDepthPrecisionEnabled());
+#endif
 
     Update();    
     glwidget->update();      
@@ -995,6 +988,12 @@ void MainWindow::Initialize()
         game->GetPlayer()->SetS("hmd_type", "2d");
         break;
     }
+
+#ifdef __ANDROID__
+    game->GetPlayer()->SetS("device_type", "android");
+#else
+    game->GetPlayer()->SetS("device_type", "desktop");
+#endif
 
     qDebug() << "MainWindow::InitializeGame() - HMD/render type:" << game->GetPlayer()->GetS("hmd_type");
 

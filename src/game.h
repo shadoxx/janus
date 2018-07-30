@@ -213,8 +213,6 @@ public:
 
     void DoImport(const QString url);
 
-    void UpdateMedia();
-
 #ifdef __ANDROID__
     bool GetPinching();
     void SetPinching(const bool b);

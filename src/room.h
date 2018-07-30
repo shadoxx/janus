@@ -165,7 +165,6 @@ public:
     QPointer <QScriptEngine> GetScriptEngine();
 
     void UpdateAssets();
-    void UpdateMedia(MultiPlayerManager *multi_players);
     void UpdateObjects(QPointer <Player> player, MultiPlayerManager*  multi_players, const bool player_in_room);
     void UpdateJS(QPointer <Player> player);
     void UpdatePhysics(QPointer <Player> player);

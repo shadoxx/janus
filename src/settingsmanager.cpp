@@ -17,7 +17,11 @@ void SettingsManager::LoadSettings()
     settings["comfortmode"] = true;
     settings["downloadcache"] = true;
     settings["antialiasing"] = true;
+#ifndef __ANDROID__
     settings["enhanceddepthprecision"] = true;
+#else
+    settings["enhanceddepthprecision"] = false;
+#endif
     settings["assetshaders"] = true;
     settings["sounds"] = true;
 #ifndef __ANDROID__

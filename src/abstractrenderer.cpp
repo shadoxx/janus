@@ -1049,9 +1049,9 @@ void AbstractRenderer::InitializeState()
 #endif
 
     // Optional Depth Precision improvements
+#ifndef __ANDROID__
     if (QOpenGLContext::currentContext()->hasExtension(QByteArrayLiteral("GL_ARB_clip_control")))
     {
-#ifndef __ANDROID__
         m_glClipControl = (PFNGLCLIPCONTROLPROC)QOpenGLContext::currentContext()->getProcAddress(QByteArrayLiteral("glClipControl"));
 
         if (m_glClipControl != nullptr)
@@ -1060,12 +1060,14 @@ void AbstractRenderer::InitializeState()
             m_enhanced_depth_precision_supported = true;
         }
         else
-#endif
         {
             qDebug () << "glClipControl NOT SUPPORTED!";
             m_enhanced_depth_precision_supported = false;
         }
     }
+#else
+    m_enhanced_depth_precision_supported = false;
+#endif
 
     // Color and Raster state
     MathUtil::glFuncs->glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
