@@ -377,6 +377,11 @@ void AssetScript::Update()
 {
     if (GetLoaded() && !GetProcessing() && !GetError()) {
 //        qDebug() << "AssetScript::Update() - Running script code" << this->GetFullURL();
+        //60.0 - bugfix, CLEAR onLoad/update remnants from previous script before injecting,
+        //       otherwise there is a bug with multiple erroneous function calls
+        roomObject.setProperty("onLoad", QScriptValue());
+        roomObject.setProperty("update", QScriptValue());
+
         RunScriptCode(QString(GetData()));
 
         room_load_fn = roomObject.property("onLoad");
@@ -584,6 +589,7 @@ QList <QPointer <RoomObject> > AssetScript::DoRoomLoad(QHash <QString, QPointer 
 //    qDebug() << "AssetScript::DoRoomLoad" << this;
     UpdateInternalDataStructures(player);
     if (room_load_fn.isFunction()) {
+//        qDebug() << "AssetScript::DoRoomLoad" << this << room_load_fn.toString();
         room_load_fn.call(roomObject);
     }
     return UpdateAsynchronousCreatedObjects(envobjects);

@@ -1672,8 +1672,8 @@ void Room::UpdateJS(QPointer <Player> player)
             if (script->GetFinished()) {
 
                 //update objects stuff
-//                qDebug() << script->HasRoomFunction("onLoad") << script->GetOnLoadInvoked();
                 if (!script->GetOnLoadInvoked()) {
+//                    qDebug() << "scriptonload" << script << script->HasRoomFunction("onLoad") << script->GetOnLoadInvoked();
                     script->SetOnLoadInvoked(true);
                     QList<QPointer <RoomObject> > objectsAdded = script->DoRoomLoad(envobjects, player);
                     LogErrorOnException();
@@ -2198,7 +2198,7 @@ void Room::SelectAssetForObject(const QString & selected, const int offset)
     }
 }
 
-bool Room::DeleteSelected(const QString & selected, const bool do_sync)
+bool Room::DeleteSelected(const QString & selected, const bool do_sync, const bool play_delete_sound)
 {        
     if (GetB("locked")) {
         MathUtil::ErrorLog("Warning: cannot do delete, room.locked=true");
@@ -2228,7 +2228,9 @@ bool Room::DeleteSelected(const QString & selected, const bool do_sync)
 
             o->SetSelected(false);
             o->Stop();
-            o->PlayDeleteObject();
+            if (play_delete_sound) {
+                o->PlayDeleteObject();
+            }
 
             if (envobjects.contains(selected) && envobjects[selected] && envobjects[selected]->GetParentObject()) {
                 envobjects[selected]->GetParentObject()->GetProperties()->removeChild(envobjects[selected]->GetProperties());

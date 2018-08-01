@@ -4508,6 +4508,13 @@ void Game::UpdateControllers()
 
     if (controller_manager->GetHMDManager() && controller_manager->GetHMDManager()->GetEnabled() && !JNIUtil::GetGamepadConnected()){
         SettingsManager::SetMicAlwaysOn(true);
+        player->SetB("flying", true);
+        if (sqrt(pow(controller_x[0],2) + pow(controller_y[0],2)) > 0.8f){
+                player->SetB("running", true);
+        }
+        else{
+            player->SetB("running", false);
+        }
         return;
     }
     else{

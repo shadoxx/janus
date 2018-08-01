@@ -1308,7 +1308,7 @@ void Environment::UpdateQueuedFunctions(QPointer <Room> r)
         }
         else if (op == "removeObject") {
             const bool do_sync = queued_funcs[i].property("sync").toBool();
-            r->DeleteSelected(name, do_sync);
+            r->DeleteSelected(name, do_sync, false); //60.0 - delete and do not play sound
             processed = true;
         }
 

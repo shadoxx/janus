@@ -133,7 +133,7 @@ public:
     void DoEdit(const QString & s);
     void DoDelete(const QString & s);
 
-    bool DeleteSelected(const QString & selected, const bool do_sync=true);
+    bool DeleteSelected(const QString & selected, const bool do_sync=true, const bool play_delete_sound=true);
     QString PasteSelected(const QString & selected, const QVector3D & p, const QVector3D & x, const QVector3D & y, const QVector3D & z, const QString & js_id);
     void EditText(const QString & selected, const QString & c, const bool backspace);   
 

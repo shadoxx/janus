@@ -75,7 +75,7 @@ android {
         ndk {
             abiFilters "armeabi", "armeabi-v7a", "x86"
         }
-        versionCode 40
+        versionCode 43
         versionName "60.00"
     }
 

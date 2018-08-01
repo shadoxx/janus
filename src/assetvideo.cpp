@@ -19,6 +19,7 @@ AssetVideo::~AssetVideo()
 
 void AssetVideo::SetupOutput(MediaContext * ctx)
 {
+    media_player.Set3D(GetB("sbs3d"), GetB("ou3d"), GetB("reverse3d"));
     media_player.SetupOutput(ctx, GetS("_src_url"), GetB("loop"));
 }
 
@@ -34,7 +35,6 @@ bool AssetVideo::GetPlaying(MediaContext * ctx)
 
 void AssetVideo::Play(MediaContext * ctx)
 {
-    media_player.Set3D(GetB("sbs3d"), GetB("ou3d"), GetB("reverse3d"));
     media_player.Play(ctx);
 }
 

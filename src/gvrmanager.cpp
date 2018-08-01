@@ -175,7 +175,7 @@ void GVRManager::Update()
     m.setColumn(0, x);
     m.setColumn(1, y);
     m.setColumn(2, z);
-    m.setColumn(3, QVector3D(0,0,0));
+    m.setColumn(3, QVector3D(h.column(3).x(), h.column(3).y()+1.6,h.column(3).z()));
     m.setRow(3, QVector4D(0,0,0,1));
     m.scale(1,1,-1);
 
@@ -282,7 +282,7 @@ bool GVRManager::GetControllerTracked(const int i)
 QVector2D GVRManager::GetControllerThumbpad(const int i) const
 {
     //Only report if thumb pad is not pressed
-    if (gvr_api->GetViewerType() == GVR_VIEWER_TYPE_DAYDREAM && !GetControllerThumbpadPressed(i) && i == 0){
+    if (gvr_api->GetViewerType() == GVR_VIEWER_TYPE_DAYDREAM && i == 0){
         //qDebug() <<  "gvr::controller_thumb_pos " << QVector2D(2*(controller_state.GetTouchPos().x - 0.5), 2*(controller_state.GetTouchPos().y - 0.5));
         return QVector2D(2*(controller_state.GetTouchPos().x - 0.5), -2*(controller_state.GetTouchPos().y - 0.5));
     }
