@@ -15,7 +15,7 @@ public:
     explicit CookieJar(QObject *parent = 0);
     ~CookieJar();
 
-    static void initialize();
+    static void Initialize();
 
     void ReadFromDisk();
     void SaveToDisk();
