@@ -5,17 +5,17 @@
 #include "multiplayermanager.h"
 
 #ifdef __ANDROID__
-#include "jniutil.h"
-#include "settingsmanager.h"
+    #include "jniutil.h"
+    #include "settingsmanager.h"
 #endif
 
 #ifdef WIN32
-#include <conio.h>
-#include <Windows.h>
+    #include <conio.h>
+    #include <Windows.h>
 #endif
 
 #ifndef __ANDROID__
-#include "include/cef_app.h"
+    #include "include/cef_app.h"
 #endif
 
 //Uncomment to enable Leak debugging in Visual Studio when using Visual Leak Detector
@@ -180,14 +180,14 @@ void ProcessCmdLineArgs1(int argc, char *argv[])
                 }
                 else if (QString::compare(eacharg2, "vive", Qt::CaseInsensitive) == 0) {
                     d = MODE_VIVE;
-                }                
+                }
                 else {
                     d = MODE_2D;
                 }
                 GLWidget::SetDisplayMode(d);
                 ++i;
                 continue;
-            }           
+            }
             else if (QString::compare(eacharg, "-help", Qt::CaseInsensitive) == 0 ||
                      QString::compare(eacharg, "-h", Qt::CaseInsensitive) == 0) {
                 MainWindow::display_help = true;
@@ -225,7 +225,7 @@ void ProcessCmdLineArgs2(int argc, char *argv[])
                 QString eacharg2(argv[i+1]);
                 SettingsManager::SetPort(eacharg2.toInt());
                 ++i;
-            }  
+            }
             else if (QString::compare(eacharg, "-output_cubemap", Qt::CaseInsensitive) == 0 && i < argc-1) {
                 MainWindow::output_cubemap = true;
                 MainWindow::output_cubemap_filename_prefix = QString(argv[i+1]);
@@ -254,41 +254,53 @@ extern "C"
 
 int main(int argc, char *argv[])
 {
-    int result;
+    bool    cefIsInitialized; // for storing the result of calling CefInitialize()
+    int     cefExecuteResult; // for storing the result of calling CefExecuteProcess()
 
     //duplicate argv so CEF doesn't modify it, and Janus cmd line parameters continue to work
-    /*char ** argv_copy = new char *[argc];
+    char ** argv_copy = new char *[argc];
     for (int i=0; i<argc; ++i) {
         const int len = QString(argv[i]).length()+1; //null-terminated character strings
         argv_copy[i] = new char[len];
         memcpy(argv_copy[i], argv[i], len);
-    }*/
+    }
+
 #ifdef WIN32
-    CefMainArgs args;
+    CefMainArgs main_args;
 #elif !defined(__ANDROID__)
-    CefMainArgs main_args(argc, argv);
+    CefMainArgs main_args(argc, argv_copy);
+    //CefMainArgs main_args;
 #endif
 
 #ifndef __ANDROID__
     CefRefPtr<CEFApp> janusapp = new CEFApp();
-        result = CefExecuteProcess(main_args, janusapp, nullptr);
-//        int result = cefexecuteprocess(args, nullptr, nullptr);
-        // checkout CefApp, derive it and set it as second parameter, for more control on
-        // command args and resources.
-        if (result >= 0) // child proccess has endend, so exit.
-        {
-            qDebug() << "CefExecuteProcess(): The child has terminated abnormally";
-            return result;
-        }
-        if (result == -1)
-        {
-            // we are here in the father proccess.
-            qDebug() << "CefExecuteProcess(): returned -1";
-        }
 
+    cefExecuteResult = CefExecuteProcess(main_args, janusapp, nullptr);
+
+    // checkout CefApp, derive it and set it as second parameter, for more control on
+    // command args and resources.
+    if (cefExecuteResult >= 0) // child proccess has endend, so exit.
+    {
+        qDebug() << "CefExecuteProcess(): The child has terminated abnormally";
+        return cefExecuteResult;
+    }
+    if (cefExecuteResult == -1)
+    {
+        // we are here in the father proccess.
+        qDebug() << "CefExecuteProcess(): Chromium Embedded Framework Started";
+    }
+
+
+// TODO: Move this to its own initialization function
     CefSettings settings;
+
+// Toggle the verbosity of CefEngine output
+#ifndef QT_DEBUG
+    settings.log_severity = LOGSEVERITY_DEFAULT;
+#else
     settings.log_severity = LOGSEVERITY_DEBUG;
-    //settings.log_severity = LOGSEVERITY_DEFAULT;
+#endif
+
     settings.multi_threaded_message_loop = false;
     settings.no_sandbox = true;
     settings.ignore_certificate_errors = true;
@@ -296,13 +308,16 @@ int main(int argc, char *argv[])
     settings.persist_user_preferences = true;
     settings.external_message_pump = true;
 
-    result = CefInitialize(main_args, settings, nullptr, nullptr);
+    cefIsInitialized = CefInitialize(main_args, settings, janusapp, nullptr);
     // CefInitialize creates a sub-proccess and executes the same executeable, as calling CefInitialize, if not set different in settings.browser_subprocess_path
     // if you create an extra program just for the childproccess you only have to call CefExecuteProcess(...) in it.
-    if (!result) {
+    if (!cefExecuteResult) {
         // handle error
-        qDebug() << "CefInitialize(): unable to initial CefEngine";
+        qDebug() << "CefInitialize(): Unable to initialize CefEngine";
         return -1;
+    } else {
+        qDebug() << "CefInitialize(): CefEngine Initialization successful! Starting the message pump...";
+        CefDoMessageLoopWork();
     }
 #endif
 
@@ -319,10 +334,9 @@ int main(int argc, char *argv[])
 #ifdef WIN32
     //    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
     SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
-
 #endif
-    auto ideal_thread_count = QThread::idealThreadCount();
-    //auto ideal_thread_count = 4;
+
+    int ideal_thread_count = QThread::idealThreadCount();
     if (ideal_thread_count > 2)
     {
         // Leave two threads out of the pool for use in the main and render threads which are created
