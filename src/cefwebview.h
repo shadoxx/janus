@@ -1,7 +1,6 @@
 #ifndef CEFWEBVIEW_H
 #define CEFWEBVIEW_H
 
-#ifndef __ANDROID__
 #include <QtCore>
 #include <QImage>
 #include <QMutex>
@@ -262,5 +261,4 @@ private:
 
     static QList <CefRefPtr<CefBrowser> > browser_list;
 };
-#endif
 #endif // CEFWEBVIEW_H

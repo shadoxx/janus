@@ -62,8 +62,8 @@ void RendererGL33_LoadingThread::InitializeRenderingThread()
                      m_loading_worker, SLOT(InitializeGLObjectsMIRROR(AbstractRenderer *)),
                      Qt::ConnectionType::BlockingQueuedConnection);
 
-    QObject::connect(this,             SIGNAL(Process(AbstractRenderer *, std::unordered_map<size_t, std::vector<AbstractRenderCommand>> *, std::unordered_map<StencilReferenceValue, LightContainer> *)),
-                     m_loading_worker, SLOT(Process(AbstractRenderer *, std::unordered_map<size_t, std::vector<AbstractRenderCommand>> *, std::unordered_map<StencilReferenceValue, LightContainer> *)),
+    QObject::connect(this,             SIGNAL(Process(AbstractRenderer *, QHash<size_t, QVector<AbstractRenderCommand>> *, QHash<StencilReferenceValue, LightContainer> *)),
+                     m_loading_worker, SLOT(Process(AbstractRenderer *, QHash<size_t, QVector<AbstractRenderCommand>> *, QHash<StencilReferenceValue, LightContainer> *)),
                      Qt::ConnectionType::BlockingQueuedConnection);
 
     QOpenGLContext * current_context = QOpenGLContext::currentContext();
@@ -150,13 +150,13 @@ void RendererGL33_LoadingThread::Initialize()
                                                           &default_equi_fragment_shader_bytes, default_equi_fragment_shader_path);
 }
 
-void RendererGL33_LoadingThread::PreRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL33_LoadingThread::PreRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     Q_UNUSED(p_scoped_render_commands)
     Q_UNUSED(p_scoped_light_containers)
 }
 
-void RendererGL33_LoadingThread::PostRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL33_LoadingThread::PostRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     Q_UNUSED(p_scoped_render_commands)
     Q_UNUSED(p_scoped_light_containers)
@@ -193,7 +193,7 @@ std::shared_ptr<ProgramHandle> RendererGL33_LoadingThread::CompileAndLinkShaderP
 
 void RendererGL33_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<ProgramHandle> * p_abstract_program, QByteArray * p_vertex_shader,
                                                             QString p_vertex_shader_path, QByteArray * p_fragment_shader, QString p_fragment_shader_path,
-                                                            std::vector<std::vector<GLint>> *p_map)
+                                                            QVector<QVector<GLint>> *p_map)
 {
 //    qDebug() << "RendererGL33_LoadingThread::CompileAndLinkShaderProgram2";
     GLuint program_id;
@@ -231,7 +231,7 @@ void RendererGL33_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(vertex_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
+            QVector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(vertex_shader_id, log_length, NULL, &vertex_shader_log[0]);
             MathUtil::ErrorLog(QString("Compilation of vertex shader ") + p_vertex_shader_path + QString("failed:")+vertex_shader_log.data());
         }
@@ -261,7 +261,7 @@ void RendererGL33_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(vertex_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
+            QVector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(vertex_shader_id, log_length, NULL, &vertex_shader_log[0]);
             MathUtil::ErrorLog(QString("Compilation of vertex shader ") + default_object_vertex_shader_path + QString(" failed:")+vertex_shader_log.data());
         }
@@ -289,7 +289,7 @@ void RendererGL33_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(fragment_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
+            QVector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(fragment_shader_id, log_length, NULL, &fragment_shader_lod[0]);
             MathUtil::ErrorLog(QString("Compilation of fragment shader ") + p_fragment_shader_path + QString(" failed:")+fragment_shader_lod.data());
         }
@@ -316,7 +316,7 @@ void RendererGL33_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(fragment_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
+            QVector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(fragment_shader_id, log_length, NULL, &fragment_shader_lod[0]);
             MathUtil::ErrorLog(QString("Compilation of fragment shader ") + default_object_fragment_shader_path + QString(" failed:") + fragment_shader_lod.data());
         }
@@ -335,7 +335,7 @@ void RendererGL33_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
         {
             int log_length;
             MathUtil::glFuncs->glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> program_log( (log_length > 1) ? log_length : 1 );
+            QVector<char> program_log( (log_length > 1) ? log_length : 1 );
             MathUtil::glFuncs->glGetProgramInfoLog(program_id, log_length, NULL, &program_log[0]);
 
             shader_failed = true;
@@ -364,7 +364,7 @@ void RendererGL33_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
     {
         int log_length;
         MathUtil::glFuncs->glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_length);
-        std::vector<char> program_log( (log_length > 1) ? log_length : 1 );
+        QVector<char> program_log( (log_length > 1) ? log_length : 1 );
         MathUtil::glFuncs->glGetProgramInfoLog(program_id, log_length, NULL, &program_log[0]);
 //        MathUtil::ErrorLog(QString("Linking of shaders ") + p_vertex_shader_path + QString(" & ") + p_fragment_shader_path + QString(" successful:"));
 //        MathUtil::ErrorLog(program_log.data());
@@ -392,8 +392,8 @@ void RendererGL33_LoadingThread::InitializeGLObjects()
     AbstractRenderer::InitializeGLObjects();
 }
 
-void RendererGL33_LoadingThread::Render(std::unordered_map<size_t, std::vector<AbstractRenderCommand>> * p_scoped_render_commands,
-                          std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL33_LoadingThread::Render(QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
+                          QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     m_loading_worker->Process((AbstractRenderer*)this, p_scoped_render_commands, p_scoped_light_containers);
 }

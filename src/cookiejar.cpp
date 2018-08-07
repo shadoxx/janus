@@ -14,7 +14,7 @@ CookieJar::~CookieJar()
 {    
 }
 
-void CookieJar::initialize()
+void CookieJar::Initialize()
 {
     CookieJar::cookie_jar = new CookieJar();
 }

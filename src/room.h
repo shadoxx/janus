@@ -14,7 +14,9 @@
 #include "htmlpage.h"
 #include "domnode.h"
 #include "lightmanager.h"
+#ifndef __ANDROID__
 #include "filteredcubemapmanager.h"
+#endif
 #include "roomphysics.h"
 #include "performancelogger.h"
 #include "assetwebsurface.h"

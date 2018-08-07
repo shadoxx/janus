@@ -79,7 +79,7 @@ public:
 
     bool m_using_openVR;
     unsigned int m_color_texture_id;
-    std::vector<QVector4D> m_eye_viewports;
+    QVector<QVector4D> m_eye_viewports;
 
 protected:
 
@@ -87,8 +87,8 @@ protected:
     float m_far_clip;
     float m_avatar_near_clip;
     float m_avatar_far_clip;
-    std::vector<QMatrix4x4> m_eye_view_matrices;
-    std::vector<QMatrix4x4> m_eye_projection_matrices;
+    QVector<QMatrix4x4> m_eye_view_matrices;
+    QVector<QMatrix4x4> m_eye_projection_matrices;
 };
 
 #endif // HMDMANAGER_H

@@ -17,12 +17,12 @@ public:
     virtual ~RendererGL33RenderThread();
 
     virtual void Initialize();
-    virtual void Render(std::unordered_map<size_t, std::vector<AbstractRenderCommand>> * p_scoped_render_commands,
-                        std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
-    virtual void PreRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands,
-                           std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
-    virtual void PostRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands,
-                            std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
+    virtual void Render(QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
+                        QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
+    virtual void PreRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands,
+                           QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
+    virtual void PostRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands,
+                            QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
     virtual void UpgradeShaderSource(QByteArray & p_shader_source, bool p_is_vertex_shader);
 
     void SaveScreenshot();
@@ -40,7 +40,7 @@ public slots:
     void CreateMeshHandleForGeomVBODataMIRRORCOPY(AbstractRenderer * p_main_thread_renderer, GeomVBOData * p_VBO_data);
     void CreateMeshHandle(AbstractRenderer * p_main_thread_renderer, std::shared_ptr<MeshHandle> * p_handle,
                             VertexAttributeLayout p_layout);
-    void Process(AbstractRenderer * p_main_thread_renderer, std::unordered_map<size_t, std::vector<AbstractRenderCommand>> * p_scoped_object_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
+    void Process(AbstractRenderer * p_main_thread_renderer, QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_object_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
     void InitializeGLObjectsMIRROR(AbstractRenderer * p_renderer);
     void DecoupledRender();
     void FinishThread();
@@ -50,7 +50,7 @@ signals:
     void error(QString err);
 
 private:
-    void UpdatePerObjectData(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands);
+    void UpdatePerObjectData(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands);
     QOffscreenSurface *  m_gl_surface;
     QOpenGLContext * m_gl_context;
 #ifndef __ANDROID__
@@ -74,7 +74,7 @@ private:
     bool m_screenshot_pbo_pending;
     GLuint m_screenshot_pbo;
     bool m_frame_vector_sorted;
-    std::vector<AbstractRenderCommand_sort> m_sorted_command_indices;
+    QVector<AbstractRenderCommand_sort> m_sorted_command_indices;
     bool m_shutting_down;   
 };
 

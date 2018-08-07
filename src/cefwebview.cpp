@@ -1,7 +1,5 @@
 #include "cefwebview.h"
 
-#ifndef __ANDROID__
-
 QList <CefRefPtr<CefBrowser> > CEFWebView::browser_list;
 
 CEFRenderProcessHandler::CEFRenderProcessHandler()
@@ -43,7 +41,7 @@ void CEFApp::OnBeforeCommandLineProcessing(
     //Use AppendSwitch if the switch doesn't need a value to be set
     command_line->AppendSwitchWithValue("--limit-fps", "60");
     command_line->AppendSwitchWithValue("--renderer-process-limit", "3");
-    command_line->AppendSwitchWithValue("--memory-pressure-thresholds-mb", "512");
+    command_line->AppendSwitchWithValue("--memory-pressure-thresholds-mb", "1024");
     command_line->AppendSwitchWithValue("--force-gpu-mem-available-mb", "512");
     command_line->AppendSwitchWithValue("--process-per-site", "1");
     CefApp::OnBeforeCommandLineProcessing(process_type, command_line);
@@ -636,5 +634,3 @@ void CEFWebView::Shutdown()
     }    
 //    browser_list.clear();
 }
-
-#endif

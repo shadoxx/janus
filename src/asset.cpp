@@ -47,7 +47,7 @@ void Asset::SetF(const char * name, const float f)
 
 float Asset::GetF(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toFloat();
     }
     return 0.0f;
@@ -62,7 +62,7 @@ void Asset::SetI(const char * name, const int i)
 
 int Asset::GetI(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toInt();
     }
     return 0;
@@ -77,7 +77,7 @@ void Asset::SetB(const char * name, const bool b)
 
 bool Asset::GetB(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toString().toLower() == "true";
     }
     return false;
@@ -92,7 +92,7 @@ void Asset::SetS(const char * name, const QString s)
 
 QString Asset::GetS(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toString();
     }
     return QString();
@@ -107,7 +107,7 @@ void Asset::SetC(const char * name, const QColor c)
 
 QColor Asset::GetC(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return MathUtil::GetStringAsColour(props->property(name).toString());
     }
     return QColor(255,255,255);

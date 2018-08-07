@@ -22,7 +22,7 @@ void GeomData::AddTriangle(const QString mat, uint32_t const mesh_UUID, GeomTria
         materials[mat].triangles.resize(mesh_UUID + 1);
         materials[mat].triangles[mesh_UUID].reserve(256);
     }
-    materials[mat].triangles[mesh_UUID].emplace_back(t);
+    materials[mat].triangles[mesh_UUID].push_back(t);
 }
 
 void GeomData::SetTextureFilename(const QString mat, const unsigned int channel, const QString filename)
@@ -79,11 +79,11 @@ GeomMaterial & GeomData::GetMaterial(const QString mat)
     return materials[mat];
 }
 
-std::vector<GeomTriangle> & GeomData::GetTriangles(const QString mat, uint32_t const mesh_UUID)
+QVector<GeomTriangle> & GeomData::GetTriangles(const QString mat, uint32_t const mesh_UUID)
 {
     if (materials[mat].triangles.size() <= mesh_UUID)
     {
-        materials[mat].triangles.emplace_back(std::vector<GeomTriangle>());
+        materials[mat].triangles.push_back(QVector<GeomTriangle>());
     }
     return materials[mat].triangles[mesh_UUID];
 }
@@ -92,7 +92,7 @@ GeomVBOData & GeomData::GetVBOData(const QString mat, uint32_t const mesh_UUID)
 {
     if (materials[mat].vbo_data.size() <= mesh_UUID)
     {
-        materials[mat].vbo_data.emplace_back(GeomVBOData());
+        materials[mat].vbo_data.push_back(GeomVBOData());
     }
     return materials[mat].vbo_data[mesh_UUID];
 }
@@ -1238,19 +1238,19 @@ void Geom::PrepareVBOs()
 
     /* draw all meshes assigned to this node */
     //iterate through everything
-    std::vector<aiNode*> nodes_to_process;
+    QVector<aiNode*> nodes_to_process;
     nodes_to_process.reserve(1024);
-    std::vector<QMatrix4x4> nodes_parent_xforms;
+    QVector<QMatrix4x4> nodes_parent_xforms;
     nodes_parent_xforms.reserve(1024);
-    std::vector<int> node_depth;
+    QVector<int> node_depth;
     node_depth.reserve(1024);
     node_list.reserve(1024);
 
     if (scene->mRootNode)
     {
-        nodes_to_process.emplace_back(scene->mRootNode);
-        nodes_parent_xforms.emplace_back(QMatrix4x4());
-        node_depth.emplace_back(0);
+        nodes_to_process.push_back(scene->mRootNode);
+        nodes_parent_xforms.push_back(QMatrix4x4());
+        node_depth.push_back(0);
 
         m_globalInverseTransform = aiToQMatrix4x4(scene->mRootNode->mTransformation).inverted();
     }
@@ -1278,7 +1278,7 @@ void Geom::PrepareVBOs()
 //            qDebug() << "Adding bone!" << nd->mName.C_Str() << "index" << node_list.size();
             const QString node_name = GetProcessedNodeName(nd->mName.C_Str());
             bone_to_node[node_name] = node_list.size();
-            node_list.emplace_back(nd);
+            node_list.push_back(nd);
 
 //            if (base_path.contains("elvis")) {
 //                QString s;
@@ -1294,17 +1294,17 @@ void Geom::PrepareVBOs()
         {
             if (nd->mChildren[n])
             {
-                nodes_to_process.emplace_back(nd->mChildren[n]);
-                nodes_parent_xforms.emplace_back(m);
-                node_depth.emplace_back(n_depth+1);
+                nodes_to_process.push_back(nd->mChildren[n]);
+                nodes_parent_xforms.push_back(m);
+                node_depth.push_back(n_depth+1);
             }
         }
     }
 
     if (scene->mRootNode)
     {
-        nodes_to_process.emplace_back(scene->mRootNode);
-        nodes_parent_xforms.emplace_back(QMatrix4x4());
+        nodes_to_process.push_back(scene->mRootNode);
+        nodes_parent_xforms.push_back(QMatrix4x4());
     }
 
     //on second pass, process meshes
@@ -1371,7 +1371,7 @@ void Geom::PrepareVBOs()
             GeomMaterial & mat = data.GetMaterial(mat_name);
             bool mesh_has_been_processed = false;
             size_t mesh_index = mat.mesh_keys.size();
-            for (std::pair<uint32_t, size_t>& mesh_key : mat.mesh_keys)
+            for (QPair<uint32_t, size_t>& mesh_key : mat.mesh_keys)
             {
                 if (mesh_key.first == nd->mMeshes[n])
                 {
@@ -1527,7 +1527,7 @@ void Geom::PrepareVBOs()
                     float weight;
                 };
 
-                std::unordered_map<uint32_t, std::vector<VertexBoneInfo>> bone_info;
+                QHash<uint32_t, QVector<VertexBoneInfo>> bone_info;
 
                 // Prepare Bone weights and indices
                 for (uint32_t bone_index = 0; bone_index < mesh->mNumBones; ++bone_index)
@@ -1560,7 +1560,7 @@ void Geom::PrepareVBOs()
                 // Skel anim indices and weights
                 for (uint32_t vertex_index = 0; vertex_index < num_verts; ++vertex_index)
                 {
-                    std::vector<VertexBoneInfo>& bones = bone_info[vertex_index];
+                    QVector<VertexBoneInfo>& bones = bone_info[vertex_index];
 
                     auto const bone_count = bones.size();
                     if (bone_count != 0)
@@ -1626,11 +1626,11 @@ void Geom::PrepareVBOs()
                 } // for (uint32_t vertex_index = 0; vertex_index < num_verts; ++vertex_index)
 
                 // Store key as we need this for parsing in the physics code
-                mat.mesh_keys.emplace_back(std::pair<uint32_t, size_t>(nd->mMeshes[n], mesh_index));
+                mat.mesh_keys.push_back(QPair<uint32_t, size_t>(nd->mMeshes[n], mesh_index));
             } // if (mesh_has_been_processed == false)
 
             // Add new transform for this mesh this is the object-space to instance-space transform for this instance
-            vbo_data.m_instance_transforms.emplace_back(m);
+            vbo_data.m_instance_transforms.push_back(m);
             // Increment nTris by the triangle count of this mesh if we are creating a new instance of it.
             // TODO: Perhaps this should store the number of triangles loaded rather than drawn, as that number will vary
             // when I implement working frustum-culling and/or other triangle culling techniques.
@@ -1641,20 +1641,15 @@ void Geom::PrepareVBOs()
         {
             if (nd->mChildren[n])
             {
-                nodes_to_process.emplace_back(nd->mChildren[n]);
-                nodes_parent_xforms.emplace_back(m);
+                nodes_to_process.push_back(nd->mChildren[n]);
+                nodes_parent_xforms.push_back(m);
             }
         }
     }
 
     nodes_to_process.clear();
-    nodes_to_process.shrink_to_fit();
-
     nodes_parent_xforms.clear();
-    nodes_parent_xforms.shrink_to_fit();
-
     node_depth.clear();
-    node_depth.shrink_to_fit();
 
     ready = true;
 }
@@ -2008,8 +2003,8 @@ void Geom::CalculateFinalPoses()
     //iterate over nodes of BASE OBJECT
     if (scene->mRootNode)
     {
-        nodes_to_process.emplace_back(scene->mRootNode);
-        nodes_parent_xforms.emplace_back(QMatrix4x4());
+        nodes_to_process.push_back(scene->mRootNode);
+        nodes_parent_xforms.push_back(QMatrix4x4());
     }
 
     //on first pass, set up node hierarchy and node indexes for whole scene
@@ -2113,8 +2108,8 @@ void Geom::CalculateFinalPoses()
         for (unsigned int n = 0; n < nd->mNumChildren; ++n) {
             if (nd->mChildren[n])  {
 //                qDebug() << node_name << nd->mChildren[n]->mName.C_Str();
-                nodes_to_process.emplace_back(nd->mChildren[n]);
-                nodes_parent_xforms.emplace_back(globalTransform);
+                nodes_to_process.push_back(nd->mChildren[n]);
+                nodes_parent_xforms.push_back(globalTransform);
             }
         }
     }

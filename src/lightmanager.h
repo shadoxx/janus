@@ -81,7 +81,7 @@ public:
 //        return *this;
 //    }
 
-    std::vector<Light> m_lights;
+    QVector<Light> m_lights;
 };
 
 class LightManager

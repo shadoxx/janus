@@ -21,13 +21,15 @@
 
 #include "controllermanager.h"
 
+#include "socialwindow.h"
+#include "settingswindow.h"
+#ifndef __ANDROID__
 #include "hierarchywindow.h"
 #include "propertieswindow.h"
-#include "settingswindow.h"
 #include "assetwindow.h"
-#include "socialwindow.h"
 #include "codeeditorwindow.h"
 #include "navigationwindow.h"
+#endif
 #include "glwidget.h"
 
 #ifdef __ANDROID__

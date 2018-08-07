@@ -1,6 +1,6 @@
 #include "renderergl44_loadingthread.h"
 
-#if !defined(__APPLE__) && !defined(__ANDROID__)
+#if !defined(__APPLE__)
 RendererGL44_LoadingThread::RendererGL44_LoadingThread()
 {
 
@@ -60,8 +60,8 @@ void RendererGL44_LoadingThread::InitializeRenderingThread()
                      m_loading_worker, SLOT(InitializeGLObjectsMIRROR(AbstractRenderer *)),
                      Qt::ConnectionType::BlockingQueuedConnection);
 
-    QObject::connect(this,             SIGNAL(Process(AbstractRenderer *, std::unordered_map<size_t, std::vector<AbstractRenderCommand>> *, std::unordered_map<StencilReferenceValue, LightContainer> *)),
-                     m_loading_worker, SLOT(Process(AbstractRenderer *, std::unordered_map<size_t, std::vector<AbstractRenderCommand>> *, std::unordered_map<StencilReferenceValue, LightContainer> *)),
+    QObject::connect(this,             SIGNAL(Process(AbstractRenderer *, QHash<size_t, QVector<AbstractRenderCommand>> *, QHash<StencilReferenceValue, LightContainer> *)),
+                     m_loading_worker, SLOT(Process(AbstractRenderer *, QHash<size_t, QVector<AbstractRenderCommand>> *, QHash<StencilReferenceValue, LightContainer> *)),
                      Qt::ConnectionType::BlockingQueuedConnection);
 
 
@@ -147,13 +147,13 @@ void RendererGL44_LoadingThread::Initialize()
     m_per_instance_compute_shader = CompileAndLinkShaderProgram(&compute_shader_bytes, compute_shader_path);
 }
 
-void RendererGL44_LoadingThread::PreRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL44_LoadingThread::PreRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     Q_UNUSED(p_scoped_render_commands)
     Q_UNUSED(p_scoped_light_containers)
 }
 
-void RendererGL44_LoadingThread::PostRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL44_LoadingThread::PostRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     Q_UNUSED(p_scoped_render_commands)
     Q_UNUSED(p_scoped_light_containers)
@@ -357,7 +357,7 @@ std::shared_ptr<ProgramHandle> RendererGL44_LoadingThread::CompileAndLinkShaderP
     {
         int log_length;
         MathUtil::glFuncs->glGetShaderiv(compute_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-        std::vector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
+        QVector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
         MathUtil::glFuncs->glGetShaderInfoLog(compute_shader_id, log_length, NULL, &vertex_shader_log[0]);
         MathUtil::ErrorLog(QString("Compilation of compute shader ") + p_compute_shader_path + QString("failed:")+vertex_shader_log.data());
         handle_id = nullptr;
@@ -383,7 +383,7 @@ std::shared_ptr<ProgramHandle> RendererGL44_LoadingThread::CompileAndLinkShaderP
 
 void RendererGL44_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<ProgramHandle> * p_abstract_program, QByteArray * p_vertex_shader,
                                                             QString p_vertex_shader_path, QByteArray * p_fragment_shader, QString p_fragment_shader_path,
-                                                            std::vector<std::vector<GLint>> *p_map)
+                                                            QVector<QVector<GLint>> *p_map)
 {
     GLuint program_id;
     *p_abstract_program = CreateProgramHandle(&program_id);
@@ -411,7 +411,7 @@ void RendererGL44_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(vertex_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
+            QVector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(vertex_shader_id, log_length, NULL, &vertex_shader_log[0]);
             MathUtil::ErrorLog(QString("Compilation of vertex shader ") + p_vertex_shader_path + QString("failed:")+vertex_shader_log.data());
         }
@@ -434,7 +434,7 @@ void RendererGL44_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(vertex_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
+            QVector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(vertex_shader_id, log_length, NULL, &vertex_shader_log[0]);
             MathUtil::ErrorLog(QString("Compilation of vertex shader ") + default_object_vertex_shader_path + QString(" failed:")+vertex_shader_log.data());
         }
@@ -454,7 +454,7 @@ void RendererGL44_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(fragment_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
+            QVector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(fragment_shader_id, log_length, NULL, &fragment_shader_lod[0]);
             MathUtil::ErrorLog(QString("Compilation of fragment shader ") + p_fragment_shader_path + QString(" failed:")+fragment_shader_lod.data());
         }
@@ -477,7 +477,7 @@ void RendererGL44_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(fragment_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
+            QVector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(fragment_shader_id, log_length, NULL, &fragment_shader_lod[0]);
             MathUtil::ErrorLog(QString("Compilation of fragment shader ") + default_object_fragment_shader_path + QString(" failed:")+fragment_shader_lod.data());
         }
@@ -494,7 +494,7 @@ void RendererGL44_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
         {
             int log_length;
             MathUtil::glFuncs->glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> program_log( (log_length > 1) ? log_length : 1 );
+            QVector<char> program_log( (log_length > 1) ? log_length : 1 );
             MathUtil::glFuncs->glGetProgramInfoLog(program_id, log_length, NULL, &program_log[0]);
 
             shader_failed = true;
@@ -523,7 +523,7 @@ void RendererGL44_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
     {
         int log_length;
         MathUtil::glFuncs->glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_length);
-        std::vector<char> program_log( (log_length > 1) ? log_length : 1 );
+        QVector<char> program_log( (log_length > 1) ? log_length : 1 );
         MathUtil::glFuncs->glGetProgramInfoLog(program_id, log_length, NULL, &program_log[0]);;
 //        MathUtil::ErrorLog(QString("Linking of shaders ") + p_vertex_shader_path + QString(" & ") + p_fragment_shader_path + QString(" successful:"));
 //        MathUtil::ErrorLog(program_log.data());
@@ -554,7 +554,7 @@ std::shared_ptr<MeshHandle> RendererGL44_LoadingThread::CreateMeshHandle(VertexA
     {
         if (m_mesh_handle_to_GL_ID[itr].first == p_handle && m_mesh_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID)
         {
-            std::pair<MeshHandle*, GLuint>& mesh_pair = m_mesh_handle_to_GL_ID[itr];
+            QPair<MeshHandle*, GLuint>& mesh_pair = m_mesh_handle_to_GL_ID[itr];
             mesh_pair.first->m_last_known_index = itr;
 
             m_loading_worker->m_mesh_deletion_guard.lock();
@@ -573,7 +573,7 @@ std::shared_ptr<MeshHandle> RendererGL44_LoadingThread::CreateMeshHandle(VertexA
     {
         if (m_program_handle_to_GL_ID[itr].first == p_handle && m_program_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID)
         {
-            std::pair<ProgramHandle*, GLuint>& program_pair = m_program_handle_to_GL_ID[itr];
+            QPair<ProgramHandle*, GLuint>& program_pair = m_program_handle_to_GL_ID[itr];
             program_pair.first->m_last_known_index = itr;
 
             m_loading_worker->m_program_deletion_guard.lock();
@@ -589,8 +589,8 @@ void RendererGL44_LoadingThread::InitializeGLObjects()
     AbstractRenderer::InitializeGLObjects();
 }
 
-void RendererGL44_LoadingThread::Render(std::unordered_map<size_t, std::vector<AbstractRenderCommand>> * p_scoped_render_commands,
-                          std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL44_LoadingThread::Render(QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
+                          QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     m_loading_worker->Process((AbstractRenderer*)this, p_scoped_render_commands, p_scoped_light_containers);
 }

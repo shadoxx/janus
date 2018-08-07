@@ -72,7 +72,7 @@ void Player::SetF(const char * name, const float f)
 
 float Player::GetF(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toFloat();
     }
     return 0.0f;
@@ -87,7 +87,7 @@ void Player::SetI(const char * name, const int i)
 
 int Player::GetI(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toInt();
     }
     return 0;
@@ -102,7 +102,7 @@ void Player::SetB(const char * name, const bool b)
 
 bool Player::GetB(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toString().toLower() == "true";
     }
     return false;
@@ -117,7 +117,7 @@ void Player::SetS(const char * name, const QString s)
 
 QString Player::GetS(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toString();
     }
     return QString();
@@ -132,7 +132,7 @@ void Player::SetC(const char * name, const QColor c)
 
 QColor Player::GetC(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return MathUtil::GetStringAsColour(props->property(name).toString());
     }
     return QColor(255,255,255);

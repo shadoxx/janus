@@ -18,9 +18,9 @@ struct TextGeomLine
     QString text;
     uint32_t glyph_count;
     QColor col;
-    std::vector<float> m_positions;
-    std::vector<float> m_texcoords;
-    std::vector<uint32_t> m_indices;
+    QVector<float> m_positions;
+    QVector<float> m_texcoords;
+    QVector<uint32_t> m_indices;
     std::shared_ptr<MeshHandle> m_mesh_handle;
     std::shared_ptr<BufferHandle> m_position_handle;
     std::shared_ptr<BufferHandle> m_texcoord_handle;

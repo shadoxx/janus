@@ -45,7 +45,7 @@ void PerformanceLogger::EndFrameSample()
     m_average_main_CPU_time /= max_frame_samples;
 }
 
-void PerformanceLogger::SetGPUTimeQueryResults(std::vector<GLuint64> & v)
+void PerformanceLogger::SetGPUTimeQueryResults(QVector<GLuint64> & v)
 {
     for (unsigned int i=0; i<(unsigned int)(frame_samples.size()); ++i) {
         if (i < v.size()) {
@@ -57,7 +57,7 @@ void PerformanceLogger::SetGPUTimeQueryResults(std::vector<GLuint64> & v)
     }
 }
 
-void PerformanceLogger::SetCPUTimeQueryResults(std::vector<uint64_t>& v)
+void PerformanceLogger::SetCPUTimeQueryResults(QVector<uint64_t>& v)
 {
     for (unsigned int i=0; i<(unsigned int)(frame_samples.size()); ++i) {
         if (i < v.size()) {
@@ -85,11 +85,11 @@ TextureHandle* PerformanceLogger::GetFrameSamplesTextureHandle()
     QPixmap pixmap(max_frame_samples, perf_height);
     pixmap.fill(QColor(0, 0, 0, 0));
     QPainter p(&pixmap);
-    std::vector<QRect> render_thread_gpu_time_rects;
+    QVector<QRect> render_thread_gpu_time_rects;
     render_thread_gpu_time_rects.reserve(max_frame_samples);
-    std::vector<QRect> render_thread_cpu_time_rects;
+    QVector<QRect> render_thread_cpu_time_rects;
     render_thread_cpu_time_rects.reserve(max_frame_samples);
-    std::vector<QRect> main_thread_cpu_time_rects;
+    QVector<QRect> main_thread_cpu_time_rects;
     main_thread_cpu_time_rects.reserve(max_frame_samples);
 
 //    qDebug() << frame_samples;
@@ -98,9 +98,9 @@ TextureHandle* PerformanceLogger::GetFrameSamplesTextureHandle()
         QRect cpu_r(i, 0, 1, frame_samples[i].render_thread_cpu_time);
         QRect cpu_m(i, 0, 1, main_thread_cpu_time_samples[i]);
 
-        render_thread_gpu_time_rects.emplace_back(gpu_r);
-        render_thread_cpu_time_rects.emplace_back(cpu_r);
-        main_thread_cpu_time_rects.emplace_back(cpu_m);
+        render_thread_gpu_time_rects.push_back(gpu_r);
+        render_thread_cpu_time_rects.push_back(cpu_r);
+        main_thread_cpu_time_rects.push_back(cpu_m);
     }
 
     p.setPen(QPen(QColor(0, 0, 255, 255)));

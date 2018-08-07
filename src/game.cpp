@@ -97,8 +97,10 @@ Game::~Game()
     //    qDebug() << "Game::DoExitNow()";
     TextureManager::Clear();    
 
+#ifndef __ANDROID__
     //access filtered cubemap thing
     FilteredCubemapManager::GetSingleton()->SetShutdown(true);
+#endif
 
     MathUtil::FlushErrorLog();
 
@@ -169,8 +171,10 @@ void Game::Initialize()
     bool cache_setting = WebAsset::GetUseCache();
     WebAsset::SetUseCache(cache_setting);
 
+#ifndef __ANDROID__
     FilteredCubemapManager* cubemap_manager = FilteredCubemapManager::GetSingleton();
     cubemap_manager->Initialize();
+#endif
 }
 
 void Game::AddPrivateWebsurface()
@@ -4834,9 +4838,9 @@ void Game::EndOpInteractionDefault(const int i)
                 for (auto & each_portal : envobjects) {
                     if (each_portal && each_portal->GetType() == "link" && each_portal != o) {
                         if (each_portal->GetB("open") && each_portal->GetB("visible") && !each_portal->GetB("auto_load")) {
-                            if (env->ClearRoom(each_portal)) {
-                                each_portal->SetB("open", false);
-                            }
+                            each_portal->SetB("open", false);
+                            if (env->GetCurRoom()->GetConnectedPortal(each_portal))
+                                env->GetCurRoom()->GetConnectedPortal(each_portal)->SetB("open", false);
                         }
                     }
                 }

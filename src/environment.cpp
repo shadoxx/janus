@@ -161,14 +161,6 @@ QPointer <Room> Environment::AddRoom(QPointer <RoomObject> p)
 //        qDebug() << "Environment::AddNewRoom creating child" << r << curnode;
     }
 
-#ifdef __ANDROID__
-    clear_room_lock.lock();
-    if (rooms_to_clear.contains(p)) {
-        rooms_to_clear.removeAll(p);
-    }
-    clear_room_lock.unlock();
-#endif
-
     emit RoomsChanged();
 
     return r;
@@ -189,15 +181,6 @@ bool Environment::ClearRoom(QPointer <RoomObject> p)
         emit RoomsChanged();
         return true;
     }
-#ifdef __ANDROID__
-    else if (r && r != curnode && r != rootnode && !r->GetReady()) {
-        clear_room_lock.lock();
-        if (!rooms_to_clear.contains(p)) {
-            rooms_to_clear.push_back(p);
-        }
-        clear_room_lock.unlock();
-    }
-#endif
     return false;
 }
 
@@ -597,17 +580,14 @@ void Environment::MovePlayer(QPointer <RoomObject> portal, QPointer <Player> pla
 
     SetCurRoom(player, room);
 
-/*#ifdef __ANDROID__
-    clear_room_lock.lock();
-    rooms_to_clear.clear();
-    clear_room_lock.unlock();
-
+#ifdef __ANDROID__
     //Close portal upon crossing
-    if (!p2->GetB("auto_load") && ClearRoom(p2)) {
-
-        p2->SetB("open", false);
+    if (!p2->GetB("auto_load")) {
+        p2->SetB("open", false); //Close portal, set to non-visible room
+        if (curnode->GetConnectedPortal(p2))
+            curnode->GetConnectedPortal(p2)->SetB("open", false);
     }
-#endif*/
+#endif
 }
 
 void Environment::Update_CrossPortals(QPointer <Player> player)
@@ -885,7 +865,8 @@ void Environment::Update2(QPointer <Player> player, MultiPlayerManager *multi_pl
     QHash <QString, QHash <int, QSet <QString> > > connections;
     for (QPointer <Room> & r : rooms) {
         //60.0 - we deallocate very conservatively, only when Room has completed loading ("ready for screenshot")
-        if (r && r->GetReady() && r->GetReadyForScreenshot() && !visible_rooms.contains(r) && r != rootnode && r != curnode && r != lastnode) { //deallocate
+        //qDebug() << r << r->GetURL() << r->GetReady() << !visible_rooms.contains(r) << (r != rootnode) << (r != curnode) << (r != lastnode);
+        if (r && r->GetReady() && !visible_rooms.contains(r) && r != rootnode && r != curnode && r != lastnode) { //deallocate
             r->Clear();            
             emit RoomsChanged();
         }
@@ -898,29 +879,6 @@ void Environment::Update2(QPointer <Player> player, MultiPlayerManager *multi_pl
         }
     }   
     multi_players->SetConnections(connections);
-
-#ifdef __ANDROID__
-    //Deallocate queued rooms
-    if (!rooms_to_clear.isEmpty()) {
-        if (clear_room_lock.tryLock()) {
-            QList<QPointer <RoomObject>>::iterator it = rooms_to_clear.begin();
-            while (it != rooms_to_clear.end()) {
-                QPointer <Room> r = curnode->GetConnectedRoom(*it);
-                if (r && r->GetReady() && r != curnode && r != rootnode && r->GetReadyForScreenshot()) {
-                    curnode->RemoveChild(r);
-                    r->Clear();
-                    emit RoomsChanged();
-                    (*it)->SetB("open", false);
-                    rooms_to_clear.erase(it);
-                }
-                else {
-                    ++it;
-                }
-            }
-            clear_room_lock.unlock();
-        }
-    }
-#endif
 
     //59.9 - update script logs (and optionally print to chat)
     //    qDebug() << "script_print_log size" << ScriptBuiltins::script_print_log.size();
@@ -952,23 +910,19 @@ void Environment::NavigateToRoom(QPointer <Player> player, QPointer <Room> r)
         player->UpdateDir();
     }
 
-/*#ifdef __ANDROID__
-    clear_room_lock.lock();
-    rooms_to_clear.clear();
-    clear_room_lock.unlock();
-
+#ifdef __ANDROID__
     // Close all portals
     const QHash <QString, QPointer <RoomObject> > & envobjects = GetCurRoom()->GetRoomObjects();
     for (auto & each_portal : envobjects) {
         if (each_portal && each_portal->GetType() == "link") {
             if (each_portal->GetB("open") && each_portal->GetB("visible") && !each_portal->GetB("auto_load")) {
-                if (ClearRoom(each_portal)) {
                     each_portal->SetB("open", false);
-                }
+                    if (curnode->GetConnectedPortal(each_portal))
+                        curnode->GetConnectedPortal(each_portal)->SetB("open", false);
             }
         }
     }
-#endif*/
+#endif
 }
 
 void Environment::SetCurRoom(QPointer <Player> player, QPointer <Room> r)

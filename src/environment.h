@@ -79,11 +79,6 @@ private:
 
     static bool launch_url_is_custom;
     static QString launch_url;
-
-#ifdef __ANDROID__
-    QList <QPointer <RoomObject> > rooms_to_clear;
-    QMutex clear_room_lock;
-#endif
 };
 
 #endif // ENVIRONMENT_H

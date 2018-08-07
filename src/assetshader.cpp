@@ -320,7 +320,7 @@ void AssetShader::SetUseSkelAnim(const bool b)
     mObject.iUseFlags[0] = b ? 1.0f : 0.0f;
 }
 
-void AssetShader::SetSkelAnimJoints(const std::vector<QMatrix4x4> & m)
+void AssetShader::SetSkelAnimJoints(const QVector <QMatrix4x4> & m)
 {
     size_t const matrix_count = m.size();
     mObject.iSkelAnimJoints.clear();

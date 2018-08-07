@@ -243,10 +243,10 @@ public:
     virtual void Initialize() = 0;
     void InitializeHMDManager(QPointer<AbstractHMDManager> p_hmd_manager);
     virtual QString GetRendererName();
-    virtual void Render(std::unordered_map<size_t, std::vector<AbstractRenderCommand>> * p_scoped_render_commands,
-                        std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
-    virtual void PreRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
-    virtual void PostRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
+    virtual void Render(QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
+                        QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
+    virtual void PreRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
+    virtual void PostRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
     virtual void UpgradeShaderSource(QByteArray& p_shader_source, bool p_is_vertex_shader) = 0;
     void RequestScreenShot(uint32_t const p_width, uint32_t const p_height, uint32_t const p_sample_count, bool const p_is_equi, uint64_t p_frame_index);
    
@@ -260,7 +260,7 @@ public:
         TextureHandle::ALPHA_TYPE p_alpha_type, uint32_t p_width, uint32_t p_height,
         GLuint p_GL_texture_ID);
 	virtual void RemoveTextureHandleFromMap(TextureHandle* p_handle);
-    std::vector<std::shared_ptr<BufferHandle>>* GetBufferHandlesForMeshHandle(MeshHandle * p_mesh_handle);
+    QVector<std::shared_ptr<BufferHandle>>* GetBufferHandlesForMeshHandle(MeshHandle * p_mesh_handle);
     int GetTextureWidth(TextureHandle* p_handle);
     int GetTextureHeight(TextureHandle* p_handle);
     void externalFormatAndTypeFromSize(GLenum* p_pixel_format, GLenum* p_pixel_type, uint const p_pixel_size);
@@ -269,10 +269,10 @@ public:
     std::shared_ptr<TextureHandle> CreateTextureFromGLIData(const QByteArray & ba, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace);
     std::shared_ptr<TextureHandle> CreateTextureQImage(const QImage & img, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace);
     std::shared_ptr<TextureHandle> CreateCubemapTextureHandle(const uint32_t p_width, const uint32_t p_height, const TextureHandle::COLOR_SPACE p_color_space, const int32_t p_internal_texture_format, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace);
-    std::shared_ptr<TextureHandle> CreateCubemapTextureHandleFromTextureHandles(QVector<QPointer<AssetImageData> > &p_skybox_image_data, std::vector<TextureHandle *> &p_skybox_image_handles, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace);
+    std::shared_ptr<TextureHandle> CreateCubemapTextureHandleFromTextureHandles(QVector<QPointer<AssetImageData> > &p_skybox_image_data, QVector<TextureHandle *> &p_skybox_image_handles, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace);
     void GenerateEnvMapsFromCubemapTextureHandle(Cubemaps &p_cubemaps);
 #ifdef WIN32
-    std::vector<std::shared_ptr<TextureHandle> > CreateSlugTextureHandles(uint32_t const p_curve_texture_width, uint32_t const p_curve_texture_height, void const * p_curve_texture,
+    QVector<std::shared_ptr<TextureHandle> > CreateSlugTextureHandles(uint32_t const p_curve_texture_width, uint32_t const p_curve_texture_height, void const * p_curve_texture,
                                                                           uint32_t const p_band_texture_width, uint32_t const p_band_texture_height, void const * p_band_texture);
 #endif
     void UpdateTextureHandleData(TextureHandle* p_handle, uint const p_level, uint const p_x_offset, uint const p_y_offset, uint const p_width, uint const p_height, uint const p_pixel_size, void* const p_pixel_data);
@@ -293,7 +293,7 @@ public:
                                                       int32_t const p_src_height,
                                                       int32_t const p_src_depth);
 
-    void CopyReadBufferToTextureHandle(std::vector<std::pair<TextureHandle *, GLuint> > * const p_map, TextureHandle* p_handle,
+    void CopyReadBufferToTextureHandle(QVector<QPair<TextureHandle *, GLuint> > * const p_map, TextureHandle* p_handle,
                                                uint32_t p_target,
                                                int32_t p_level,
                                                int32_t p_dst_x,
@@ -320,7 +320,7 @@ public:
 
     TextureSet GetCurrentlyBoundTextures();
 
-    inline std::pair<TextureHandle*, GLuint> & GetTextureFromHandle(std::vector<std::pair<TextureHandle *, GLuint> > * const p_map, TextureHandle* p_texture_handle)
+    inline QPair<TextureHandle*, GLuint> & GetTextureFromHandle(QVector<QPair<TextureHandle *, GLuint> > * const p_map, TextureHandle* p_texture_handle)
     {
         TextureHandle * ref_handle = p_texture_handle;
         auto const tex_count = p_map->size();
@@ -342,7 +342,7 @@ public:
         return (*p_map)[0];
     }
 
-    inline void BindTextureHandle(std::vector<std::pair<TextureHandle *, GLuint>> * const p_map,
+    inline void BindTextureHandle(QVector<QPair<TextureHandle *, GLuint>> * const p_map,
                                   uint32_t p_slot_index, TextureHandle* p_texture_handle, bool p_force_rebind = false)
     {
         if (p_texture_handle == nullptr || p_texture_handle->m_UUID.m_in_use_flag == 0)
@@ -359,7 +359,7 @@ public:
 		
         if (m_bound_texture_handles[p_slot_index] == nullptr || m_bound_texture_handles[p_slot_index]->m_UUID.m_UUID != p_texture_handle->m_UUID.m_UUID || p_force_rebind == true)
         {
-            std::pair<TextureHandle*, GLuint> & texture_id = GetTextureFromHandle(p_map, p_texture_handle);
+            QPair<TextureHandle*, GLuint> & texture_id = GetTextureFromHandle(p_map, p_texture_handle);
 
             auto texture_type = texture_id.first->GetTextureType();
 			GLenum texture_target = (texture_type == TextureHandle::TEXTURE_2D) ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP;
@@ -369,7 +369,7 @@ public:
         }
     }
 
-    inline void BindTextureHandleRef(std::vector<std::pair<TextureHandle *, GLuint>> * const p_map,
+    inline void BindTextureHandleRef(QVector<QPair<TextureHandle *, GLuint>> * const p_map,
                                   uint32_t p_slot_index, TextureHandle* p_texture_handle_ref)
     {
         if  (m_bound_texture_handles_render[p_slot_index] == nullptr
@@ -383,7 +383,7 @@ public:
                 m_active_texture_slot_render = p_slot_index;
             }
 
-            std::pair<TextureHandle*, GLuint> & texture_id = GetTextureFromHandle(p_map, p_texture_handle_ref);
+            QPair<TextureHandle*, GLuint> & texture_id = GetTextureFromHandle(p_map, p_texture_handle_ref);
 
             auto texture_type = texture_id.first->GetTextureType();
             GLenum texture_target = (texture_type == TextureHandle::TEXTURE_2D) ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP;
@@ -511,9 +511,9 @@ public:
     void SetColorMask(ColorMask p_color_mask);
     ColorMask GetColorMask() const;
 
-    void RenderObjectsNaive(RENDERER::RENDER_SCOPE const p_scope, std::vector<AbstractRenderCommand> const & p_object_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
-    void RenderObjectsNaiveDecoupled(AbstractRenderer * p_main_thread_renderer, RENDERER::RENDER_SCOPE const p_scope, std::vector<AbstractRenderCommand> const & p_object_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
-    void RenderObjectsStereoViewportInstanced(AbstractRenderer *p_main_thread_renderer, RENDERER::RENDER_SCOPE const p_scope, std::vector<AbstractRenderCommand> const & p_object_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
+    void RenderObjectsNaive(RENDERER::RENDER_SCOPE const p_scope, QVector<AbstractRenderCommand> const & p_object_render_commands, QHash<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
+    void RenderObjectsNaiveDecoupled(AbstractRenderer * p_main_thread_renderer, RENDERER::RENDER_SCOPE const p_scope, QVector<AbstractRenderCommand> const & p_object_render_commands, QHash<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
+    void RenderObjectsStereoViewportInstanced(AbstractRenderer *p_main_thread_renderer, RENDERER::RENDER_SCOPE const p_scope, QVector<AbstractRenderCommand> const & p_object_render_commands, QHash<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
 
     void InitializeLightUBOs();
     void PushNewLightData(LightContainer const * p_lightContainer);
@@ -530,8 +530,8 @@ public:
     GLuint InitGLBuffer(GLsizeiptr p_dataSizeInBytes, void* p_data, GLenum p_bufferType, GLenum p_bufferUse);
     GLuint InitGLVertexAttribBuffer(GLenum p_dataType, GLboolean p_normalised, GLint p_dataTypeCount, GLsizeiptr p_dataSizeInBytes, GLuint p_attribID, GLuint p_attribDivisor, GLsizei p_stride, GLenum p_bufferUse, void* p_data);
     void CopyDataBetweenBuffers(GLuint p_src, GLuint p_dst, GLsizeiptr p_size, GLintptr p_srcOffset, GLintptr p_dstOffset);
-    void CreateShadowVAO(GLuint p_VAO, std::vector<GLuint> p_VBOs);
-    void CreateShadowFBO(GLuint p_FBO, std::vector<GLuint> p_texture_ids);
+    void CreateShadowVAO(GLuint p_VAO, QVector<GLuint> p_VBOs);
+    void CreateShadowFBO(GLuint p_FBO, QVector<GLuint> p_texture_ids);
 #if !defined(__APPLE__) && !defined(__ANDROID__)
     void CreateMatrixSSBO(std::size_t p_ssbo_size, GLuint* p_ssbo_handle, GLintptr& p_ssbo_GPU_ptr, std::size_t* p_aligned_size);
     static void initPersistentlyMappedGLBuffer(GLsizeiptr* p_bufferPtr, GLuint* p_bufferID, GLsizeiptr* p_alignedChunkSizeInBytes, GLuint p_bufferIndex, GLsizeiptr p_chunkSizeInBytes, GLuint p_chunkCount, GLenum p_bufferType);
@@ -540,14 +540,14 @@ public:
     void LockFrameSyncObject();
     void StartFrame();
     void EndFrame();
-    void SetCameras(std::vector<VirtualCamera> * p_cameras);
+    void SetCameras(QVector<VirtualCamera> * p_cameras);
 	void SetDefaultFontGlyphAtlas(std::shared_ptr<TextureHandle> p_handle);
 	TextureHandle* GetDefaultFontGlyphAtlas();
-	std::vector<VirtualCamera> const & GetCameras() const;
+    QVector<VirtualCamera> const & GetCameras() const;
     uint32_t GetCamerasPerScope(RENDERER::RENDER_SCOPE const p_scope) const;
 
-    std::vector<uint64_t> & GetGPUTimeQueryResults();
-    std::vector<uint64_t> & GetCPUTimeQueryResults();
+    QVector<uint64_t> & GetGPUTimeQueryResults();
+    QVector<uint64_t> & GetCPUTimeQueryResults();
     int64_t GetFrameCounter();
     size_t GetNumTextures() const;
     void prependDataInShaderMainFunction(QByteArray &p_shader_source, const char *p_insertion_string);
@@ -564,9 +564,9 @@ public:
     void ConfigureWindowSize(uint32_t const p_window_width, uint32_t const p_window_height);
     void ConfigureSamples(uint32_t const p_msaa_count);
     uint32_t GetTextureID(FBO_TEXTURE_ENUM const p_texture_index, bool const p_multisampled) const;
-    std::vector<uint32_t> BindFBOToRead(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true);
-    std::vector<uint32_t> BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true);
-    void BindFBOAndTextures(std::vector<uint32_t>& p_bound_buffers, uint32_t const p_texture_type,
+    QVector<uint32_t> BindFBOToRead(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true);
+    QVector<uint32_t> BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true);
+    void BindFBOAndTextures(QVector<uint32_t>& p_bound_buffers, uint32_t const p_texture_type,
                             uint32_t const p_framebuffer_target, uint32_t const p_fbo,
                             size_t const p_texture_offset, FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask) const;
     void BlitMultisampledFramebuffer(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask,
@@ -585,27 +585,27 @@ public:
     GLuint m_active_texture_slot;
     GLuint m_active_texture_slot_render;
 
-    std::vector<std::pair<TextureHandle*, GLuint>> m_texture_handle_to_GL_ID;
+    QVector<QPair<TextureHandle*, GLuint>> m_texture_handle_to_GL_ID;
     size_t m_num_deleted_textures;
-    std::vector<MeshHandle*> m_meshes_pending_deletion;
+    QVector<MeshHandle*> m_meshes_pending_deletion;
     QMutex m_mesh_deletion_guard;
 
-    std::vector<BufferHandle*> m_buffers_pending_deletion;
+    QVector<BufferHandle*> m_buffers_pending_deletion;
     QMutex m_buffer_deletion_guard;
 
-    std::vector<ProgramHandle*> m_programs_pending_deletion;
+    QVector<ProgramHandle*> m_programs_pending_deletion;
     QMutex m_program_deletion_guard;
 
-    std::vector<TextureHandle*> m_textures_pending_deletion;
+    QVector<TextureHandle*> m_textures_pending_deletion;
     QMutex m_texture_deletion_guard;
 
     QPointer<AbstractHMDManager> m_hmd_manager;
-    std::vector<uint64_t> m_GPUTimeQueryResults; // GPU data from frame 0 is read on frame 2 because of readback delays to avoid stalling
-    std::vector<uint64_t> m_CPUTimeQueryResults;
+    QVector<uint64_t> m_GPUTimeQueryResults; // GPU data from frame 0 is read on frame 2 because of readback delays to avoid stalling
+    QVector<uint64_t> m_CPUTimeQueryResults;
     QElapsedTimer m_frame_time_timer;
-    std::vector<QMatrix4x4> m_per_frame_cameras;
-    std::vector<bool> m_per_frame_cameras_is_left_eye;
-    std::vector<RENDERER::RENDER_SCOPE> m_scopes;
+    QVector<QMatrix4x4> m_per_frame_cameras;
+    QVector<bool> m_per_frame_cameras_is_left_eye;
+    QVector<RENDERER::RENDER_SCOPE> m_scopes;
     std::shared_ptr<ProgramHandle> m_default_object_shader;
     std::shared_ptr<ProgramHandle> m_default_object_shader_binary_alpha;
     std::shared_ptr<ProgramHandle> m_default_object_shader_linear_alpha;
@@ -655,16 +655,16 @@ public:
 
     GLuint m_fullScreenQuadShaderProgram;
     std::shared_ptr<MeshHandle> m_fullScreenQuadVAO;
-    std::vector<std::shared_ptr<BufferHandle>> m_fullScreenQuadVBOs;
+    QVector<std::shared_ptr<BufferHandle>> m_fullScreenQuadVBOs;
 
     uint32_t m_window_width;
     uint32_t m_window_height;
     uint32_t m_msaa_count;
     bool m_framebuffer_requires_initialization;
     bool m_framebuffer_initialized;
-    std::vector<GLuint> m_FBOs;
-    std::vector<GLuint> m_textures;
-    std::vector<std::shared_ptr<TextureHandle>> m_texture_handles;
+    QVector<GLuint> m_FBOs;
+    QVector<GLuint> m_textures;
+    QVector<std::shared_ptr<TextureHandle>> m_texture_handles;
 	std::shared_ptr<TextureHandle> m_default_font_glyph_atlas;
     QSemaphore m_frame_rate_limiter;
     QMutex m_reallocation_guard;
@@ -673,12 +673,12 @@ public:
     uint8_t m_rendering_index;
     uint64_t m_submitted_frame_id;
     uint64_t m_current_frame_id;
-    std::vector<std::unordered_map<size_t, std::vector<AbstractRenderCommand>>> m_scoped_render_commands_cache;
-    std::vector<std::unordered_map<StencilReferenceValue, LightContainer>> m_scoped_light_containers_cache;
-    //std::vector<std::vector<VirtualCamera>> m_cameras_cache;
-    std::vector<std::unordered_map<size_t, std::vector<VirtualCamera>>> m_scoped_cameras_cache;
-    std::unordered_map<size_t, std::vector<QMatrix4x4>> m_per_frame_scoped_cameras_view_matrix;
-    std::unordered_map<size_t, std::vector<bool>> m_per_frame_scoped_cameras_is_left_eye;
+    QVector<QHash<size_t, QVector<AbstractRenderCommand>>> m_scoped_render_commands_cache;
+    QVector<QHash<StencilReferenceValue, LightContainer>> m_scoped_light_containers_cache;
+    //QVector<QVector<VirtualCamera>> m_cameras_cache;
+    QVector<QHash<size_t, QVector<VirtualCamera>>> m_scoped_cameras_cache;
+    QHash<size_t, QVector<QMatrix4x4>> m_per_frame_scoped_cameras_view_matrix;
+    QHash<size_t, QVector<bool>> m_per_frame_scoped_cameras_is_left_eye;
     uint32_t m_draw_id;
 
     // Screenshot info
@@ -695,7 +695,7 @@ public:
     AbstractRenderer * m_main_thread_renderer;
 protected:
 
-    void CacheUniformLocations(GLuint p_program, std::vector<std::vector<GLint>> * const p_map);
+    void CacheUniformLocations(GLuint p_program, QVector<QVector<GLint>> * const p_map);
 
     static inline void UpdateUniform4fv(GLint const p_loc,  GLuint const p_vector_count, float* p_values)
     {
@@ -781,8 +781,8 @@ protected:
     void InitScreenQuadShaderProgram();
 
     PFNGLCLIPCONTROLPROC m_glClipControl;
-    std::vector<GLsync> m_syncObjects; // These are used to prevent stopming over data in-use by the GPU
-    std::vector<GLuint> m_GPUTimeQuery; // Used for profiling GPU frame times
+    QVector<GLsync> m_syncObjects; // These are used to prevent stopming over data in-use by the GPU
+    QVector<GLuint> m_GPUTimeQuery; // Used for profiling GPU frame times
     GLuint64 m_GPUTimeMin;
     GLuint64 m_GPUTimeMax;
     GLuint64 m_GPUTimeAvg;
@@ -790,15 +790,15 @@ protected:
     QString m_name;
 
     friend class Renderer;
-    std::vector<AssetShader_Object> m_sequntialTestData;
-    std::vector<std::vector<GLint>> m_uniform_locs;
+    QVector<AssetShader_Object> m_sequntialTestData;
+    QVector<QVector<GLint>> m_uniform_locs;
 
-    std::vector<std::pair<TextureHandle*, int>> m_texture_handle_to_width;
-    std::vector<std::pair<TextureHandle*, int>> m_texture_handle_to_height;
-    std::vector<std::pair<MeshHandle*, GLuint>> m_mesh_handle_to_GL_ID;
-    std::vector<std::pair<MeshHandle*, std::vector<std::shared_ptr<BufferHandle>>>> m_mesh_handle_to_buffers;
-    std::vector<std::pair<BufferHandle*, GLuint>> m_buffer_handle_to_GL_ID;
-    std::vector<std::pair<ProgramHandle*, GLuint>> m_program_handle_to_GL_ID;
+    QVector<QPair<TextureHandle*, int>> m_texture_handle_to_width;
+    QVector<QPair<TextureHandle*, int>> m_texture_handle_to_height;
+    QVector<QPair<MeshHandle*, GLuint>> m_mesh_handle_to_GL_ID;
+    QVector<QPair<MeshHandle*, QVector<std::shared_ptr<BufferHandle>>>> m_mesh_handle_to_buffers;
+    QVector<QPair<BufferHandle*, GLuint>> m_buffer_handle_to_GL_ID;
+    QVector<QPair<ProgramHandle*, GLuint>> m_program_handle_to_GL_ID;
     uint32_t m_texture_UUID;
     uint32_t m_mesh_UUID;
     uint32_t m_buffer_UUID;
@@ -806,7 +806,7 @@ protected:
 
 private:
 
-    void GetViewportsAndCameraCount(std::vector<float>& viewports, RENDERER::RENDER_SCOPE const p_scope, uint32_t& camera_count);
+    void GetViewportsAndCameraCount(QVector<float>& viewports, RENDERER::RENDER_SCOPE const p_scope, uint32_t& camera_count);
 
     void InternalFormatFromSize(GLenum *p_pixel_format, const uint p_pixel_size);
 

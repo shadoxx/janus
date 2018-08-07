@@ -69,7 +69,7 @@ public:
     void SetFogEnd(const float f);
     void SetFogColour(const QColor & c);
     void SetUseSkelAnim(const bool b);
-    void SetSkelAnimJoints(const std::vector<QMatrix4x4> &m);
+    void SetSkelAnimJoints(const QVector <QMatrix4x4> &m);
     void SetAmbient(const QVector3D v);
     void SetDiffuse(const QVector3D v);
     void SetSpecular(const QVector3D v);

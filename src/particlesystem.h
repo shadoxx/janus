@@ -62,12 +62,12 @@ private:
     std::shared_ptr<BufferHandle> m_VBO_colors;
     std::shared_ptr<BufferHandle> m_VBO_indices;
 
-    std::vector<float> m_positions;
-    std::vector<uint8_t> m_tex_coords;
-    std::vector<float> m_colors;
-    std::vector<uint32_t> m_indices;
+    QVector<float> m_positions;
+    QVector<uint8_t> m_tex_coords;
+    QVector<float> m_colors;
+    QVector<uint32_t> m_indices;
 
-    std::vector<QVector3D> v;
+    QVector<QVector3D> v;
 
     int stride;
 

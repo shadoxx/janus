@@ -1410,7 +1410,7 @@ ColorMask AbstractRenderer::GetColorMask() const
     return m_color_mask;
 }
 
-void AbstractRenderer::GetViewportsAndCameraCount(std::vector<float> & viewports, RENDERER::RENDER_SCOPE const p_scope, uint32_t & camera_count)
+void AbstractRenderer::GetViewportsAndCameraCount(QVector<float> & viewports, RENDERER::RENDER_SCOPE const p_scope, uint32_t & camera_count)
 {
     QVector4D viewport;
     camera_count = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(p_scope)].size();
@@ -1459,7 +1459,7 @@ void AbstractRenderer::GenerateEnvMapsFromCubemapTextureHandle(Cubemaps& p_cubem
 
     // Allocate memory for holding raw face data
     size_t const pixel_data_size = (gl_tex_red_size / 8 * ((gl_tex_red_size == 8) ? 3 : 4));
-    std::vector<uint8_t> pixel_data(pixel_data_size * gl_tex_width * gl_tex_width, 0);
+    QVector<uint8_t> pixel_data(pixel_data_size * gl_tex_width * gl_tex_width, 0);
     // For each face
     gli::format format = (gl_tex_red_size == 8) ? gli::FORMAT_BGR8_UNORM_PACK8 : gli::FORMAT_RGBA16_SFLOAT_PACK16;
     gli::extent2d extent = { gl_tex_width, gl_tex_width };
@@ -1502,13 +1502,13 @@ void AbstractRenderer::GenerateEnvMapsFromCubemapTextureHandle(Cubemaps& p_cubem
 
 void AbstractRenderer::RenderObjectsStereoViewportInstanced(AbstractRenderer * p_main_thread_renderer,
                                                             const RENDERER::RENDER_SCOPE p_scope,
-                                                            const std::vector<AbstractRenderCommand> &p_object_render_commands,
-                                                            const std::unordered_map<StencilReferenceValue, LightContainer> &p_scoped_light_containers)
+                                                            const QVector<AbstractRenderCommand> &p_object_render_commands,
+                                                            const QHash<StencilReferenceValue, LightContainer> &p_scoped_light_containers)
 {
 #ifndef __ANDROID__
     const size_t camera_count_this_scope = m_per_frame_scoped_cameras_view_matrix[static_cast<size_t>(p_scope)].size();
 
-    std::vector<float> viewports;
+    QVector<float> viewports;
     viewports.reserve(camera_count_this_scope * 4);
 
     QVector4D viewport;
@@ -1564,13 +1564,13 @@ void AbstractRenderer::RenderObjectsStereoViewportInstanced(AbstractRenderer * p
     GLuint current_programID = 0;
     ProgramHandle* current_program_handle = nullptr;
 
-    std::vector<GLfloat> default_color;
+    QVector<GLfloat> default_color;
     default_color.resize(4);
     default_color[0] = 1.0f;
     default_color[1] = 1.0f;
     default_color[2] = 1.0f;
     default_color[3] = 1.0f;
-    std::vector<GLfloat> default_normal;
+    QVector<GLfloat> default_normal;
     default_normal.resize(4);
     default_normal[0] = 0.0f;
     default_normal[1] = 0.0f;
@@ -1677,10 +1677,11 @@ void AbstractRenderer::RenderObjectsStereoViewportInstanced(AbstractRenderer * p
                 if (current_stencil_ref != stencil_ref)
                 {
                     current_stencil_ref = stencil_ref;
-                    auto itr = p_scoped_light_containers.find(current_stencil_ref);
+                    QHash<StencilReferenceValue, LightContainer>::const_iterator itr = p_scoped_light_containers.find(current_stencil_ref);
                     if (itr != p_scoped_light_containers.end())
                     {
-                        p_main_thread_renderer->PushNewLightData(&(itr->second));
+                        //p_main_thread_renderer->PushNewLightData(&(itr->second));
+                        p_main_thread_renderer->PushNewLightData(&(itr.value()));
                     }
                     else
                     {
@@ -1750,11 +1751,11 @@ void AbstractRenderer::RenderObjectsStereoViewportInstanced(AbstractRenderer * p
 #endif
 }
 
-void AbstractRenderer::RenderObjectsNaive(RENDERER::RENDER_SCOPE const , std::vector<AbstractRenderCommand> const & , std::unordered_map<StencilReferenceValue, LightContainer> const & )
+void AbstractRenderer::RenderObjectsNaive(RENDERER::RENDER_SCOPE const , QVector<AbstractRenderCommand> const & , QHash<StencilReferenceValue, LightContainer> const & )
 {
     /*uint32_t camera_count = 0;
 
-    std::vector<float> viewports;
+    QVector<float> viewports;
     viewports.reserve(m_cameras_cache[m_main_thread_renderer->m_rendering_index].size() * 4);
 
     GetViewportsAndCameraCount(viewports, p_scope, camera_count);
@@ -2062,12 +2063,12 @@ void AbstractRenderer::RenderObjectsNaive(RENDERER::RENDER_SCOPE const , std::ve
 
 void AbstractRenderer::RenderObjectsNaiveDecoupled(AbstractRenderer * p_main_thread_renderer,
                                                    const RENDERER::RENDER_SCOPE p_scope,
-                                                   const std::vector<AbstractRenderCommand> &p_object_render_commands,
-                                                   const std::unordered_map<StencilReferenceValue, LightContainer> &p_scoped_light_containers)
+                                                   const QVector<AbstractRenderCommand> &p_object_render_commands,
+                                                   const QHash<StencilReferenceValue, LightContainer> &p_scoped_light_containers)
 {
     const size_t camera_count_this_scope = m_per_frame_scoped_cameras_view_matrix[static_cast<size_t>(p_scope)].size();
 
-    std::vector<float> viewports;
+    QVector<float> viewports;
     viewports.reserve(camera_count_this_scope);
 
     QVector4D viewport;
@@ -2134,13 +2135,13 @@ void AbstractRenderer::RenderObjectsNaiveDecoupled(AbstractRenderer * p_main_thr
 
     bool is_left_eye = true;
     GLuint current_programID = 0;
-    std::vector<GLfloat> default_color;
+    QVector<GLfloat> default_color;
     default_color.resize(4);
     default_color[0] = 1.0f;
     default_color[1] = 1.0f;
     default_color[2] = 1.0f;
     default_color[3] = 1.0f;
-    std::vector<GLfloat> default_normal;
+    QVector<GLfloat> default_normal;
     default_normal.resize(4);
     default_normal[0] = 0.0f;
     default_normal[1] = 0.0f;
@@ -2252,10 +2253,11 @@ void AbstractRenderer::RenderObjectsNaiveDecoupled(AbstractRenderer * p_main_thr
                     if (current_stencil_ref != stencil_ref)
                     {
                         current_stencil_ref = stencil_ref;
-                        auto itr = p_scoped_light_containers.find(current_stencil_ref);
+                        QHash<StencilReferenceValue, LightContainer>::const_iterator itr = p_scoped_light_containers.find(current_stencil_ref);
                         if (itr != p_scoped_light_containers.end())
                         {
-                            p_main_thread_renderer->PushNewLightData(&(itr->second));
+//                            p_main_thread_renderer->PushNewLightData(&(itr->second));
+                            p_main_thread_renderer->PushNewLightData(&(itr.value()));
                         }
                         else
                         {
@@ -2377,13 +2379,13 @@ void AbstractRenderer::CopyDataBetweenBuffers(GLuint p_src, GLuint p_dst, GLsize
     }
 }
 
-void AbstractRenderer::CreateShadowVAO(GLuint p_VAO, std::vector<GLuint> p_VBOs)
+void AbstractRenderer::CreateShadowVAO(GLuint p_VAO, QVector<GLuint> p_VBOs)
 {
     Q_UNUSED(p_VAO);
     Q_UNUSED(p_VBOs);
 }
 
-void AbstractRenderer::CreateShadowFBO(GLuint p_FBO, std::vector<GLuint> p_texture_ids)
+void AbstractRenderer::CreateShadowFBO(GLuint p_FBO, QVector<GLuint> p_texture_ids)
 {
     Q_UNUSED(p_FBO);
     Q_UNUSED(p_texture_ids);
@@ -2503,17 +2505,17 @@ size_t AbstractRenderer::GetNumTextures() const
     return m_texture_handle_to_GL_ID.size() - m_num_deleted_textures;
 }
 
-std::vector<uint64_t> & AbstractRenderer::GetGPUTimeQueryResults()
+QVector<uint64_t> & AbstractRenderer::GetGPUTimeQueryResults()
 {
     return m_GPUTimeQueryResults;
 }
 
-std::vector<uint64_t> & AbstractRenderer::GetCPUTimeQueryResults()
+QVector<uint64_t> & AbstractRenderer::GetCPUTimeQueryResults()
 {
     return m_CPUTimeQueryResults;
 }
 
-void AbstractRenderer::SetCameras(std::vector<VirtualCamera> *p_cameras)
+void AbstractRenderer::SetCameras(QVector<VirtualCamera> *p_cameras)
 {
     for (size_t scope_enum = 0; scope_enum < static_cast<size_t>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++scope_enum)
     {
@@ -2525,7 +2527,7 @@ void AbstractRenderer::SetCameras(std::vector<VirtualCamera> *p_cameras)
         {
             if ((*p_cameras)[cam_index].GetScopeMask(static_cast<RENDERER::RENDER_SCOPE>(scope_enum)) == true)
             {
-                m_scoped_cameras_cache[m_current_submission_index][scope_enum].emplace_back((*p_cameras)[cam_index]);
+                m_scoped_cameras_cache[m_current_submission_index][scope_enum].push_back((*p_cameras)[cam_index]);
             }
         }
     }
@@ -2541,7 +2543,7 @@ TextureHandle* AbstractRenderer::GetDefaultFontGlyphAtlas()
 	return m_default_font_glyph_atlas.get();
 }
 
-/*std::vector<VirtualCamera> const & AbstractRenderer::GetCameras() const
+/*QVector<VirtualCamera> const & AbstractRenderer::GetCameras() const
 {
     return  m_cameras_cache[m_rendering_index];
 }
@@ -2587,7 +2589,7 @@ std::shared_ptr<ProgramHandle> AbstractRenderer::CompileAndLinkShaderProgram(QBy
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(vertex_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
+            QVector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(vertex_shader_id, log_length, NULL, &vertex_shader_log[0]);
             MathUtil::ErrorLog(QString("Compilation of vertex shader \"") + p_vertex_shader_path + QString("\" failed:") + QString("\n") + vertex_shader_log.data());
         }
@@ -2616,7 +2618,7 @@ std::shared_ptr<ProgramHandle> AbstractRenderer::CompileAndLinkShaderProgram(QBy
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(vertex_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
+            QVector<char> vertex_shader_log((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(vertex_shader_id, log_length, NULL, &vertex_shader_log[0]);
             MathUtil::ErrorLog(QString("Compilation of vertex shader \"") + default_object_vertex_shader_path + QString("\" failed:") + QString("\n") + vertex_shader_log.data());
         }
@@ -2644,7 +2646,7 @@ std::shared_ptr<ProgramHandle> AbstractRenderer::CompileAndLinkShaderProgram(QBy
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(fragment_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
+            QVector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(fragment_shader_id, log_length, NULL, &fragment_shader_lod[0]);
             MathUtil::ErrorLog(QString("Compilation of fragment shader \"") + p_fragment_shader_path + QString("\" failed:") + QString("\n") + fragment_shader_lod.data());
         }
@@ -2673,7 +2675,7 @@ std::shared_ptr<ProgramHandle> AbstractRenderer::CompileAndLinkShaderProgram(QBy
             shader_failed = true;
             int log_length;
             MathUtil::glFuncs->glGetShaderiv(fragment_shader_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
+            QVector<char> fragment_shader_lod((log_length > 1) ? log_length : 1);
             MathUtil::glFuncs->glGetShaderInfoLog(fragment_shader_id, log_length, NULL, &fragment_shader_lod[0]);
             MathUtil::ErrorLog(QString("Error: Compilation of fragment shader \"") + default_object_fragment_shader_path + QString("\" failed:") + QString("\n") + fragment_shader_lod.data());
         }
@@ -2690,7 +2692,7 @@ std::shared_ptr<ProgramHandle> AbstractRenderer::CompileAndLinkShaderProgram(QBy
 		{
             int log_length;
             MathUtil::glFuncs->glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_length);
-            std::vector<char> program_log( (log_length > 1) ? log_length : 1 );
+            QVector<char> program_log( (log_length > 1) ? log_length : 1 );
             MathUtil::glFuncs->glGetProgramInfoLog(program_id, log_length, NULL, &program_log[0]);
 
             shader_failed = true;
@@ -2707,7 +2709,7 @@ std::shared_ptr<ProgramHandle> AbstractRenderer::CompileAndLinkShaderProgram(QBy
 	{
         int log_length;
         MathUtil::glFuncs->glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_length);
-        std::vector<char> program_log( (log_length > 1) ? log_length : 1 );
+        QVector<char> program_log( (log_length > 1) ? log_length : 1 );
         MathUtil::glFuncs->glGetProgramInfoLog(program_id, log_length, NULL, &program_log[0]);;
 //        MathUtil::ErrorLog(QString("Linking of shaders \"") + p_vertex_shader_path + QString("\" & \"") + p_fragment_shader_path + QString("\" successful:") + QString("\n") + program_log.data());
 
@@ -2730,17 +2732,17 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureHandle(TextureHand
 {
     Q_ASSERT_X(m_main_thread_renderer == this, "CreateTextureHandle", "Not called from m_main_thread_renderer");
 
-    std::pair<TextureHandle*, GLuint> texture_pair;
+    QPair<TextureHandle*, GLuint> texture_pair;
 	texture_pair.first = new TextureHandle(m_texture_UUID, p_texture_type, p_color_space, p_alpha_type);
     texture_pair.second = p_GL_texture_ID;
 
     m_texture_UUID++;
 
-    std::pair<TextureHandle*, uint32_t> width_pair;
+    QPair<TextureHandle*, uint32_t> width_pair;
     width_pair.first = texture_pair.first;
     width_pair.second = p_width;
 
-    std::pair<TextureHandle*, uint32_t> height_pair;
+    QPair<TextureHandle*, uint32_t> height_pair;
     height_pair.first = texture_pair.first;
     height_pair.second = p_height;
 
@@ -2753,10 +2755,10 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureHandle(TextureHand
         m_reallocation_guard.unlock();
     }
 
-    m_texture_handle_to_GL_ID.emplace_back(texture_pair);
+    m_texture_handle_to_GL_ID.push_back(texture_pair);
     texture_pair.first->m_last_known_index = (m_texture_handle_to_GL_ID.size() - 1);
-    m_texture_handle_to_width.emplace_back(width_pair);
-    m_texture_handle_to_height.emplace_back(height_pair);
+    m_texture_handle_to_width.push_back(width_pair);
+    m_texture_handle_to_height.push_back(height_pair);
 
     TextureHandle* tex_address = m_texture_handle_to_GL_ID.back().first;
 
@@ -2791,7 +2793,7 @@ void AbstractRenderer::RemoveTextureHandleFromMap(TextureHandle* p_handle)
     {
         if (m_texture_handle_to_GL_ID[itr].first == p_handle && m_texture_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID)
         {
-            std::pair<TextureHandle*, GLuint>& texture_pair = m_texture_handle_to_GL_ID[itr];
+            QPair<TextureHandle*, GLuint>& texture_pair = m_texture_handle_to_GL_ID[itr];
             texture_pair.first->m_last_known_index = itr;
             m_texture_deletion_guard.lock();
 
@@ -2801,7 +2803,7 @@ void AbstractRenderer::RemoveTextureHandleFromMap(TextureHandle* p_handle)
         + "UUID: " + QString::number(texture_UUID.m_UUID) + " "
         + "GPUHandle: " + QString::number((uint32_t)texture_pair.second);
 #endif
-            m_textures_pending_deletion.emplace_back(texture_pair.first);
+            m_textures_pending_deletion.push_back(texture_pair.first);
             m_texture_deletion_guard.unlock();
             return;
         }
@@ -2815,7 +2817,7 @@ void AbstractRenderer::FreeTextureHandles()
     for (size_t i = 0; i < texture_count; ++i)
     {
         size_t const last_index = m_textures_pending_deletion[i]->m_last_known_index;
-        std::pair<TextureHandle*, GLuint>& texture_pair = m_texture_handle_to_GL_ID[last_index];
+        QPair<TextureHandle*, GLuint>& texture_pair = m_texture_handle_to_GL_ID[last_index];
 
 #ifdef QT_DEBUG
     auto texture_UUID = texture_pair.first->GetUUID();
@@ -2839,7 +2841,7 @@ void AbstractRenderer::FreeTextureHandles()
     m_texture_deletion_guard.unlock();
 }
 
-std::vector<std::shared_ptr<BufferHandle>>* AbstractRenderer::GetBufferHandlesForMeshHandle(MeshHandle * p_mesh_handle)
+QVector<std::shared_ptr<BufferHandle>>* AbstractRenderer::GetBufferHandlesForMeshHandle(MeshHandle * p_mesh_handle)
 {
     const size_t mesh_count = m_mesh_handle_to_buffers.size();
     for (size_t itr = 0; itr < mesh_count; ++itr)
@@ -2961,7 +2963,7 @@ std::shared_ptr<MeshHandle> AbstractRenderer::CreateMeshHandle(VertexAttributeLa
 {
     Q_ASSERT_X(m_main_thread_renderer == this, "CreateMeshHandle", "Not called from m_main_thread_renderer");
 
-    std::pair<MeshHandle*, GLuint> mesh_pair;
+    QPair<MeshHandle*, GLuint> mesh_pair;
     mesh_pair.first = new MeshHandle(m_mesh_UUID,
         p_layout.attributes[(uint32_t)VAO_ATTRIB::POSITION].in_use,
         p_layout.attributes[(uint32_t)VAO_ATTRIB::NORMAL].in_use,
@@ -2988,7 +2990,7 @@ std::shared_ptr<MeshHandle> AbstractRenderer::CreateMeshHandle(VertexAttributeLa
         m_reallocation_guard.unlock();
     }
 
-    m_mesh_handle_to_GL_ID.emplace_back(mesh_pair);
+    m_mesh_handle_to_GL_ID.push_back(mesh_pair);
     mesh_pair.first->m_last_known_index = (m_mesh_handle_to_GL_ID.size() - 1);
 
     MeshHandle* mesh_address = m_mesh_handle_to_GL_ID.back().first;
@@ -3004,7 +3006,7 @@ std::shared_ptr<MeshHandle> AbstractRenderer::CreateMeshHandle(VertexAttributeLa
 
     uint32_t const num_attribs = (uint32_t)VAO_ATTRIB::NUM_ATTRIBS;
 
-    std::vector<std::shared_ptr<BufferHandle>> buffer_handles;
+    QVector<std::shared_ptr<BufferHandle>> buffer_handles;
     buffer_handles.resize(num_attribs);
 
     for (uint32_t attrib_index = 0; attrib_index < num_attribs; ++ attrib_index)
@@ -3057,7 +3059,7 @@ std::shared_ptr<MeshHandle> AbstractRenderer::CreateMeshHandle(VertexAttributeLa
         m_mesh_handle_to_buffers.reserve(m_mesh_handle_to_buffers.size() + 128);
         m_reallocation_guard.unlock();
     }
-    m_mesh_handle_to_buffers.emplace_back(std::pair<MeshHandle*, std::vector<std::shared_ptr<BufferHandle>>>(mesh_address, buffer_handles));
+    m_mesh_handle_to_buffers.push_back(QPair<MeshHandle*, QVector<std::shared_ptr<BufferHandle>>>(mesh_address, buffer_handles));
 
 
 
@@ -3078,7 +3080,7 @@ void AbstractRenderer::FreeMeshHandles()
     for (size_t i = 0; i < mesh_count; ++i)
     {
         size_t const last_index = m_meshes_pending_deletion[i]->m_last_known_index;
-        std::pair<MeshHandle*, GLuint>& mesh_pair = m_mesh_handle_to_GL_ID[last_index];
+        QPair<MeshHandle*, GLuint>& mesh_pair = m_mesh_handle_to_GL_ID[last_index];
 
 #ifdef QT_DEBUG
     auto mesh_UUID = mesh_pair.first->m_UUID;
@@ -3097,7 +3099,6 @@ void AbstractRenderer::FreeMeshHandles()
         // Deref VBOs assosiated with VAO
         m_mesh_handle_to_buffers[last_index].first = nullptr;
         m_mesh_handle_to_buffers[last_index].second.clear();
-        m_mesh_handle_to_buffers[last_index].second.shrink_to_fit();
 
         // Free memory used by MeshHandle
         delete m_meshes_pending_deletion[i];
@@ -3121,7 +3122,7 @@ void AbstractRenderer::RemoveMeshHandleFromMap(MeshHandle* p_handle)
     {
         if (m_mesh_handle_to_GL_ID[itr].first == p_handle && m_mesh_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID)
         {
-            std::pair<MeshHandle*, GLuint>& mesh_pair = m_mesh_handle_to_GL_ID[itr];
+            QPair<MeshHandle*, GLuint>& mesh_pair = m_mesh_handle_to_GL_ID[itr];
             mesh_pair.first->m_last_known_index = itr;
 
 #ifdef QT_DEBUG
@@ -3132,7 +3133,7 @@ void AbstractRenderer::RemoveMeshHandleFromMap(MeshHandle* p_handle)
 #endif
 
             m_mesh_deletion_guard.lock();
-            m_meshes_pending_deletion.emplace_back(mesh_pair.first);
+            m_meshes_pending_deletion.push_back(mesh_pair.first);
             m_mesh_deletion_guard.unlock();
             return;
         }
@@ -3146,7 +3147,7 @@ void AbstractRenderer::FreeProgramHandles()
     for (size_t i = 0; i < program_count; ++i)
     {
         size_t const last_index = m_programs_pending_deletion[i]->m_last_known_index;
-        std::pair<ProgramHandle*, GLuint>& program_pair = m_program_handle_to_GL_ID[last_index];
+        QPair<ProgramHandle*, GLuint>& program_pair = m_program_handle_to_GL_ID[last_index];
 
         // Null m_mesh_handle_to_GL_ID ptr
         program_pair.first = nullptr;
@@ -3174,11 +3175,11 @@ void AbstractRenderer::RemoveProgramHandleFromMap(ProgramHandle* p_handle)
     {
         if (m_program_handle_to_GL_ID[itr].first == p_handle && m_program_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID)
         {
-            std::pair<ProgramHandle*, GLuint>& program_pair = m_program_handle_to_GL_ID[itr];
+            QPair<ProgramHandle*, GLuint>& program_pair = m_program_handle_to_GL_ID[itr];
             program_pair.first->m_last_known_index = itr;
 
             m_program_deletion_guard.lock();
-            m_programs_pending_deletion.emplace_back(program_pair.first);
+            m_programs_pending_deletion.push_back(program_pair.first);
             m_program_deletion_guard.unlock();
             return;
         }
@@ -3278,7 +3279,7 @@ void AbstractRenderer::InternalFormatFromSize(GLenum* p_pixel_format, uint const
     }
 }
 
-std::shared_ptr<TextureHandle> AbstractRenderer::CreateCubemapTextureHandleFromTextureHandles(QVector<QPointer<AssetImageData>>& p_skybox_image_data, std::vector<TextureHandle*>& p_skybox_image_handles, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE )
+std::shared_ptr<TextureHandle> AbstractRenderer::CreateCubemapTextureHandleFromTextureHandles(QVector<QPointer<AssetImageData>>& p_skybox_image_data, QVector<TextureHandle*>& p_skybox_image_handles, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE )
 {
     int w = 0;
     int h = 0;
@@ -4282,7 +4283,7 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateCubemapTextureHandle(uint
     return CreateTextureHandle(texture_type, color_space, alpha_type,p_width, p_height, texture_id);
 }
 #ifdef WIN32
-std::vector<std::shared_ptr<TextureHandle>> AbstractRenderer::CreateSlugTextureHandles(uint32_t const p_curve_texture_width,
+QVector<std::shared_ptr<TextureHandle>> AbstractRenderer::CreateSlugTextureHandles(uint32_t const p_curve_texture_width,
                                                                                        uint32_t const p_curve_texture_height,
                                                                                        void const * p_curve_texture,
                                                                                        uint32_t const p_band_texture_width,
@@ -4312,11 +4313,11 @@ std::vector<std::shared_ptr<TextureHandle>> AbstractRenderer::CreateSlugTextureH
     TextureHandle::COLOR_SPACE color_space = TextureHandle::COLOR_SPACE::LINEAR;
     TextureHandle::ALPHA_TYPE alpha_type = TextureHandle::ALPHA_TYPE::CUTOUT;
 
-    std::vector<std::shared_ptr<TextureHandle>> handles;
+    QVector<std::shared_ptr<TextureHandle>> handles;
     handles.reserve(2);
-    handles.emplace_back(CreateTextureHandle(texture_type, color_space, alpha_type,
+    handles.push_back(CreateTextureHandle(texture_type, color_space, alpha_type,
                                           p_curve_texture_width, p_curve_texture_height, texture_ids[0]));
-    handles.emplace_back(CreateTextureHandle(texture_type, color_space, alpha_type,
+    handles.push_back(CreateTextureHandle(texture_type, color_space, alpha_type,
                                           p_band_texture_width, p_band_texture_height, texture_ids[1]));
 
     return handles;
@@ -4564,7 +4565,7 @@ void AbstractRenderer::CopyTextureHandleDataToTextureHandle(TextureHandle* p_src
     const size_t tex_count = m_texture_handle_to_GL_ID.size();
     for (size_t itr = 0; itr < tex_count; ++itr)
     {
-        std::pair<TextureHandle*, GLuint>& pair_ref = m_texture_handle_to_GL_ID[itr];
+        QPair<TextureHandle*, GLuint>& pair_ref = m_texture_handle_to_GL_ID[itr];
         itr_pointer = pair_ref.first;
 
         if (itr_pointer->m_UUID.m_UUID == p_src_pointer->m_UUID.m_UUID)
@@ -4593,7 +4594,7 @@ void AbstractRenderer::CopyTextureHandleDataToTextureHandle(TextureHandle* p_src
     }
 }
 
-void AbstractRenderer::CopyReadBufferToTextureHandle(std::vector<std::pair<TextureHandle *, GLuint>> * const , TextureHandle* p_handle, uint32_t p_target, int32_t p_level, int32_t p_dst_x, int32_t p_dst_y, int32_t p_src_x, int32_t p_src_y, int32_t p_src_width, int32_t p_src_height)
+void AbstractRenderer::CopyReadBufferToTextureHandle(QVector<QPair<TextureHandle *, GLuint>> * const , TextureHandle* p_handle, uint32_t p_target, int32_t p_level, int32_t p_dst_x, int32_t p_dst_y, int32_t p_src_x, int32_t p_src_y, int32_t p_src_width, int32_t p_src_height)
 {
     if (p_handle) {
         MathUtil::glFuncs->glCopyTexSubImage2D(p_target, p_level, p_dst_x, p_dst_y, p_src_x, p_src_y, p_src_width, p_src_height);
@@ -4608,7 +4609,7 @@ std::shared_ptr<BufferHandle> AbstractRenderer::CreateBufferHandle(
 
     GLuint buffer_GL_ID;
 	MathUtil::glFuncs->glGenBuffers(1, &buffer_GL_ID);
-	std::pair<BufferHandle*, GLuint> buffer_pair;
+    QPair<BufferHandle*, GLuint> buffer_pair;
 	buffer_pair.first = new BufferHandle(m_buffer_UUID, p_buffer_type, p_buffer_usage);
 	buffer_pair.second = buffer_GL_ID;
 
@@ -4621,7 +4622,7 @@ std::shared_ptr<BufferHandle> AbstractRenderer::CreateBufferHandle(
         m_reallocation_guard.unlock();
     }
 
-    m_buffer_handle_to_GL_ID.emplace_back(buffer_pair);
+    m_buffer_handle_to_GL_ID.push_back(buffer_pair);
     buffer_pair.first->m_last_known_index = (m_buffer_handle_to_GL_ID.size() - 1);
 
 	BufferHandle* mesh_address = m_buffer_handle_to_GL_ID.back().first;
@@ -4648,7 +4649,7 @@ void AbstractRenderer::FreeBufferHandles()
     for (size_t i = 0; i < buffer_count; ++i)
     {
         size_t const last_index = m_buffers_pending_deletion[i]->m_last_known_index;
-        std::pair<BufferHandle*, GLuint>& buffer_pair = m_buffer_handle_to_GL_ID[last_index];
+        QPair<BufferHandle*, GLuint>& buffer_pair = m_buffer_handle_to_GL_ID[last_index];
 
 #ifdef QT_DEBUG
     auto mesh_UUID = buffer_pair.first->m_UUID;
@@ -4686,7 +4687,7 @@ void AbstractRenderer::RemoveBufferHandleFromMap(BufferHandle* p_handle)
 	{
         if (m_buffer_handle_to_GL_ID[itr].first == p_handle && m_buffer_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID)
 		{
-            std::pair<BufferHandle*, GLuint>& buffer_pair = m_buffer_handle_to_GL_ID[itr];
+            QPair<BufferHandle*, GLuint>& buffer_pair = m_buffer_handle_to_GL_ID[itr];
             buffer_pair.first->m_last_known_index = itr;
             buffer_pair.first->m_UUID.m_in_use_flag = 0;
 #ifdef QT_DEBUG
@@ -4696,7 +4697,7 @@ void AbstractRenderer::RemoveBufferHandleFromMap(BufferHandle* p_handle)
         + "GPUHandle: " + QString::number((uint32_t)buffer_pair.second);
 #endif
             m_buffer_deletion_guard.lock();
-            m_buffers_pending_deletion.emplace_back(buffer_pair.first);
+            m_buffers_pending_deletion.push_back(buffer_pair.first);
             m_buffer_deletion_guard.unlock();
             return;
 		}
@@ -4708,7 +4709,7 @@ std::shared_ptr<ProgramHandle> AbstractRenderer::CreateProgramHandle(uint32_t *p
     Q_ASSERT_X(m_main_thread_renderer == this, "CreateProgramHandle", "Not called from m_main_thread_renderer");
 
     *p_GPU_ID = MathUtil::glFuncs->glCreateProgram();
-    std::pair<ProgramHandle*, GLuint> buffer_pair;
+    QPair<ProgramHandle*, GLuint> buffer_pair;
     buffer_pair.first = new ProgramHandle(m_shader_UUID);
     buffer_pair.second = *p_GPU_ID;
 
@@ -4721,7 +4722,7 @@ std::shared_ptr<ProgramHandle> AbstractRenderer::CreateProgramHandle(uint32_t *p
         m_reallocation_guard.unlock();
     }
 
-    m_program_handle_to_GL_ID.emplace_back(buffer_pair);
+    m_program_handle_to_GL_ID.push_back(buffer_pair);
 
     ProgramHandle* program_address = m_program_handle_to_GL_ID.back().first;
 
@@ -4886,7 +4887,7 @@ void AbstractRenderer::UpdateFramebuffer()
         size_t const fbo_count = (do_multi_fbos ? 2 : 1);
         m_FBOs.resize(fbo_count);
         m_textures.resize(fbo_count * FBO_TEXTURE::COUNT);
-        m_texture_handles.resize(fbo_count * FBO_TEXTURE::COUNT, std::make_shared<TextureHandle>());
+        m_texture_handles = QVector<std::shared_ptr<TextureHandle>>(fbo_count * FBO_TEXTURE::COUNT, std::make_shared<TextureHandle>());
 
         // For each fbo
         for (uint32_t fbo_index = 0; fbo_index < fbo_count; ++fbo_index)
@@ -5072,7 +5073,7 @@ uint32_t AbstractRenderer::GetTextureID(const FBO_TEXTURE_ENUM p_texture_index, 
     return texture_id;
 }
 
-void AbstractRenderer::BindFBOAndTextures(std::vector<uint32_t> &p_bound_buffers, const uint32_t p_texture_type, const uint32_t p_framebuffer_target, const uint32_t p_fbo, const size_t p_texture_offset, const FBO_TEXTURE_BITFIELD_ENUM p_textures_bitmask) const
+void AbstractRenderer::BindFBOAndTextures(QVector<uint32_t> &p_bound_buffers, const uint32_t p_texture_type, const uint32_t p_framebuffer_target, const uint32_t p_fbo, const size_t p_texture_offset, const FBO_TEXTURE_BITFIELD_ENUM p_textures_bitmask) const
 {
     MathUtil::glFuncs->glBindFramebuffer((GLenum)p_framebuffer_target, (GLuint)p_fbo);
 
@@ -5083,7 +5084,7 @@ void AbstractRenderer::BindFBOAndTextures(std::vector<uint32_t> &p_bound_buffers
                                                   p_texture_type,
                                                   m_textures[FBO_TEXTURE::COLOR + p_texture_offset],
                                                   0);
-        p_bound_buffers.emplace_back(GL_COLOR_ATTACHMENT0);
+        p_bound_buffers.push_back(GL_COLOR_ATTACHMENT0);
     }
 
     if ((p_textures_bitmask & FBO_TEXTURE_BITFIELD::AO) != 0)
@@ -5093,7 +5094,7 @@ void AbstractRenderer::BindFBOAndTextures(std::vector<uint32_t> &p_bound_buffers
                                                   p_texture_type,
                                                   m_textures[FBO_TEXTURE::AO + p_texture_offset],
                                                   0);
-        p_bound_buffers.emplace_back(GL_COLOR_ATTACHMENT1);
+        p_bound_buffers.push_back(GL_COLOR_ATTACHMENT1);
     }
 
     if ((p_textures_bitmask & FBO_TEXTURE_BITFIELD::TRANSMISSION) != 0)
@@ -5103,7 +5104,7 @@ void AbstractRenderer::BindFBOAndTextures(std::vector<uint32_t> &p_bound_buffers
                                                   p_texture_type,
                                                   m_textures[FBO_TEXTURE::TRANSMISSION + p_texture_offset],
                                                   0);
-        p_bound_buffers.emplace_back(GL_COLOR_ATTACHMENT2);
+        p_bound_buffers.push_back(GL_COLOR_ATTACHMENT2);
     }
 
     if ((p_textures_bitmask & FBO_TEXTURE_BITFIELD::MODULATION_DIFFUSION) != 0)
@@ -5113,7 +5114,7 @@ void AbstractRenderer::BindFBOAndTextures(std::vector<uint32_t> &p_bound_buffers
                                                   p_texture_type,
                                                   m_textures[FBO_TEXTURE::MODULATION_DIFFUSION + p_texture_offset],
                                                   0);
-        p_bound_buffers.emplace_back(GL_COLOR_ATTACHMENT3);
+        p_bound_buffers.push_back(GL_COLOR_ATTACHMENT3);
     }
 
     if ((p_textures_bitmask & FBO_TEXTURE_BITFIELD::DELTA) != 0)
@@ -5123,7 +5124,7 @@ void AbstractRenderer::BindFBOAndTextures(std::vector<uint32_t> &p_bound_buffers
                                                   p_texture_type,
                                                   m_textures[FBO_TEXTURE::DELTA + p_texture_offset],
                                                   0);
-        p_bound_buffers.emplace_back(GL_COLOR_ATTACHMENT4);
+        p_bound_buffers.push_back(GL_COLOR_ATTACHMENT4);
     }
 
     if ((p_textures_bitmask & FBO_TEXTURE_BITFIELD::COMPOSITED) != 0)
@@ -5133,7 +5134,7 @@ void AbstractRenderer::BindFBOAndTextures(std::vector<uint32_t> &p_bound_buffers
                                                   p_texture_type,
                                                   m_textures[FBO_TEXTURE::COMPOSITED + p_texture_offset],
                                                   0);
-        p_bound_buffers.emplace_back(GL_COLOR_ATTACHMENT5);
+        p_bound_buffers.push_back(GL_COLOR_ATTACHMENT5);
     }
 
 
@@ -5153,7 +5154,7 @@ void AbstractRenderer::BlitMultisampledFramebuffer(const FBO_TEXTURE_BITFIELD_EN
     {
         if (m_msaa_count > 0)
         {
-            std::vector<GLenum> read_buffers = BindFBOToRead(p_textures_bitmask, true);
+            QVector<GLenum> read_buffers = BindFBOToRead(p_textures_bitmask, true);
             BindFBOToDraw(p_textures_bitmask, false);
 
             size_t const read_buffers_size = read_buffers.size();
@@ -5181,9 +5182,9 @@ void AbstractRenderer::BlitMultisampledFramebuffer(const FBO_TEXTURE_BITFIELD_EN
     BlitMultisampledFramebuffer(p_textures_bitmask, 0, 0, m_window_width, m_window_height, 0, 0, m_window_width, m_window_height);
 }
 
-std::vector<uint32_t> AbstractRenderer::BindFBOToRead(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled/* = true*/)
+QVector<uint32_t> AbstractRenderer::BindFBOToRead(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled/* = true*/)
 {
-    std::vector<uint32_t> read_buffers;
+    QVector<uint32_t> read_buffers;
 
     UpdateFramebuffer();
     if (m_framebuffer_initialized)
@@ -5212,9 +5213,9 @@ std::vector<uint32_t> AbstractRenderer::BindFBOToRead(FBO_TEXTURE_BITFIELD_ENUM 
     return read_buffers;
 }
 
-std::vector<uint32_t> AbstractRenderer::BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled/* = true*/)
+QVector<uint32_t> AbstractRenderer::BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled/* = true*/)
 {
-    std::vector<uint32_t> draw_buffers;
+    QVector<uint32_t> draw_buffers;
 
     UpdateFramebuffer();
     if (m_framebuffer_initialized)
@@ -5250,7 +5251,7 @@ std::vector<uint32_t> AbstractRenderer::BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM 
     return draw_buffers;
 }
 
-void AbstractRenderer::CacheUniformLocations(GLuint p_program, std::vector<std::vector<GLint>> * const p_map)
+void AbstractRenderer::CacheUniformLocations(GLuint p_program, QVector<QVector<GLint>> * const p_map)
 {
     GLint loc = -1;
 
@@ -5260,7 +5261,7 @@ void AbstractRenderer::CacheUniformLocations(GLuint p_program, std::vector<std::
         (*p_map).resize(p_program + 128); // Allocate 128 here so that we aren't reallocating frequently
         m_reallocation_guard.unlock();
     }
-    (*p_map)[p_program].resize(count, -1);
+    (*p_map)[p_program] = QVector<GLint>(count, -1);
 
     // Frame Uniforms
     loc = MathUtil::glFuncs->glGetUniformLocation(p_program, "iLeftEye");

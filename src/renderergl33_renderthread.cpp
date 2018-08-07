@@ -156,20 +156,20 @@ void RendererGL33RenderThread::CreateMeshHandle(AbstractRenderer *p_main_thread_
     DecoupledRender();
 }
 
-void RendererGL33RenderThread::Render(std::unordered_map<size_t, std::vector<AbstractRenderCommand>> * p_scoped_render_commands,
-                                 std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL33RenderThread::Render(QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
+                                 QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     Q_UNUSED(p_scoped_render_commands)
     Q_UNUSED(p_scoped_light_containers)
 }
 
-void RendererGL33RenderThread::PreRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL33RenderThread::PreRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     Q_UNUSED(p_scoped_light_containers)
     UpdatePerObjectData(p_scoped_render_commands);
 }
 
-void RendererGL33RenderThread::PostRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > * p_scoped_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL33RenderThread::PostRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     Q_UNUSED(p_scoped_render_commands)
     Q_UNUSED(p_scoped_light_containers)
@@ -267,7 +267,7 @@ glm::mat4x4 matFromDmat(glm::dmat4x4 const & m)
     return matrix;
 }*/
 
-void RendererGL33RenderThread::UpdatePerObjectData(std::unordered_map<size_t, std::vector<AbstractRenderCommand>> * p_scoped_render_commands)
+void RendererGL33RenderThread::UpdatePerObjectData(QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_render_commands)
 {
     QMatrix4x4 temp_matrix;
     QMatrix4x4 model_matrix;
@@ -323,7 +323,7 @@ void RendererGL33RenderThread::UpdatePerObjectData(std::unordered_map<size_t, st
 
     for (const RENDERER::RENDER_SCOPE scope : m_scopes)
     {
-        std::vector<AbstractRenderCommand> & render_command_vector = (*p_scoped_render_commands)[static_cast<size_t>(scope)];
+        QVector<AbstractRenderCommand> & render_command_vector = (*p_scoped_render_commands)[static_cast<size_t>(scope)];
 
         auto const command_count(render_command_vector.size());
         auto const camera_count_this_scope(m_per_frame_scoped_cameras_view_matrix[static_cast<size_t>(scope)].size());
@@ -449,8 +449,8 @@ void RendererGL33RenderThread::InitializeGLContext(QOpenGLContext * p_gl_context
 }
 
 void RendererGL33RenderThread::Process(AbstractRenderer * p_main_thread_renderer,
-                                        std::unordered_map<size_t, std::vector<AbstractRenderCommand> > *,
-                                        std::unordered_map<StencilReferenceValue, LightContainer> *)
+                                        QHash<size_t, QVector<AbstractRenderCommand> > *,
+                                        QHash<StencilReferenceValue, LightContainer> *)
 {
      // Queued up data to allow Process to not block the main-thread longer than necessary
     m_main_thread_renderer = p_main_thread_renderer;
@@ -590,7 +590,7 @@ void RendererGL33RenderThread::DecoupledRender()
             }
 
             BindFBOToRead(FBO_TEXTURE_BITFIELD::COLOR, false);
-            std::vector<uint32_t> draw_buffers;
+            QVector<uint32_t> draw_buffers;
             draw_buffers.reserve(FBO_TEXTURE::COUNT);
             m_main_thread_renderer->BindFBOAndTextures(draw_buffers, GL_TEXTURE_2D, GL_DRAW_FRAMEBUFFER, m_main_thread_fbo, 0, FBO_TEXTURE_BITFIELD::COLOR);
 
@@ -703,15 +703,15 @@ void RendererGL33RenderThread::RenderEqui()
     uint32_t const cube_cross_width = m_window_width;
     uint32_t const cube_cross_height = m_window_height;
     uint32_t const cube_face_dim = qMin(cube_cross_width / 3, cube_cross_height / 2);
-    std::vector<QVector4D> viewports;
+    QVector<QVector4D> viewports;
     viewports.reserve(6);
     // This is a 3x2 grid layout to use all of the available framebuffer space
-    viewports.emplace_back(QVector4D(cube_face_dim * 0.0f, cube_face_dim * 0.0f, cube_face_dim, cube_face_dim)); // X+
-    viewports.emplace_back(QVector4D(cube_face_dim * 1.0f, cube_face_dim * 0.0f, cube_face_dim, cube_face_dim)); // X-
-    viewports.emplace_back(QVector4D(cube_face_dim * 2.0f, cube_face_dim * 0.0f, cube_face_dim, cube_face_dim)); // Y+
-    viewports.emplace_back(QVector4D(cube_face_dim * 0.0f, cube_face_dim * 1.0f, cube_face_dim, cube_face_dim)); // Y-
-    viewports.emplace_back(QVector4D(cube_face_dim * 1.0f, cube_face_dim * 1.0f, cube_face_dim, cube_face_dim)); // Z+
-    viewports.emplace_back(QVector4D(cube_face_dim * 2.0f, cube_face_dim * 1.0f, cube_face_dim, cube_face_dim)); // Z-
+    viewports.push_back(QVector4D(cube_face_dim * 0.0f, cube_face_dim * 0.0f, cube_face_dim, cube_face_dim)); // X+
+    viewports.push_back(QVector4D(cube_face_dim * 1.0f, cube_face_dim * 0.0f, cube_face_dim, cube_face_dim)); // X-
+    viewports.push_back(QVector4D(cube_face_dim * 2.0f, cube_face_dim * 0.0f, cube_face_dim, cube_face_dim)); // Y+
+    viewports.push_back(QVector4D(cube_face_dim * 0.0f, cube_face_dim * 1.0f, cube_face_dim, cube_face_dim)); // Y-
+    viewports.push_back(QVector4D(cube_face_dim * 1.0f, cube_face_dim * 1.0f, cube_face_dim, cube_face_dim)); // Z+
+    viewports.push_back(QVector4D(cube_face_dim * 2.0f, cube_face_dim * 1.0f, cube_face_dim, cube_face_dim)); // Z-
 
     // Create a new TextureHandle if our current is nullptr, this is either because it's the first
     // frame, or because the window changed size which nulls the existing TextureHandle.
@@ -735,9 +735,9 @@ void RendererGL33RenderThread::RenderEqui()
 
 
     // Use forward menu camera as we are drawing a full-screen quad
-    std::vector<VirtualCamera> overlay_camera;
+    QVector<VirtualCamera> overlay_camera;
     overlay_camera.reserve(1);
-    overlay_camera.emplace_back(VirtualCamera(QVector3D(0.0f, 0.0f, 0.0f), QQuaternion(), QVector3D(1.0f, 1.0f, 1.0f),
+    overlay_camera.push_back(VirtualCamera(QVector3D(0.0f, 0.0f, 0.0f), QQuaternion(), QVector3D(1.0f, 1.0f, 1.0f),
                                     QVector4D(0, 0, cube_cross_width, cube_cross_height),
                                     float(cube_cross_width)/float(cube_cross_height), -1.0f, 0.1f, 10.0f));
     overlay_camera[0].SetScopeMask(RENDERER::RENDER_SCOPE::ALL, false);
@@ -752,13 +752,13 @@ void RendererGL33RenderThread::RenderEqui()
         {
             if (camera.GetScopeMask(static_cast<RENDERER::RENDER_SCOPE>(scope_enum)) == true)
             {
-                m_main_thread_renderer->m_scoped_cameras_cache[m_main_thread_renderer->m_rendering_index][scope_enum].emplace_back(camera);
+                m_main_thread_renderer->m_scoped_cameras_cache[m_main_thread_renderer->m_rendering_index][scope_enum].push_back(camera);
             }
         }
     }
 
     // Cache then erase any existing commands in the overlay scope
-    std::unordered_map<size_t, std::vector<AbstractRenderCommand>> post_process_commands;
+    QHash<size_t, QVector<AbstractRenderCommand>> post_process_commands;
 
     // Push the AbstractRenderCommand needed to convert the cubemap into an equi to the OVERLAYS scope
     AbstractRenderComandShaderData shader_data(m_main_thread_renderer->m_default_equi_shader.get(),
@@ -772,7 +772,7 @@ void RendererGL33RenderThread::RenderEqui()
     ident.setToIdentity();
     memcpy(shader_data.m_object.iModelMatrix, ident.constData(), 16 * sizeof(float));
 
-    post_process_commands[(size_t)RENDERER::RENDER_SCOPE::POST_PROCESS].emplace_back(
+    post_process_commands[(size_t)RENDERER::RENDER_SCOPE::POST_PROCESS].push_back(
                 AbstractRenderCommand(PrimitiveType::TRIANGLES,
                                        6,
                                        1,

@@ -116,7 +116,7 @@ private:
 
     std::shared_ptr<TextureHandle> m_equi_cubemap_handle;
 
-    std::vector<VirtualCamera> cameras;
+    QVector<VirtualCamera> cameras;
 };
 
 #endif // GLWIDGET_H

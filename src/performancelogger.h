@@ -30,8 +30,8 @@ public:
     void StartFrameSample();    
     void EndFrameSample();
 
-    void SetGPUTimeQueryResults(std::vector<uint64_t>& v);
-    void SetCPUTimeQueryResults(std::vector<uint64_t>& v);
+    void SetGPUTimeQueryResults(QVector<uint64_t>& v);
+    void SetCPUTimeQueryResults(QVector<uint64_t>& v);
 
     void SetNumFrameSamples(const int i);
     int GetNumFrameSamples() const;    

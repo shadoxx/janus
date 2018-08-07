@@ -1214,7 +1214,7 @@ void GLWidget::paintGL()
         cameras.clear();
         cameras.reserve(7);
 
-        std::vector<QVector4D> viewports;
+        QVector<QVector4D> viewports;
         viewports.reserve(6);
         // This is a 3x2 grid layout to use all of the available framebuffer space
         viewports.push_back(QVector4D(cube_face_dim * 0.0f, cube_face_dim * 0.0f, cube_face_dim, cube_face_dim)); // X+
@@ -1312,6 +1312,7 @@ void GLWidget::paintGL()
     case MODE_2D:
     default:
     {        
+#if !(defined(OCULUS_SUBMISSION_BUILD) && defined(ANDROID))
         // Make sure we have no FBO bound here, so that the render-thread won't have texture binding issues
         // when it tries to copy it's resulting texture to our FBO color layer.
         RendererInterface::m_pimpl->BindFBOToDraw(FBO_TEXTURE_BITFIELD::NONE);
@@ -1379,6 +1380,7 @@ void GLWidget::paintGL()
 #else
         MathUtil::glFuncs->glBlitFramebuffer(0,    0, 1280, 720,
                                              0,    0, width(), height(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+#endif
 #endif
 
         break;

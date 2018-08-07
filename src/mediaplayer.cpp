@@ -173,7 +173,7 @@ void MediaPlayer::ClearOutput(MediaContext * ctx)
         alGetSourcei(ctx->openal_source, AL_BUFFERS_QUEUED, &buffers_to_dequeue);
         if (buffers_to_dequeue > 0)
         {
-            std::vector<ALuint> buffHolder;
+            QVector<ALuint> buffHolder;
             buffHolder.resize(buffers_to_dequeue);
             alSourceUnqueueBuffers(ctx->openal_source, buffers_to_dequeue, buffHolder.data());
             for (int i=0;i<buffers_to_dequeue;++i) {
@@ -716,7 +716,7 @@ void MediaPlayer::play(void *data, const void *samples, unsigned count, int64_t 
     alGetSourcei(ctx->openal_source, AL_BUFFERS_PROCESSED, &availBuffers);
     //qDebug() << availBuffers;
     if (availBuffers > 0) {
-        std::vector<ALuint> buffHolder;
+        QVector<ALuint> buffHolder;
         buffHolder.resize(availBuffers); //49.50 crash with audio on Windows
         alSourceUnqueueBuffers(ctx->openal_source, availBuffers, buffHolder.data());
         for (int i=0;i<availBuffers;++i) {
@@ -783,6 +783,4 @@ void MediaPlayer::flush(void *data, int64_t )
 void MediaPlayer::drain(void *data)
 {
     (void) data;
-    /*audio_lock.lock();
-    audio_lock.unlock();*/
 }

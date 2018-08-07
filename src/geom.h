@@ -107,9 +107,9 @@ struct GeomMaterial
     // This lets us just store the transforms for instanes
     // rather than transforming it's verts into object-space and
     // appending to the one mesh.
-    std::vector<std::vector<GeomTriangle>> triangles;
-    std::vector<GeomVBOData> vbo_data;
-    std::vector<std::pair<uint32_t, size_t>> mesh_keys;
+    QVector <QVector<GeomTriangle>> triangles;
+    QVector <GeomVBOData> vbo_data;
+    QVector <QPair<uint32_t, size_t>> mesh_keys;
 
     int material_index; //hack to fix some broken texture references
 };
@@ -132,7 +132,7 @@ public:
     QList <QString> GetMaterialNames() const;
     GeomMaterial & GetMaterial(const QString mat);
     QString GetMaterialMatchName(const GeomMaterial & mat);
-    std::vector<GeomTriangle> & GetTriangles(const QString mat, uint32_t const mesh_UUID);
+    QVector<GeomTriangle> & GetTriangles(const QString mat, uint32_t const mesh_UUID);
     GeomVBOData & GetVBOData(const QString mat, const uint32_t mesh_UUID);
     unsigned int nTris;
 
@@ -366,7 +366,7 @@ private:
     QHash <QString, uint32_t> bone_to_node; //maps bone names to node indexes
     QHash <QString, uint32_t> bone_to_boneid; //maps bone names to bone indexes (skips some nodes, since there can only be up to 128 bones)
     QHash <QString, aiNodeAnim *> anims;
-    std::vector<aiNode *> node_list; //maps indexes to aiNodes
+    QVector <aiNode *> node_list; //maps indexes to aiNodes
     bool uses_tex_file;
 
     QMatrix4x4 m_globalInverseTransform;
@@ -376,14 +376,14 @@ private:
     double cur_time;
     float anim_speed;
     bool loop;
-    std::vector<QMatrix4x4> final_poses;
-    std::vector<QMatrix4x4> skin_joints;
+    QVector<QMatrix4x4> final_poses;
+    QVector<QMatrix4x4> skin_joints;
     QHash <QString, QMatrix4x4> bone_offset_matrix;
     QHash <uint32_t, QMatrix4x4> extra_global_transforms; //bone indexes to xform
     QHash <uint32_t, QMatrix4x4> extra_global_rotation_transforms; //bone indexes to xform
     QHash <uint32_t, QMatrix4x4> extra_relative_transforms; //bone indexes to xform
-    std::vector <aiNode *> nodes_to_process;
-    std::vector <QMatrix4x4> nodes_parent_xforms;
+    QVector <aiNode *> nodes_to_process;
+    QVector <QMatrix4x4> nodes_parent_xforms;
 };
 
 #endif // GEOM_H

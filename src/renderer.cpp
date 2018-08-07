@@ -134,7 +134,7 @@ std::shared_ptr<ProgramHandle> Renderer::GetDefaultPortalShaderProgram()
     return m_abstractRenderer->GetDefaultPortalShaderProgram();
 }
 
-void Renderer::SetCameras(std::vector<VirtualCamera> *p_cameras)
+void Renderer::SetCameras(QVector<VirtualCamera> *p_cameras)
 {
     m_abstractRenderer->SetCameras(p_cameras);
 }
@@ -174,7 +174,7 @@ std::shared_ptr<TextureHandle> Renderer::CreateCubemapTextureHandle(const uint32
     return m_abstractRenderer->CreateCubemapTextureHandle(p_width, p_height, p_color_space, p_internal_texture_format, tex_mipmap, tex_linear, tex_clamp, tex_alpha, tex_colorspace);
 }
 
-std::shared_ptr<TextureHandle> Renderer::CreateCubemapTextureHandleFromTextureHandles(QVector<QPointer<AssetImageData> > &p_skybox_image_data, std::vector<TextureHandle *> &p_skybox_image_handles, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace)
+std::shared_ptr<TextureHandle> Renderer::CreateCubemapTextureHandleFromTextureHandles(QVector<QPointer<AssetImageData> > &p_skybox_image_data, QVector<TextureHandle *> &p_skybox_image_handles, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace)
 {
     return m_abstractRenderer->CreateCubemapTextureHandleFromTextureHandles(p_skybox_image_data, p_skybox_image_handles, tex_mipmap, tex_linear, tex_clamp, tex_alpha, tex_colorspace);
 }
@@ -199,7 +199,7 @@ void Renderer::GenerateTextureHandleMipMap(TextureHandle* p_handle)
     return m_abstractRenderer->GenerateTextureHandleMipMap(p_handle);
 }
 #ifdef WIN32
-std::vector<std::shared_ptr<TextureHandle>> Renderer::CreateSlugTextureHandles(uint32_t const p_curve_texture_width,
+QVector<std::shared_ptr<TextureHandle>> Renderer::CreateSlugTextureHandles(uint32_t const p_curve_texture_width,
                                                                                        uint32_t const p_curve_texture_height,
                                                                                        void const * p_curve_texture,
                                                                                        uint32_t const p_band_texture_width,
@@ -230,7 +230,7 @@ void Renderer::BindMeshHandle(MeshHandle* p_mesh_handle)
 	m_abstractRenderer->BindMeshHandle(p_mesh_handle);
 }
 
-std::vector<std::shared_ptr<BufferHandle>>* Renderer::GetBufferHandlesForMeshHandle(MeshHandle *p_mesh_handle)
+QVector<std::shared_ptr<BufferHandle>>* Renderer::GetBufferHandlesForMeshHandle(MeshHandle *p_mesh_handle)
 {
 	return m_abstractRenderer->GetBufferHandlesForMeshHandle(p_mesh_handle);
 }
@@ -283,7 +283,7 @@ void Renderer::ToggleImmediateMode()
 
 void Renderer::ClearRenderQueues()
 {    
-    /*for (std::vector<AbstractRenderCommand>& render_command_vector : m_scoped_render_commands_cache[0])
+    /*for (QVector<AbstractRenderCommand>& render_command_vector : m_scoped_render_commands_cache[0])
     {
         render_command_vector.erase(render_command_vector.begin(), render_command_vector.end());
     }*/
@@ -384,12 +384,12 @@ int Renderer::GetTextureHeight(TextureHandle* p_handle)
 	return m_abstractRenderer->GetTextureHeight(p_handle);
 }
 
-void Renderer::PreRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > & , std::unordered_map<StencilReferenceValue, LightContainer> & )
+void Renderer::PreRender(QHash<size_t, QVector<AbstractRenderCommand> > & , QHash<StencilReferenceValue, LightContainer> & )
 {
     //m_abstractRenderer->PreRender(p_scoped_render_commands, p_scoped_light_containers);
 }
 
-void Renderer::PostRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > & , std::unordered_map<StencilReferenceValue, LightContainer> & )
+void Renderer::PostRender(QHash<size_t, QVector<AbstractRenderCommand> > & , QHash<StencilReferenceValue, LightContainer> & )
 {
     //m_abstractRenderer->PostRender(p_scoped_render_commands, p_scoped_light_containers);
 }
@@ -401,7 +401,7 @@ void Renderer::BindTextureHandle(uint32_t p_slot_index, TextureHandle* p_id)
 
 void Renderer::EnableRenderCommandInstancing(RENDERER::RENDER_SCOPE const p_scope)
 {
-    std::vector<AbstractRenderCommand>& render_command_vector = m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(p_scope)];
+    QVector<AbstractRenderCommand>& render_command_vector = m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(p_scope)];
     AbstractRenderCommand * previous_unique_command = nullptr;
 
     size_t const command_count = render_command_vector.size();
@@ -487,7 +487,7 @@ void Renderer::Render()
                                &(m_abstractRenderer->m_scoped_light_containers_cache[m_abstractRenderer->m_completed_submission_index]));
 }
 
-void Renderer::SortRenderCommandsByDistance(std::vector<AbstractRenderCommand>& render_command_vector, bool const p_is_transparent)
+void Renderer::SortRenderCommandsByDistance(QVector<AbstractRenderCommand>& render_command_vector, bool const p_is_transparent)
 {
     size_t command_count = render_command_vector.size();
     m_sorted_command_indices.clear();
@@ -496,7 +496,7 @@ void Renderer::SortRenderCommandsByDistance(std::vector<AbstractRenderCommand>& 
     // Build compacted data structure for cheaper sorting
     for (size_t index = 0; index < command_count; ++index)
     {
-        m_sorted_command_indices.emplace_back(AbstractRenderCommand_sort(render_command_vector[index], index));
+        m_sorted_command_indices.push_back(AbstractRenderCommand_sort(render_command_vector[index], index));
     }
 
     // Sort the compacted info
@@ -694,13 +694,13 @@ void Renderer::PushAbstractRenderCommand(AbstractRenderCommand& p_object_render_
                 if (camera_index != camera_count - 1)
                 {
                     //(command_uses_transparency_scope) ? command_vector.insert(command_vector.begin(), p_object_render_command) : command_vector.emplace_back(p_object_render_command);
-                    command_vector.emplace_back(p_object_render_command);
+                    command_vector.push_back(p_object_render_command);
                 }
                 else
                 {
                     // I can move contruct here because I know I'm not using p_object_render_command after this line
                     //(command_uses_transparency_scope) ? command_vector.insert(command_vector.begin(),std::move(p_object_render_command)) : command_vector.emplace_back(std::move(p_object_render_command));
-                    command_vector.emplace_back(p_object_render_command);
+                    command_vector.push_back(p_object_render_command);
                 }
             }
         }
@@ -727,7 +727,7 @@ void Renderer::RenderObjectsDebug()
     /*if(AreBoundingBoxesVisible() == true)
     {
         const int object_count = m_scoped_render_commands[m_current_scope].size();
-        std::vector<AbstractRenderCommand> bounding_boxes;
+        QVector<AbstractRenderCommand> bounding_boxes;
         bounding_boxes.reserve(object_count);
 
         for (int i = 0; i < m_scoped_render_commands[m_current_scope].size(); ++i)
@@ -804,12 +804,12 @@ bool Renderer::AreFramebufferLayersVisible() const
     return static_cast<bool>(m_render_framebuffer_layers);
 }
 
-std::vector<GLuint64> & Renderer::GetGPUTimeQueryResults()
+QVector<GLuint64> & Renderer::GetGPUTimeQueryResults()
 {
     return m_abstractRenderer->GetGPUTimeQueryResults();
 }
 
-std::vector<uint64_t> & Renderer::GetCPUTimeQueryResults()
+QVector<uint64_t> & Renderer::GetCPUTimeQueryResults()
 {
     return m_abstractRenderer->GetCPUTimeQueryResults();
 }
@@ -960,12 +960,12 @@ uint32_t Renderer::GetTextureID(const FBO_TEXTURE_ENUM p_texture_index, const bo
     return m_abstractRenderer->GetTextureID(p_texture_index, p_multisampled);
 }
 
-std::vector<uint32_t> Renderer::BindFBOToRead(const FBO_TEXTURE_BITFIELD_ENUM p_textures_bitmask, const bool p_bind_multisampled) const
+QVector<uint32_t> Renderer::BindFBOToRead(const FBO_TEXTURE_BITFIELD_ENUM p_textures_bitmask, const bool p_bind_multisampled) const
 {
     return m_abstractRenderer->BindFBOToRead(p_textures_bitmask, p_bind_multisampled);
 }
 
-std::vector<uint32_t> Renderer::BindFBOToDraw(const FBO_TEXTURE_BITFIELD_ENUM p_textures_bitmask, const bool p_bind_multisampled) const
+QVector<uint32_t> Renderer::BindFBOToDraw(const FBO_TEXTURE_BITFIELD_ENUM p_textures_bitmask, const bool p_bind_multisampled) const
 {
     return m_abstractRenderer->BindFBOToDraw(p_textures_bitmask, p_bind_multisampled);
 }

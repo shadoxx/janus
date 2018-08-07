@@ -84,7 +84,7 @@ void ParticleSystem::Update(QPointer <DOMNode> props, const double dt_sec)
                     QList <QString> mat_names = data.GetMaterialNames();
                     int rand_mat = qrand() % mat_names.size();
 
-                    std::vector<GeomTriangle> & tris = data.GetTriangles(mat_names[rand_mat], 0);
+                    QVector <GeomTriangle> & tris = data.GetTriangles(mat_names[rand_mat], 0);
                     int rand_tri = qrand() % tris.size();
 
                     int rand_tri_vert = qrand() % 3;

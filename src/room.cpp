@@ -175,9 +175,11 @@ void Room::Clear()
     }
     envobjects.clear();
 
+#ifndef __ANDROID__
     //clear/reset cubemaps related room properties
     qint64 room_url_md5 = MathUtil::hash(GetS("url"));
     FilteredCubemapManager::GetSingleton()->RemoveFromProcessing(room_url_md5, false);
+#endif
 
     if (page) {
         page->Clear();
@@ -261,7 +263,7 @@ void Room::SetF(const char * name, const float f)
 
 float Room::GetF(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toFloat();
     }
     return 0.0f;
@@ -276,7 +278,7 @@ void Room::SetI(const char * name, const int i)
 
 int Room::GetI(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toInt();
     }
     return 0;
@@ -291,7 +293,7 @@ void Room::SetB(const char * name, const bool b)
 
 bool Room::GetB(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toString().toLower() == "true";
     }
     return false;
@@ -306,7 +308,7 @@ void Room::SetS(const char * name, const QString s)
 
 QString Room::GetS(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return props->property(name).toString();
     }
     return QString();
@@ -321,7 +323,7 @@ void Room::SetC(const char * name, const QColor c)
 
 QColor Room::GetC(const char * name) const
 {
-    if (props) {
+    if (props && props->property(name).isValid()) {
         return MathUtil::GetStringAsColour(props->property(name).toString());
     }
     return QColor(255,255,255);
@@ -806,6 +808,7 @@ void Room::BindCubemaps(QPointer <AssetShader> shader)
     bool const has_radiance_cubemap = !cubemap_radiance.isNull();
     bool const has_irradiance_cubemap = !cubemap_irradiance.isNull();
 
+#ifndef __ANDROID__
     // If we have a valid loaded cubemap and either of our radiance and irradiance maps are null
     // and we haven't already requested cubemap processing then save out the faces of the cubemap and
     // register them for processing.
@@ -893,6 +896,7 @@ void Room::BindCubemaps(QPointer <AssetShader> shader)
             cubemap_manager->RemoveFromProcessing(room_url_md5, !is_room_local);
         }
     }
+#endif
 
     if (has_radiance_cubemap)
     {
@@ -985,7 +989,7 @@ void Room::DrawGL(MultiPlayerManager *multi_players, QPointer <Player> player, c
     // Build list of Lights that exist in this room
     LightContainer light_container;
     GetLights(&light_container);
-    light_container.m_lights.emplace_back(Light());
+    light_container.m_lights.push_back(Light());
     renderer->PushLightContainer(&light_container, renderer->GetStencilFunc().GetStencilReferenceValue());
 
     BindShader(room_shader);
@@ -4936,7 +4940,7 @@ QList <QPointer <Room> > Room::GetVisibleRooms() {
                 r->GetParentObject() && r->GetParentObject()->GetB("open")) {
             l.push_back(r);
         }
-    }    
+    }
 
     return l;
 }

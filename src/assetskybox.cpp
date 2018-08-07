@@ -66,7 +66,7 @@ TextureHandle* AssetSkybox::GetTextureHandle()
 		{
 			QVector <QPointer<AssetImageData>> asset_image_datas;
 			asset_image_datas.resize(6);
-            std::vector<TextureHandle*> asset_image_handles;
+            QVector<TextureHandle*> asset_image_handles;
             asset_image_handles.resize(6);
 
 			bool tex_linear = false;

@@ -9,9 +9,12 @@
 #include <algorithm>
 #include "rendererinterface.h"
 #include "assetimagedata.h"
-#include "jniutil.h"
 #include "renderergl33_loadingthread.h"
+#ifndef __ANDROID__
 #include "renderergl44_loadingthread.h"
+#else
+#include "jniutil.h"
+#endif
 
 class Renderer : public RendererInterface
 {
@@ -40,7 +43,7 @@ public:
     std::shared_ptr<ProgramHandle> GetDefaultSkyboxShaderProgram();
     std::shared_ptr<ProgramHandle> GetDefaultPortalShaderProgram();
 
-    void SetCameras(std::vector<VirtualCamera> * p_cameras);
+    void SetCameras(QVector<VirtualCamera> * p_cameras);
 	void SetDefaultFontGlyphAtlas(std::shared_ptr<TextureHandle> p_handle);
 	TextureHandle* GetDefaultFontGlyphAtlas();
 
@@ -49,10 +52,10 @@ public:
     std::shared_ptr<TextureHandle> CreateTextureFromGLIData(const QByteArray & ba, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace);
     std::shared_ptr<TextureHandle> CreateTextureQImage(const QImage & img, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace);
     std::shared_ptr<TextureHandle> CreateCubemapTextureHandle(const uint32_t p_width, const uint32_t p_height, const TextureHandle::COLOR_SPACE p_color_space, const int32_t p_internal_texture_format, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace);
-    std::shared_ptr<TextureHandle> CreateCubemapTextureHandleFromTextureHandles(QVector<QPointer<AssetImageData> > &p_skybox_image_data, std::vector<TextureHandle *> &p_skybox_image_handles, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace);
+    std::shared_ptr<TextureHandle> CreateCubemapTextureHandleFromTextureHandles(QVector<QPointer<AssetImageData> > &p_skybox_image_data, QVector<TextureHandle *> &p_skybox_image_handles, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace);
     void GenerateEnvMapsFromCubemapTextureHandle(Cubemaps &p_cubemaps);
 #ifdef WIN32
-    std::vector<std::shared_ptr<TextureHandle>> CreateSlugTextureHandles(uint32_t const p_curve_texture_width,
+    QVector<std::shared_ptr<TextureHandle>> CreateSlugTextureHandles(uint32_t const p_curve_texture_width,
                                                                            uint32_t const p_curve_texture_height,
                                                                            void const * p_curve_texture,
                                                                            uint32_t const p_band_texture_width,
@@ -66,7 +69,7 @@ public:
 	void CreateMeshHandleForGeomVBOData(GeomVBOData* p_VBO_data);
     std::shared_ptr<MeshHandle> CreateMeshHandle(VertexAttributeLayout p_layout);
     void BindMeshHandle(MeshHandle * p_mesh_handle);
-    std::vector<std::shared_ptr<BufferHandle>>* GetBufferHandlesForMeshHandle(MeshHandle * p_mesh_handle);
+    QVector<std::shared_ptr<BufferHandle>>* GetBufferHandlesForMeshHandle(MeshHandle * p_mesh_handle);
 	
 	std::shared_ptr<BufferHandle> CreateBufferHandle(BufferHandle::BUFFER_TYPE const p_buffer_type, BufferHandle::BUFFER_USAGE const p_buffer_usage);
     void BindBufferHandle(BufferHandle * p_buffer_handle, BufferHandle::BUFFER_TYPE const p_buffer_type);
@@ -131,8 +134,8 @@ public:
 
 	void ClearRenderQueues();
 
-    std::vector<uint64_t> & GetGPUTimeQueryResults();
-    std::vector<uint64_t> & GetCPUTimeQueryResults();
+    QVector<uint64_t> & GetGPUTimeQueryResults();
+    QVector<uint64_t> & GetCPUTimeQueryResults();
 
     int64_t GetFrameCounter();
     size_t GetNumTextures() const;
@@ -165,8 +168,8 @@ public:
     void ConfigureWindowSize(uint32_t const p_window_width, uint32_t const p_window_height);
     void ConfigureSamples(uint32_t const p_msaa_count);
     uint32_t GetTextureID(FBO_TEXTURE_ENUM const p_texture_index, bool const p_multisampled) const;
-    std::vector<uint32_t> BindFBOToRead(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true) const;
-    std::vector<uint32_t> BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true) const;
+    QVector<uint32_t> BindFBOToRead(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true) const;
+    QVector<uint32_t> BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true) const;
     void BlitMultisampledFramebuffer(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask,
                                      int32_t srcX0, int32_t srcY0, int32_t srcX1, int32_t srcY1,
                                      int32_t dstX0, int32_t dstY0, int32_t dstX1, int32_t dstY1) const;
@@ -185,8 +188,8 @@ public:
 
 private:
 
-    void PreRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > & p_scoped_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> & p_scoped_light_containers);
-    void PostRender(std::unordered_map<size_t, std::vector<AbstractRenderCommand> > & p_scoped_render_commands, std::unordered_map<StencilReferenceValue, LightContainer> & p_scoped_light_containers);
+    void PreRender(QHash<size_t, QVector<AbstractRenderCommand> > & p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> & p_scoped_light_containers);
+    void PostRender(QHash<size_t, QVector<AbstractRenderCommand> > & p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> & p_scoped_light_containers);
 
     RENDERER::RENDER_SCOPE m_current_scope;
     std::unique_ptr<AbstractRenderer> m_abstractRenderer;
@@ -205,8 +208,8 @@ private:
     unsigned char m_render_framebuffer_layers : 1;
     bool m_immediate_mode;
 	RendererInterface* m_interface;
-    std::vector<AbstractRenderCommand_sort> m_sorted_command_indices;
-    void SortRenderCommandsByDistance(std::vector<AbstractRenderCommand>& render_command_vector, const bool p_is_transparent);
+    QVector<AbstractRenderCommand_sort> m_sorted_command_indices;
+    void SortRenderCommandsByDistance(QVector<AbstractRenderCommand>& render_command_vector, const bool p_is_transparent);
     void EnableRenderCommandInstancing(const RENDERER::RENDER_SCOPE p_scope);
     size_t m_collapsed_draws;
     size_t m_collapsable_draws;

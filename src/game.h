@@ -40,7 +40,9 @@
 #include "virtualkeyboard.h"
 #include "bookmarkmanager.h"
 #include "controllermanager.h"
+#ifndef __ANDROID__
 #include "filteredcubemapmanager.h"
+#endif
 #include "soundmanager.h"
 
 #ifdef __ANDROID__

@@ -592,7 +592,7 @@ void RoomPhysics::AddMesh(const QPointer <RoomObject> o, short group, short mask
             const size_t instance_count = vbo_data.m_instance_transforms.size();
             for (size_t instance_index = 0; instance_index < instance_count; ++instance_index)
             {
-                const std::vector<GeomTriangle>& tris = a->GetGeom()->GetData().GetTriangles(materials[i], mesh_index);
+                const QVector <GeomTriangle>& tris = a->GetGeom()->GetData().GetTriangles(materials[i], mesh_index);
                 QVector3D transformed_position0;
                 QVector3D transformed_position1;
                 QVector3D transformed_position2;

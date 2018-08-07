@@ -355,7 +355,7 @@ public:
     float iConstColour[4];
     float iChromaKeyColour[4];
     float iUseFlags[4];
-    std::vector<float> iSkelAnimJoints;
+    QVector<float> iSkelAnimJoints;
 };
 
 class AssetShader_Material
@@ -1065,17 +1065,11 @@ struct Cubemaps
     void clear_DDS_data()
     {
         m_dds_data[0].clear();
-        m_dds_data[0].shrink_to_fit();
         m_dds_data[1].clear();
-        m_dds_data[1].shrink_to_fit();
         m_dds_data[2].clear();
-        m_dds_data[2].shrink_to_fit();
         m_dds_data[3].clear();
-        m_dds_data[3].shrink_to_fit();
         m_dds_data[4].clear();
-        m_dds_data[4].shrink_to_fit();
         m_dds_data[5].clear();
-        m_dds_data[5].shrink_to_fit();
     }
 
     // First 6 QString are the input cubemap face paths, anything after that is used for output paths.
@@ -1288,7 +1282,16 @@ class AbstractRenderCommand_sort
 {
 public:
 
-    AbstractRenderCommand_sort();
+    AbstractRenderCommand_sort()
+        : m_stencil_ref_value(0),
+            m_draw_layer(0),
+            m_room_space_distance(0.0f),
+            m_draw_id(0),
+            m_camera_id(0),
+            m_original_index(0)
+    {
+
+    }
     AbstractRenderCommand_sort(AbstractRenderCommand const & p_copy, size_t const p_index)
         : m_stencil_ref_value(p_copy.m_stencil_func.GetStencilReferenceValue()),
           m_draw_layer(p_copy.m_object_uniforms.m_draw_layer),
@@ -1419,19 +1422,12 @@ public:
     {
         m_index_count = m_indices.size();
         m_indices.clear();
-        m_indices.shrink_to_fit();
         m_positions.clear();
-        m_positions.shrink_to_fit();
         m_normals.clear();
-        m_normals.shrink_to_fit();
         m_tex_coords.clear();
-        m_tex_coords.shrink_to_fit();
         m_colors.clear();
-        m_colors.shrink_to_fit();
         m_skel_anim_indices.clear();
-        m_skel_anim_indices.shrink_to_fit();
         m_skel_anim_weights.clear();
-        m_skel_anim_weights.shrink_to_fit();
         m_aabb_min[0] = FLT_MAX;
         m_aabb_min[1] = FLT_MAX;
         m_aabb_min[2] = FLT_MAX;
@@ -1440,14 +1436,14 @@ public:
         m_aabb_max[2] = FLT_MIN;
     }
 
-    std::vector<QMatrix4x4> m_instance_transforms;
-    std::vector<uint32_t> m_indices;
-    std::vector<float> m_positions;
-    std::vector<float> m_normals;
-    std::vector<float> m_tex_coords;
-    std::vector<float> m_colors;
-    std::vector<uint8_t> m_skel_anim_indices;
-    std::vector<float> m_skel_anim_weights;
+    QVector <QMatrix4x4> m_instance_transforms;
+    QVector <uint32_t> m_indices;
+    QVector <float> m_positions;
+    QVector <float> m_normals;
+    QVector <float> m_tex_coords;
+    QVector <float> m_colors;
+    QVector <uint8_t> m_skel_anim_indices;
+    QVector <float> m_skel_anim_weights;
     QVector3D m_aabb_min;
     QVector3D m_aabb_max;
 
@@ -1496,7 +1492,7 @@ public:
     virtual std::shared_ptr<ProgramHandle> GetDefaultSkyboxShaderProgram() = 0;
     virtual std::shared_ptr<ProgramHandle> GetDefaultPortalShaderProgram() = 0;
 
-    virtual void SetCameras(std::vector<VirtualCamera> * p_cameras) = 0;
+    virtual void SetCameras(QVector<VirtualCamera> * p_cameras) = 0;
 	virtual void SetDefaultFontGlyphAtlas(std::shared_ptr<TextureHandle> p_handle) = 0;
 	virtual TextureHandle* GetDefaultFontGlyphAtlas() = 0;
 
@@ -1505,10 +1501,10 @@ public:
     virtual std::shared_ptr<TextureHandle> CreateTextureFromGLIData(const QByteArray & ba, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace) = 0;
     virtual std::shared_ptr<TextureHandle> CreateTextureQImage(const QImage & img, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace) = 0;
     virtual std::shared_ptr<TextureHandle> CreateCubemapTextureHandle(const uint32_t p_width, const uint32_t p_height, const TextureHandle::COLOR_SPACE p_color_space, const int32_t p_internal_texture_format, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace) = 0;
-    virtual std::shared_ptr<TextureHandle> CreateCubemapTextureHandleFromTextureHandles(QVector<QPointer<AssetImageData> > &p_skybox_image_data, std::vector<TextureHandle *> &p_skybox_image_handles, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace) = 0;
+    virtual std::shared_ptr<TextureHandle> CreateCubemapTextureHandleFromTextureHandles(QVector<QPointer<AssetImageData> > &p_skybox_image_data, QVector<TextureHandle *> &p_skybox_image_handles, const bool tex_mipmap, const bool tex_linear, const bool tex_clamp, const TextureHandle::ALPHA_TYPE tex_alpha, const TextureHandle::COLOR_SPACE tex_colorspace) = 0;
     virtual void GenerateEnvMapsFromCubemapTextureHandle(Cubemaps &p_cubemaps) = 0;
 #ifdef WIN32
-    virtual std::vector<std::shared_ptr<TextureHandle>> CreateSlugTextureHandles(uint32_t const p_curve_texture_width,
+    virtual QVector<std::shared_ptr<TextureHandle>> CreateSlugTextureHandles(uint32_t const p_curve_texture_width,
                                                                                  uint32_t const p_curve_texture_height,
                                                                                  void const * p_curve_texture,
                                                                                  uint32_t const p_band_texture_width,
@@ -1522,7 +1518,7 @@ public:
 	virtual void CreateMeshHandleForGeomVBOData(GeomVBOData* p_VBO_data) = 0;
     virtual std::shared_ptr<MeshHandle> CreateMeshHandle(VertexAttributeLayout p_layout) = 0;
     virtual void BindMeshHandle(MeshHandle* p_mesh_handle) = 0;
-    virtual std::vector<std::shared_ptr<BufferHandle>>* GetBufferHandlesForMeshHandle(MeshHandle* p_mesh_handle) = 0;
+    virtual QVector<std::shared_ptr<BufferHandle>>* GetBufferHandlesForMeshHandle(MeshHandle* p_mesh_handle) = 0;
 
 	virtual std::shared_ptr<BufferHandle> CreateBufferHandle(BufferHandle::BUFFER_TYPE const p_buffer_type, BufferHandle::BUFFER_USAGE const p_buffer_usage) = 0;
     virtual void BindBufferHandle(BufferHandle * p_buffer_handle, BufferHandle::BUFFER_TYPE const p_buffer_type) = 0;
@@ -1590,8 +1586,8 @@ public:
 
 	virtual void ClearRenderQueues() = 0;
 
-    virtual std::vector<uint64_t>& GetGPUTimeQueryResults() = 0;
-    virtual std::vector<uint64_t>& GetCPUTimeQueryResults() = 0;
+    virtual QVector<uint64_t>& GetGPUTimeQueryResults() = 0;
+    virtual QVector<uint64_t>& GetCPUTimeQueryResults() = 0;
 
     virtual int64_t GetFrameCounter() = 0;
     virtual size_t GetNumTextures() const = 0;
@@ -1629,8 +1625,8 @@ public:
     // TODO: Remove GetTextureID, once I bring HMD managers into the RendererInterface,
     // this is a leaky abstraction for GL.
     virtual uint32_t GetTextureID(FBO_TEXTURE_ENUM const p_texture_index, bool const p_multisampled) const = 0;
-    virtual std::vector<uint32_t> BindFBOToRead(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true) const = 0;
-    virtual std::vector<uint32_t> BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true) const = 0;
+    virtual QVector<uint32_t> BindFBOToRead(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true) const = 0;
+    virtual QVector<uint32_t> BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true) const = 0;
     virtual void BlitMultisampledFramebuffer(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask,
                                              int32_t srcX0, int32_t srcY0, int32_t srcX1, int32_t srcY1,
                                              int32_t dstX0, int32_t dstY0, int32_t dstX1, int32_t dstY1) const = 0;
