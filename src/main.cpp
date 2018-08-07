@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
     cefIsInitialized = CefInitialize(main_args, settings, janusapp, nullptr);
     // CefInitialize creates a sub-proccess and executes the same executeable, as calling CefInitialize, if not set different in settings.browser_subprocess_path
     // if you create an extra program just for the childproccess you only have to call CefExecuteProcess(...) in it.
-    if (!cefExecuteResult) {
+    if (!cefIsInitialized) {
         // handle error
         qDebug() << "CefInitialize(): Unable to initialize CefEngine";
         return -1;
@@ -434,6 +434,10 @@ int main(int argc, char *argv[])
 //    qDebug() << "CefShutdown() started";
 //    CefShutdown(); //shut down CEF (any other janusvr.exe processes launched)
 //    qDebug() << "CefShutdown() done";
+//
+//    Possible fix for the CefShutdown() issue:
+//    SetErrorMode(SEM_NOGPFAULTERRORBOX);
+//    CefShutdown();
 //#endif
 
     return ret_val;
