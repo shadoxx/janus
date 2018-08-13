@@ -2778,7 +2778,7 @@ void Game::DrawCursorGL()
 #ifdef __ANDROID__
             ControllerState * cs = controller_manager->GetStates();
             if ((draw_cursor ||
-                 JNIUtil::GetGamepadConnected() ||
+                 (JNIUtil::GetGamepadConnected() && cursor_active == 0) ||
                  (controller_manager->GetUsingSpatiallyTrackedControllers() &&
                   (cursor_active == 0 || (cursor_active == 1 && (!cs[0].active || cs[1].GetClick().hover || cs[1].GetTeleport().hover || cs[1].GetGrab().pressed)))))
                     && r->GetB("cursor_visible")) {
@@ -4110,16 +4110,16 @@ void Game::UpdateControllers()
 #ifdef __ANDROID__
     else if (controller_manager->GetUsingGamepad() && JNIUtil::GetGamepadConnected()) {
         if (!controller_manager->GetHMDManager() || (controller_manager->GetHMDManager() && !controller_manager->GetHMDManager()->GetEnabled())) {
-            cursor_active = 0;
             ComputeMouseCursorTransform(windowSize, QPointF(windowSize.width()/2, windowSize.height()/2));
             UpdateCursorRaycast(GetMouseCursorTransform(), 0);
+            cursor_active = 0;
         }
         else if (controller_manager->GetHMDManager() && controller_manager->GetHMDManager()->GetEnabled()){
+            QMatrix4x4 m = controller_manager->GetHMDManager()->GetHMDTransform();
+            QMatrix4x4 m2 = player->GetTransform() * m;
+            m2.setColumn(2, -m2.column(2));
+            UpdateCursorRaycast(m2, 0);
             cursor_active = 0;
-            QMatrix4x4 m2 = controller_manager->GetHMDManager()->GetHMDTransform();
-            QMatrix4x4 m = player->GetTransform() * m2;
-            m.setColumn(2, -m.column(2));
-            UpdateCursorRaycast(m, 0);
         }
 #else
     else if (controller_manager->GetUsingGamepad() && SettingsManager::GetGamepadEnabled()) {

@@ -95,7 +95,7 @@ void GVRManager::InitializeGL()
     buffer_viewports.SetBufferViewport((size_t) 0, left_viewport);
     buffer_viewports.SetBufferViewport((size_t) 1, right_viewport);
 
-    QVector<gvr::BufferSpec> specs;
+    std::vector<gvr::BufferSpec> specs;
 
     specs.push_back(gvr_api->CreateBufferSpec());
     specs[0].SetSize(idealTextureSize);
@@ -159,35 +159,20 @@ void GVRManager::Update()
     gvr_hmd_xform = gvr_api->ApplyNeckModel(gvr_api->GetHeadSpaceFromStartSpaceRotation(pred_time), 1.0f);
 
     QMatrix4x4 h = GVRMatrixToMatrix(gvr_hmd_xform);
-
-    QQuaternion q = MathUtil::QuaternionFromQMatrix4x4(h);
-
-    QVector3D x, y, z;
-    x = QVector3D(1,0,0);
-    y = QVector3D(0,1,0);
-    z = QVector3D(0,0,-1);
-
-    x = q.rotatedVector(x);
-    y = q.rotatedVector(y);
-    z = q.rotatedVector(z);
-
-    QMatrix4x4 m;
-    m.setColumn(0, x);
-    m.setColumn(1, y);
-    m.setColumn(2, z);
-    m.setColumn(3, QVector3D(h.column(3).x(), h.column(3).y()+1.6,h.column(3).z()));
-    m.setRow(3, QVector4D(0,0,0,1));
-    m.scale(1,1,-1);
-
-    hmd_xform = m;
+    QMatrix4x4 h1 = h.inverted();
+    h1.setColumn(3, QVector4D(h.column(3).x(),h.column(3).y() + 1.6, h.column(3).z(), 1));
+    qDebug() << h1;
+    hmd_xform = h1;
 
     //Set up projection matrix for specific eye
     //qDebug() << "GVRManager - Loading matrices";
 
     // m_eye_view_matrices contains the compelte transform from tracking origin to each eye.
     // This is what we use when rendering, hmd_xform is used purely for positiong the player capsule
-    QMatrix4x4 l = GVRMatrixToMatrix(gvr_api->GetEyeFromHeadMatrix(GVR_LEFT_EYE))*h;
-    QMatrix4x4 r = GVRMatrixToMatrix(gvr_api->GetEyeFromHeadMatrix(GVR_RIGHT_EYE))*h;
+    QMatrix4x4 l = GVRMatrixToMatrix(gvr_api->GetEyeFromHeadMatrix(GVR_LEFT_EYE)) * h; //.inverted();
+    //l = l * h.inverted();
+    QMatrix4x4 r = GVRMatrixToMatrix(gvr_api->GetEyeFromHeadMatrix(GVR_RIGHT_EYE)) * h; //.inverted();
+    //r = r * h.inverted();
     QMatrix4x4 v = (l+r)/2;
     m_eye_view_matrices[GVR_LEFT_EYE] = v;
     m_eye_view_matrices[GVR_RIGHT_EYE] = v;
@@ -209,6 +194,7 @@ void GVRManager::Update()
     last_controller_xform = controller_xform;
 
     //Update controller xform
+    QVector3D x, y, z;
     x = QVector3D(1,0,0);
     y = QVector3D(0,1,0);
     z = QVector3D(0,0,1);
@@ -219,12 +205,14 @@ void GVRManager::Update()
     //qDebug() <<  "gvr::controller_pos " << pos;
 
     const gvr::ControllerQuat & rot = controller_state.GetOrientation();
+
     QQuaternion qt_quat = QQuaternion(rot.qw, rot.qx, rot.qy, rot.qz);
     x = qt_quat.rotatedVector(x);
     y = qt_quat.rotatedVector(y);
     z = qt_quat.rotatedVector(z);
     //qDebug() <<  "gvr::controller_quat " << qt_quat;
 
+    QMatrix4x4 m;
     m.setColumn(0, x);
     m.setColumn(1, y);
     m.setColumn(2, z);

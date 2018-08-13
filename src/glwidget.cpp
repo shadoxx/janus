@@ -1072,7 +1072,11 @@ void GLWidget::paintGL()
         const int fbo_h = RendererInterface::m_pimpl->GetWindowHeight();
 
         QVector<GLfloat> m_viewPortArray;
+#ifdef __ANDROID__
+        m_viewPortArray.reserve(4);
+#else
         m_viewPortArray.reserve(8);
+#endif
 
         m_viewPortArray.push_back(0.0f);
         m_viewPortArray.push_back(0.0f);

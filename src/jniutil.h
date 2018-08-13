@@ -43,7 +43,6 @@ public:
     static void HideSplash();
     static void SetProgressBar(int i);
 
-    static void SetUseGeckoWebView(bool b);
     static void CreateNewWebView(int tag);
     static void RemoveWebView(int tag);
     static void AttachWebViewToMainLayout(int tag);
@@ -139,7 +138,6 @@ private:
     static jmethodID m_hideSplashMID;
     static jmethodID m_setProgressBarMID;
 
-    static jmethodID m_setUseGeckoWebViewMID;
     static jmethodID m_createNewWebViewMID;
     static jmethodID m_removeWebViewMID;
     static jmethodID m_attachWebViewToMainLayoutMID;

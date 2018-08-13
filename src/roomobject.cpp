@@ -2518,9 +2518,6 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
         if (aw && (aw->GetFocus() || ai.isNull())) {
             RendererInterface::m_pimpl->BindTextureHandle(0, aw->GetTextureHandle());
             override_texture = true;
-#if defined(__arm__) && defined(__ANDROID__)
-            //is_flipped = true; //Flip GeckoWebView
-#endif
         }
         else if (av && av->GetPlaying(&media_ctx) && av->GetTextureHandle(&media_ctx, left_eye)
                  && av->GetTextureHandle(&media_ctx, left_eye) != AssetImage::null_image_tex_handle.get()) {

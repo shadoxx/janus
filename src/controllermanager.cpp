@@ -139,17 +139,17 @@ void ControllerManager::DrawGhostGL(QPointer <AssetShader> shader, const int i, 
             touch_obj[i]->DrawGL(shader);
         }
     }
-    else if (QString::compare(hmd_type, "daydream") == 0) {
+    else if (QString::compare(hmd_type, "daydream") == 0 && i == 0) {
         if (daydream_obj) {
             daydream_obj->DrawGL(shader);
         }
     }
-    else if (QString::compare(hmd_type, "gear") == 0) {
+    else if (QString::compare(hmd_type, "gear") == 0 && i == 0) {
         if (gear_obj) {
             gear_obj->DrawGL(shader);
         }
     }
-    else if (QString::compare(hmd_type, "go") == 0) {
+    else if (QString::compare(hmd_type, "go") == 0 && i == 0) {
         if (go_obj) {
             go_obj->DrawGL(shader);
         }
@@ -530,8 +530,9 @@ void ControllerManager::UpdateControllers()
                 float t_val = 0.0f;
 
                 if (hmd_manager->GetHMDType() == "daydream"){
-                    t_val = (j == 0 && hmd_manager->GetControllerThumbpadTouched(i)) ? 0.5f:0.0f;
-                    t_val = (j == 0 && hmd_manager->GetControllerThumbpadPressed(i)) ? 1.0f:t_val;
+                    float dist = sqrt(pow(hmd_manager->GetControllerThumbpad(i).x(), 2) + pow(hmd_manager->GetControllerThumbpad(i).y(), 2));
+                    t_val = (j == 0 && hmd_manager->GetControllerThumbpadTouched(i) && dist < 0.3f) ? 0.5f:0.0f;
+                    t_val = (j == 0 && hmd_manager->GetControllerThumbpadPressed(i) && dist < 0.3f) ? 1.0f:t_val;
                 }
 
                 if (hmd_manager->GetHMDType() == "go" || hmd_manager->GetHMDType() == "gear"){

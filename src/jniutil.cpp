@@ -13,7 +13,6 @@ jmethodID JNIUtil::m_hideSplashMID = NULL;
 jmethodID JNIUtil::m_setVRModeEnabledMID = NULL;
 jmethodID JNIUtil::m_setProgressBarMID = NULL;
 
-jmethodID JNIUtil::m_setUseGeckoWebViewMID = NULL;
 jmethodID JNIUtil::m_createNewWebViewMID = NULL;
 jmethodID JNIUtil::m_removeWebViewMID = NULL;
 jmethodID JNIUtil::m_attachWebViewToMainLayoutMID = NULL;
@@ -143,7 +142,6 @@ void JNIUtil::Initialize()
          */
 
         //Webview
-        m_setUseGeckoWebViewMID = jniEnv->GetMethodID(cls, "setUseGeckoWebView", "(Z)V");
         m_createNewWebViewMID = jniEnv->GetMethodID(cls, "createNewWebView", "(I)V");
         m_removeWebViewMID = jniEnv->GetMethodID(cls, "removeWebView", "(I)V");
         m_attachWebViewToMainLayoutMID = jniEnv->GetMethodID(cls, "attachWebViewToMainLayout", "(I)V");
@@ -232,11 +230,6 @@ void JNIUtil::Initialize()
         m_getButtonStartMID = jniEnv->GetMethodID(cls, "getButtonStart", "()Z");
         m_getButtonBackMID = jniEnv->GetMethodID(cls, "getButtonBack", "()Z");
     }
-
-#ifdef __arm__
-    //JNIUtil::SetUseGeckoWebView(true);
-#endif
-
 }
 
 void JNIUtil::Destroy()
@@ -309,15 +302,6 @@ void JNIUtil::SetProgressBar(int i)
     {
         QAndroidJniEnvironment jniEnv;
         jniEnv->CallVoidMethod(m_objectRef, m_setProgressBarMID, i);
-    }
-}
-
-void JNIUtil::SetUseGeckoWebView(bool b)
-{
-    if(m_setUseGeckoWebViewMID)
-    {
-        QAndroidJniEnvironment jniEnv;
-        jniEnv->CallVoidMethod(m_objectRef, m_setUseGeckoWebViewMID, b);
     }
 }
 

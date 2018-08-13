@@ -520,12 +520,12 @@ contains(ANDROID_TARGET_ARCH,x86) {
 }
 
 # Opus
-INCLUDEPATH +="./resources/opus-1.1.2/include"
+INCLUDEPATH +="./resources/opus-1.2.1/include"
 CONFIG(debug) {
-    win32:LIBS += -L"$$PWD/resources/opus-1.1.2/lib/x64/debug"
+    win32:LIBS += -L"$$PWD/resources/opus-1.2.1/win32/VS2015/x64/debug"
 }
 CONFIG(release) {
-    win32:LIBS += -L"$$PWD/resources/opus-1.1.2/lib/x64/release"
+    win32:LIBS += -L"$$PWD/resources/opus-1.2.1/win32/VS2015/x64/release"
 }
 unix:macx:LIBS += -L"/usr/local/lib" #used for Opus - OSX
 !android:LIBS += -lopus

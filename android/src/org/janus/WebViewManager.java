@@ -54,18 +54,8 @@ import android.opengl.GLUtils;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-//import org.mozilla.gecko.gfx.CompositorController;
-//import org.mozilla.gecko.gfx.GeckoDisplay;
-//import org.mozilla.geckoview.GeckoView;
-//import org.mozilla.geckoview.GeckoRuntime;
-//import org.mozilla.geckoview.GeckoRuntimeSettings;
-//import org.mozilla.geckoview.GeckoResponse;
-//import org.mozilla.geckoview.GeckoSession;
-//import org.mozilla.geckoview.GeckoSessionSettings;
-
 public class WebViewManager
 {
-    private boolean use_gecko = false;
     private Context context;
     private boolean paused = false;
     private final float[] rgbSwapTransform =
@@ -189,10 +179,6 @@ public class WebViewManager
         rgbSwapPaint.setColorFilter(colorFilter);
     }
 
-    public void setUseGeckoWebView(boolean b) {
-        use_gecko = false; //b;
-    }
-
     public void createNewWebView(int tag) {
         Message msg = new Message();
         msg.what = tag;
@@ -206,77 +192,75 @@ public class WebViewManager
             Lock l = new ReentrantLock();
             l.lock();
             try{
-                if (!use_gecko){
-                    webViewLockList.put(msg.what, l);
+                webViewLockList.put(msg.what, l);
 
-                    AWebView webView = new AWebView(context);
-                    webView.setTag(msg.what);
+                AWebView webView = new AWebView(context);
+                webView.setTag(msg.what);
 
-                    webView.getSettings().setJavaScriptEnabled(true);
-                    webView.getSettings().setBuiltInZoomControls( true );
-                    webView.getSettings().setUseWideViewPort(true);
-                    webView.getSettings().setLoadWithOverviewMode(true);
-                    //webView.setScrollBarStyle(WebView.SCROLLBARS_OUTSIDE_OVERLAY);
-                    //webView.setScrollbarFadingEnabled(false);
-                    webView.getSettings().setDomStorageEnabled(true);
-                    webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-                    webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
-                    webView.getSettings().setOffscreenPreRaster(true);
-                    webView.getSettings().setUserAgentString("Desktop"); //Android
-                    webView.setWebViewClient(new WebViewClient() {
-                        @Override
-                        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                            return false;
+                webView.getSettings().setJavaScriptEnabled(true);
+                webView.getSettings().setBuiltInZoomControls( true );
+                webView.getSettings().setUseWideViewPort(true);
+                webView.getSettings().setLoadWithOverviewMode(true);
+                //webView.setScrollBarStyle(WebView.SCROLLBARS_OUTSIDE_OVERLAY);
+                //webView.setScrollbarFadingEnabled(false);
+                webView.getSettings().setDomStorageEnabled(true);
+                webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+                webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+                webView.getSettings().setOffscreenPreRaster(true);
+                webView.getSettings().setUserAgentString("Desktop"); //Android
+                webView.setWebViewClient(new WebViewClient() {
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                        return false;
+                    }
+
+                    @Override
+                    public void onPageFinished(WebView view, String url) {
+                        Integer tag = (Integer) view.getTag();
+
+                        if (webViewLockList.containsKey(tag)) webViewLockList.get(tag).lock();
+                        else{
+                            return;
                         }
 
-                        @Override
-                        public void onPageFinished(WebView view, String url) {
-                            Integer tag = (Integer) view.getTag();
+                        try {
+                            urlList.put(tag, view.getUrl());
+                            urlChangedList.put(tag, true);
 
-                            if (webViewLockList.containsKey(tag)) webViewLockList.get(tag).lock();
-                            else{
-                                return;
-                            }
-
-                            try {
-                                urlList.put(tag, view.getUrl());
-                                urlChangedList.put(tag, true);
-
-                                horizontalRangeList.put(tag, ((AWebView) view).computeHorizontalScrollRange());
-                                verticalRangeList.put(tag, ((AWebView) view).computeVerticalScrollRange());
-                            }
-                            finally {
-                                if (webViewLockList.containsKey(tag)) webViewLockList.get(tag).unlock();
-                            }
+                            horizontalRangeList.put(tag, ((AWebView) view).computeHorizontalScrollRange());
+                            verticalRangeList.put(tag, ((AWebView) view).computeVerticalScrollRange());
                         }
-                    });
-                    webView.setWebChromeClient(new WebChromeClient() {
-                        //@Override
-                        //public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
-                        //    Log.i("SHOWINGCUSTOMVIEW","Here");
-                        //}
-                    });
-                    webView.setBackgroundColor(Color.WHITE); //TRANSPARENT,BLACK
-                    webView.setVisibility(View.VISIBLE);
-                    //webView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_LOW);
-                    //webView.setLayerType(View.LAYER_TYPE_HARDWARE, rgbSwapPaint);
+                        finally {
+                            if (webViewLockList.containsKey(tag)) webViewLockList.get(tag).unlock();
+                        }
+                    }
+                });
+                webView.setWebChromeClient(new WebChromeClient() {
+                    //@Override
+                    //public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+                    //    Log.i("SHOWINGCUSTOMVIEW","Here");
+                    //}
+                });
+                webView.setBackgroundColor(Color.WHITE); //TRANSPARENT,BLACK
+                webView.setVisibility(View.VISIBLE);
+                //webView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_LOW);
+                //webView.setLayerType(View.LAYER_TYPE_HARDWARE, rgbSwapPaint);
 
-                    webViewsList.add(webView);
+                webViewsList.add(webView);
 
-                    updatesEnabledList.put(msg.what, new ReentrantLock());
-                    repaintRequestedList.put(msg.what, false);
-                    urlChangedList.put(msg.what, false);
-                    scrollRequestedList.put(msg.what, false);
-                    widthList.put(msg.what, 1000);
-                    heightList.put(msg.what, 800);
-                    horizontalRangeList.put(msg.what, 1000);
-                    verticalRangeList.put(msg.what, 800);
-                    scrollXList.put(msg.what, 0);
-                    scrollYList.put(msg.what, 0);
-                    urlList.put(msg.what, "");
-                    hitTestsList.put(msg.what,"");
-                    hitTestLockList.put(msg.what, new ReentrantLock());
-                }
+                updatesEnabledList.put(msg.what, new ReentrantLock());
+                repaintRequestedList.put(msg.what, false);
+                urlChangedList.put(msg.what, false);
+                scrollRequestedList.put(msg.what, false);
+                widthList.put(msg.what, 1000);
+                heightList.put(msg.what, 800);
+                horizontalRangeList.put(msg.what, 1000);
+                verticalRangeList.put(msg.what, 800);
+                scrollXList.put(msg.what, 0);
+                scrollYList.put(msg.what, 0);
+                urlList.put(msg.what, "");
+                hitTestsList.put(msg.what,"");
+                hitTestLockList.put(msg.what, new ReentrantLock());
             }
             finally{
                 l.unlock();
@@ -493,20 +477,18 @@ public class WebViewManager
                 return;
             }
             try{
-                if (!use_gecko) {
-                    AWebView webView = (AWebView) findWebViewByTag(msg.what);
-                    if (webView != null) {
-                        String s = "";
-                        if (!(msg.obj.toString()).contains(":")) s += "http://";
-                        //webView.clearCache(true);
-                        webView.loadUrl(s + msg.obj.toString());
+                AWebView webView = (AWebView) findWebViewByTag(msg.what);
+                if (webView != null) {
+                    String s = "";
+                    if (!(msg.obj.toString()).contains(":")) s += "http://";
+                    //webView.clearCache(true);
+                    webView.loadUrl(s + msg.obj.toString());
 
-                        //Log.i("url", msg.obj.toString());
-                    }
-
-                    urlList.put(msg.what, webView.getUrl());
-                    urlChangedList.put(msg.what, true);
+                    //Log.i("url", msg.obj.toString());
                 }
+
+                urlList.put(msg.what, webView.getUrl());
+                urlChangedList.put(msg.what, true);
             }
             finally{
                 if (webViewLockList.containsKey(msg.what)) webViewLockList.get(msg.what).unlock();
@@ -530,18 +512,16 @@ public class WebViewManager
                 return;
             }
             try{
-                if (!use_gecko){
-                    AWebView webView = (AWebView) findWebViewByTag(msg.what);
-                    if (webView != null) {
-                        if (webView.canGoBackOrForward(msg.arg1))
-                        {
-                            webView.goBackOrForward(msg.arg1);
-                        }
+                AWebView webView = (AWebView) findWebViewByTag(msg.what);
+                if (webView != null) {
+                    if (webView.canGoBackOrForward(msg.arg1))
+                    {
+                        webView.goBackOrForward(msg.arg1);
                     }
-
-                    urlList.put(msg.what, webView.getUrl());
-                    urlChangedList.put(msg.what, true);
                 }
+
+                urlList.put(msg.what, webView.getUrl());
+                urlChangedList.put(msg.what, true);
             }
             finally{
                 if (webViewLockList.containsKey(msg.what)) webViewLockList.get(msg.what).unlock();
@@ -564,15 +544,13 @@ public class WebViewManager
                 return;
             }
             try{
-                if (!use_gecko){
-                    AWebView webView = (AWebView) findWebViewByTag(msg.what);
-                    if (webView != null) {
-                        webView.reload();
-                    }
-
-                    urlList.put(msg.what, webView.getUrl());
-                    urlChangedList.put(msg.what, true);
+                AWebView webView = (AWebView) findWebViewByTag(msg.what);
+                if (webView != null) {
+                    webView.reload();
                 }
+
+                urlList.put(msg.what, webView.getUrl());
+                urlChangedList.put(msg.what, true);
             }
             finally{
                 if (webViewLockList.containsKey(msg.what)) webViewLockList.get(msg.what).unlock();
@@ -595,15 +573,13 @@ public class WebViewManager
                 return;
             }
             try{
-                if (!use_gecko){
-                    AWebView webView = (AWebView) findWebViewByTag(msg.what);
-                    if (webView != null) {
-                        webView.stopLoading();
-                    }
-
-                    urlList.put(msg.what, webView.getUrl());
-                    urlChangedList.put(msg.what, true);
+                AWebView webView = (AWebView) findWebViewByTag(msg.what);
+                if (webView != null) {
+                    webView.stopLoading();
                 }
+
+                urlList.put(msg.what, webView.getUrl());
+                urlChangedList.put(msg.what, true);
             }
             finally{
                 if (webViewLockList.containsKey(msg.what)) webViewLockList.get(msg.what).unlock();
@@ -627,11 +603,9 @@ public class WebViewManager
                 return;
             }
             try{
-                if (!use_gecko){
-                    AWebView webView = (AWebView) findWebViewByTag(msg.what);
-                    if (webView != null) {
-                            webView.loadData(msg.obj.toString(), "text/html; charset=UTF-8", "UTF-8");
-                    }
+                AWebView webView = (AWebView) findWebViewByTag(msg.what);
+                if (webView != null) {
+                        webView.loadData(msg.obj.toString(), "text/html; charset=UTF-8", "UTF-8");
                 }
                 //repaintRequestedList.put(msg.what, true);
             }
@@ -657,16 +631,14 @@ public class WebViewManager
                 return;
             }
             try{
-                if (!use_gecko){
-                    AWebView webView = (AWebView) findWebViewByTag(msg.what);
-                    if (webView != null) {
-                        webView.evaluateJavascript(msg.obj.toString(), new ValueCallback<String>() {
-                            @Override
-                            public void onReceiveValue(String s) {
-                                //Log.d("EvaluatedJS", s);
-                            }
-                        });
-                    }
+                AWebView webView = (AWebView) findWebViewByTag(msg.what);
+                if (webView != null) {
+                    webView.evaluateJavascript(msg.obj.toString(), new ValueCallback<String>() {
+                        @Override
+                        public void onReceiveValue(String s) {
+                            //Log.d("EvaluatedJS", s);
+                        }
+                    });
                 }
                 //repaintRequestedList.put(msg.what, true);
             }
@@ -785,9 +757,7 @@ public class WebViewManager
                 View viewToScroll = null;
                 viewToScroll = findWebViewByTag(msg.what);
 
-                if (!use_gecko) {
-                    viewToScroll.scrollBy(msg.arg1, msg.arg2);
-                }
+                viewToScroll.scrollBy(msg.arg1, msg.arg2);
 
                 scrollXList.put(msg.what, viewToScroll.getScrollX());
                 scrollYList.put(msg.what, viewToScroll.getScrollY());
@@ -822,9 +792,7 @@ public class WebViewManager
                 viewToScroll = findWebViewByTag(msg.what);
 
                 if (viewToScroll != null) {
-                    if (!use_gecko) {
-                        viewToScroll.scrollTo(msg.arg1, msg.arg2);
-                    }
+                    viewToScroll.scrollTo(msg.arg1, msg.arg2);
                 }
 
                 scrollXList.put(msg.what, viewToScroll.getScrollX());
@@ -860,68 +828,66 @@ public class WebViewManager
                 viewToPress = findWebViewByTag(msg.what);
 
                 if (viewToPress != null) {
-                    if (!use_gecko) {
-                        WebView webView = (WebView) viewToPress;
-                        webView.setWebViewClient(new WebViewClient(){
-                            @Override
-                            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                                //Log.i("OVERRIDINGURL",url);
-                                hitTestLockList.get((Integer)view.getTag()).lock();
+                    WebView webView = (WebView) viewToPress;
+                    webView.setWebViewClient(new WebViewClient(){
+                        @Override
+                        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                            //Log.i("OVERRIDINGURL",url);
+                            hitTestLockList.get((Integer)view.getTag()).lock();
 
-                                view.setWebViewClient(new WebViewClient() {
-                                    @Override
-                                    public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                                        return false;
-                                    }
+                            view.setWebViewClient(new WebViewClient() {
+                                @Override
+                                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                                    return false;
+                                }
 
-                                    @Override
-                                    public void onPageFinished(WebView view, String url) {
-                                        Integer tag = (Integer) view.getTag();
-                                        urlList.put(tag, view.getUrl());
-                                        urlChangedList.put(tag, true);
-                                    }
-                                });
+                                @Override
+                                public void onPageFinished(WebView view, String url) {
+                                    Integer tag = (Integer) view.getTag();
+                                    urlList.put(tag, view.getUrl());
+                                    urlChangedList.put(tag, true);
+                                }
+                            });
 
-                                hitTestLockList.get((Integer)view.getTag()).unlock();
-                                return true;
-                            }
-                        });
+                            hitTestLockList.get((Integer)view.getTag()).unlock();
+                            return true;
+                        }
+                    });
 
-                        //Simulate touch press/release to get hittest
-                        MotionEvent e1 = MotionEvent.obtain(
-                                SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
-                                MotionEvent.ACTION_DOWN, msg.arg1, msg.arg2, 0);
-                        viewToPress.dispatchTouchEvent(e1);
-                        MotionEvent e2 = MotionEvent.obtain(
-                                SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
-                                MotionEvent.ACTION_UP, msg.arg1, msg.arg2, 0);
-                        viewToPress.dispatchTouchEvent(e2);
+                    //Simulate touch press/release to get hittest
+                    MotionEvent e1 = MotionEvent.obtain(
+                            SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                            MotionEvent.ACTION_DOWN, msg.arg1, msg.arg2, 0);
+                    viewToPress.dispatchTouchEvent(e1);
+                    MotionEvent e2 = MotionEvent.obtain(
+                            SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                            MotionEvent.ACTION_UP, msg.arg1, msg.arg2, 0);
+                    viewToPress.dispatchTouchEvent(e2);
 
-                        //Actual mouse press
-                        hitTestLockList.get(msg.what).lock();
+                    //Actual mouse press
+                    hitTestLockList.get(msg.what).lock();
 
-                        webView.setWebViewClient(new WebViewClient() {
-                            @Override
-                            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                                return false;
-                            }
+                    webView.setWebViewClient(new WebViewClient() {
+                        @Override
+                        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                            return false;
+                        }
 
-                            @Override
-                            public void onPageFinished(WebView view, String url) {
-                                Integer tag = (Integer) view.getTag();
-                                urlList.put(tag, view.getUrl());
-                                urlChangedList.put(tag, true);
-                            }
-                        });
+                        @Override
+                        public void onPageFinished(WebView view, String url) {
+                            Integer tag = (Integer) view.getTag();
+                            urlList.put(tag, view.getUrl());
+                            urlChangedList.put(tag, true);
+                        }
+                    });
                     //repaintRequestedList.put(msg.what, true);
 
-                        MotionEvent e = MotionEvent.obtain(
-                                SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
-                                MotionEvent.ACTION_DOWN, msg.arg1, msg.arg2, 0);
+                    MotionEvent e = MotionEvent.obtain(
+                            SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                            MotionEvent.ACTION_DOWN, msg.arg1, msg.arg2, 0);
 
-                        viewToPress.dispatchTouchEvent(e);
-                        hitTestLockList.get(msg.what).unlock();
-                    }
+                    viewToPress.dispatchTouchEvent(e);
+                    hitTestLockList.get(msg.what).unlock();
                 }
             }
             finally{
@@ -951,12 +917,10 @@ public class WebViewManager
                 viewToMove = findWebViewByTag(msg.what);
 
                 if (viewToMove != null) {
-                    if (!use_gecko){
-                        MotionEvent e = MotionEvent.obtain(
-                                SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
-                                MotionEvent.ACTION_MOVE, msg.arg1, msg.arg2, 0);
-                        viewToMove.dispatchTouchEvent(e);
-                    }
+                    MotionEvent e = MotionEvent.obtain(
+                            SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                            MotionEvent.ACTION_MOVE, msg.arg1, msg.arg2, 0);
+                    viewToMove.dispatchTouchEvent(e);
                 }
                 //repaintRequestedList.put(msg.what, true);
             }
@@ -987,12 +951,10 @@ public class WebViewManager
                 viewToRelease = findWebViewByTag(msg.what);
 
                 if (viewToRelease != null) {
-                    if (!use_gecko){
-                        MotionEvent e = MotionEvent.obtain(
-                                SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
-                                MotionEvent.ACTION_UP, msg.arg1, msg.arg2, 0);
-                        viewToRelease.dispatchTouchEvent(e);
-                    }
+                    MotionEvent e = MotionEvent.obtain(
+                            SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                            MotionEvent.ACTION_UP, msg.arg1, msg.arg2, 0);
+                    viewToRelease.dispatchTouchEvent(e);
                 }
                 //repaintRequestedList.put(msg.what, true);
             }
@@ -1045,17 +1007,13 @@ public class WebViewManager
             View wv = (View) webViewsList.get(i);
             if (paused){
                 stopWebView(((Integer)wv.getTag()).intValue());
-                if (!use_gecko){
-                    ((AWebView) wv).loadUrl("about:blank");
-                    ((AWebView) wv).onPause();
-                }
+                ((AWebView) wv).loadUrl("about:blank");
+                ((AWebView) wv).onPause();
             }
             else {
-                if (!use_gecko){
-                    int tag = ((Integer)wv.getTag()).intValue();
-                    ((AWebView) wv).loadUrl(urlList.get(tag));
-                    ((AWebView) wv).onResume();
-                }
+                int tag = ((Integer)wv.getTag()).intValue();
+                ((AWebView) wv).loadUrl(urlList.get(tag));
+                ((AWebView) wv).onResume();
                 reloadWebView(((Integer)wv.getTag()).intValue());
             }
         }

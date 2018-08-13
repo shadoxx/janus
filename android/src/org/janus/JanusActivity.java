@@ -347,10 +347,6 @@ public class JanusActivity extends org.qtproject.qt5.android.bindings.QtActivity
         //WebView
         //============================================================================================================
 
-        public void setUseGeckoWebView(boolean b) {
-            webViewManager.setUseGeckoWebView(b);
-        }
-
         public void createNewWebView(int tag) {
             webViewManager.createNewWebView(tag);
         }
