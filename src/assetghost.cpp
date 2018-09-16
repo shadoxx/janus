@@ -3,23 +3,31 @@
 AssetGhost::AssetGhost() :
     secs_per_frame(0.2f)
 {
+    mutex.lock();
     SetS("_type", "assetghost");
+    SetS("_tagname", "AssetGhost");
+    mutex.unlock();
 }
 
 AssetGhost::~AssetGhost()
 {
-
+    mutex.lock();
+    mutex.unlock();
 }
 
 void AssetGhost::Load()
 {
+    mutex.lock();
     WebAsset::Load(QUrl(GetS("_src_url")));
+    mutex.unlock();
 }
 
 void AssetGhost::Unload()
 {
+    mutex.lock();
     frames.clear();    
     WebAsset::Unload();
+    mutex.unlock();
 }
 
 void AssetGhost::SetFromFrames(const QVector <GhostFrame> & ghost_frames, const float secs_between_frames)
@@ -45,6 +53,16 @@ void AssetGhost::SetFromFrames(const QVector <GhostFrame> & ghost_frames, const 
 
 void AssetGhost::LoadDataThread()
 {
+    if (!mutex.tryLock()) {
+        SetProcessing(false);
+        return;
+    }
+
+    if (GetProcessed()) {
+        mutex.unlock();
+        return;
+    }
+
 //    qDebug() << "AssetGhost::LoadDataThread()" << url;
     const QByteArray & ba = GetData();
     QTextStream ifs(ba);
@@ -110,6 +128,8 @@ void AssetGhost::LoadDataThread()
 //    qDebug() << "AssetGhost::LoadDataThread() - Loaded frames/packets:" << frames.size() << packets.size();
     SetProcessed(true);
     ClearData();
+
+    mutex.unlock();
 }
 
 void AssetGhost::ClearFrames()

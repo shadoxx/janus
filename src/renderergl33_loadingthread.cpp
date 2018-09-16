@@ -168,6 +168,11 @@ void RendererGL33_LoadingThread::UpgradeShaderSource(QByteArray & p_shader_sourc
     p_shader_source.replace("uniform lowp vec4 iUseSkelAnim;",  "uniform lowp vec4 iUseFlags;");
     p_shader_source.replace("uniform lowp vec4 iUseLighting;",  "");
 #else
+    p_shader_source.replace("#version 310 es","#version 330 core");
+    p_shader_source.replace("#ifdef GL_FRAGMENT_PRECISION_HIGH\r\n      precision highp float;\r\n#else\r\n      precision mediump float;\r\n#endif\r\n","");
+    p_shader_source.replace("uniform lowp","uniform");
+
+    //qDebug() << p_shader_source;
     p_shader_source.replace("uniform vec4 iUseSkelAnim;",  "uniform vec4 iUseFlags;");
     p_shader_source.replace("uniform vec4 iUseLighting;",  "");
 #endif
@@ -177,8 +182,8 @@ void RendererGL33_LoadingThread::UpgradeShaderSource(QByteArray & p_shader_sourc
     p_shader_source.replace("iUseLighting[0]",                     "iUseFlags.y");
 
     if (!p_is_vertex_shader)
-	{
-		// Add gamma correction step as we output to a linear texture
+    {
+        // Add gamma correction step as we output to a linear texture
         prependDataInShaderMainFunction(p_shader_source, g_gamma_correction_GLSL);
     }
 }
@@ -210,7 +215,7 @@ void RendererGL33_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
     bool fragment_empty = false;
 
 #ifndef __ANDROID__
-    if (p_vertex_shader->contains("#version 330 core"))
+    if (p_vertex_shader->contains("#version 330 core") || p_vertex_shader->contains("#version 310 es"))
 #else
     if (p_vertex_shader->contains("#version 310 es"))
 #endif
@@ -268,7 +273,7 @@ void RendererGL33_LoadingThread::CompileAndLinkShaderProgram2(std::shared_ptr<Pr
     }
 
 #ifndef __ANDROID__
-    if (!shader_failed && p_fragment_shader->contains("#version 330 core"))
+    if (!shader_failed && (p_fragment_shader->contains("#version 330 core") || p_fragment_shader->contains("#version 310 es")))
 #else
     if (!shader_failed && p_fragment_shader->contains("#version 310 es"))
 #endif

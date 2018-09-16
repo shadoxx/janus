@@ -9,8 +9,10 @@ BookmarkManager::BookmarkManager()
 
 void BookmarkManager::AddWorkspace(const QString url, const QString title, const QString thumbnail)
 {
+    const QDir d(url);
+    qDebug() << "BookmarkManager::AddWorkspace" << d.path();
     QVariantMap o;
-    o["url"] = url;
+    o["url"] = d.path();
     o["title"] = title;
     o["thumbnail"] = thumbnail;
 

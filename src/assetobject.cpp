@@ -4,6 +4,7 @@ AssetObject::AssetObject()
 {    
 //    qDebug() << "AssetObject::AssetObject" << props;
     SetS("_type", "assetobject");
+    SetS("_tagname", "AssetObject");
     geom = new Geom();
     tex_url_str = QVector <QString> (ASSETSHADER_NUM_TEXTURES, QString(""));    
     img_error = 0;       
@@ -101,7 +102,7 @@ void AssetObject::Load()
     }
 
     geom->SetPath(GetS("_src_url"));
-    if (!GetS("_src_url").isEmpty() || geom->GetHasMeshData()) {
+    if ((!GetS("_src_url").isEmpty() || geom->GetHasMeshData()) && !geom->GetStarted()) {
         QtConcurrent::run(geom.data(), &Geom::Load);
     }
     else {
@@ -115,13 +116,16 @@ void AssetObject::Unload()
 }
 
 bool AssetObject::UpdateGL()
-{    
+{
     return geom->UpdateGL();
 }
 
 void AssetObject::Update()
 {
     if (geom) {
+        if ((!GetS("_src_url").isEmpty() || geom->GetHasMeshData()) && !geom->GetStarted()) {
+            QtConcurrent::run(geom.data(), &Geom::Load);
+        }
         geom->Update();
     }
 }
@@ -279,3 +283,4 @@ float AssetObject::GetProgress()
 //    qDebug() << "AssetObject::GetProgress()" << this << this->GetS("src") << geom->GetProgress() << geom->GetTextureProgress();
     return (geom->GetProgress() + geom->GetTextureProgress()) * 0.5f;
 }
+

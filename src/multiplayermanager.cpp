@@ -287,7 +287,7 @@ bool MultiPlayerManager::GetEnabled()
     return enabled;
 }
 
-void MultiPlayerManager::Update(QPointer <Player> player, const QString & url, const QList <QString> adjacent_urls, const QString & name, const bool room_allows_party_mode)
+void MultiPlayerManager::Update(QPointer <Player> player, const QString & url, const QList <QString> adjacent_urls, const QString & name, const bool room_allows_party_mode, const float delta_time)
 {    
     if (user_ghost) {
         user_ghost->SetS("anim_id", player->GetS("anim_id"));
@@ -533,7 +533,7 @@ void MultiPlayerManager::Update(QPointer <Player> player, const QString & url, c
                     p->Play();
                 }
 
-                p->Update(player->GetF("delta_time"));
+                p->Update(delta_time);
                 if (current_in_room.contains(p) && !players_in_room.contains(playerIndex.key())){
     //                Analytics::PostEvent("user", "joined", player->GetID());
                     players_in_room[playerIndex.key()] = p;
@@ -675,7 +675,7 @@ void MultiPlayerManager::SetCursorPosition(const QVector3D & cpos, const QVector
     pending_pos = true;
 }
 
-void MultiPlayerManager::AddMicBuffers(const QList <QByteArray> & buffers)
+void MultiPlayerManager::AddMicBuffers(const QList <QByteArray> buffers)
 {
     mic_buffers += buffers;
     if (recording) {
@@ -857,7 +857,7 @@ bool MultiPlayerManager::SetChatMessage(QPointer <Player> player, const QString 
     else {
         //qDebug() << "MultiPlayerManager::SetTextMessage() " << s;
 //        Analytics::PostEvent("player", "chat");
-        chat_message = s;
+        chat_message = s.toHtmlEscaped(); //60.0 adds escape characters for double quotes, etc., so they send properly
         AddChatMessage(user_ghost->GetS("id") + QString(" ") + s, QColor(64,192,64));
         return true;
     }

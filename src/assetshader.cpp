@@ -4,6 +4,7 @@ AssetShader::AssetShader() :
     m_program_handle(nullptr)
 {       
     SetS("_type", "assetshader");
+    SetS("_tagname", "AssetShader");
     time.start();
 }
 

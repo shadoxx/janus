@@ -235,6 +235,7 @@ public:
 
     void SetReady(const bool b);
     bool GetReady() const;
+    bool GetStarted() const;
     float GetProgress() const;
     bool GetTexturesReady() const;
     float GetTextureProgress() const;
@@ -309,6 +310,7 @@ protected:
     bool center;
 
     bool ready;
+    bool started;
     bool error;
     QString error_str;
     bool textures_started;
@@ -384,6 +386,8 @@ private:
     QHash <uint32_t, QMatrix4x4> extra_relative_transforms; //bone indexes to xform
     QVector <aiNode *> nodes_to_process;
     QVector <QMatrix4x4> nodes_parent_xforms;
+
+    QMutex mutex;
 };
 
 #endif // GEOM_H

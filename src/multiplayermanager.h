@@ -106,7 +106,7 @@ public:
     void SetConnections(QHash <QString, QHash <int, QSet <QString> > > cs);
     QHash <QString, QHash <int, QSet <QString> > > GetConnections() const;
 
-    void Update(QPointer <Player> player, const QString & url, const QList <QString> adjacent_urls, const QString & name, const bool room_allows_party_mode);
+    void Update(QPointer <Player> player, const QString & url, const QList <QString> adjacent_urls, const QString & name, const bool room_allows_party_mode, const float delta_time);
 
     void SetURLToDraw(const QString & s);
     void DrawGL(QPointer <AssetShader> shader, const QVector3D & player_pos, const bool render_left_eye);
@@ -124,7 +124,7 @@ public:
     bool SetChatMessage(QPointer <Player> player, const QString & s);
     void SetSendPortal(const QString & s, const QString & js_id);    
     void SetCursorPosition(const QVector3D & cpos, const QVector3D & cxdir, const QVector3D & cydir, const QVector3D & czdir, const float cscale);    
-    void AddMicBuffers(const QList <QByteArray> & buffers);
+    void AddMicBuffers(const QList <QByteArray> buffers);
 
     void SetHMD(const QString & s);
 

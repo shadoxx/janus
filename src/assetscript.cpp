@@ -5,6 +5,7 @@ AssetScript::AssetScript(QPointer <Room> r) :
     room(r)
 {
     SetS("_type", "assetscript");
+    SetS("_tagname", "AssetScript");
     script_engine = r->GetScriptEngine();
     global_scope = script_engine->globalObject();
     roomObject = global_scope.property("room");
@@ -271,6 +272,7 @@ void AssetScript::HandleCookieChanges()
         //Note: do not change from base_url (doesn't work using base_url.host())
 //        qDebug() << "AssetScript::HandleCookieChanges()" << newCookies.first().domain() << newCookies << base_url;
         CookieJar::cookie_jar->setCookiesFromUrl(newCookies, QUrl(GetS("_base_url")));
+        CookieJar::cookie_jar->SaveToDisk();
     }
 
 //    cookies->PrintAllCookies();

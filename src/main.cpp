@@ -304,6 +304,8 @@ int main(int argc, char *argv[])
     settings.persist_user_preferences = true;
     settings.external_message_pump = true;
 
+    CefString(&settings.cache_path).FromASCII(MathUtil::GetAppDataPath().toLatin1().constData());
+
     cefIsInitialized = CefInitialize(main_args, settings, janusapp, nullptr);
     // CefInitialize creates a sub-proccess and executes the same executeable, as calling CefInitialize, if not set different in settings.browser_subprocess_path
     // if you create an extra program just for the childproccess you only have to call CefExecuteProcess(...) in it.

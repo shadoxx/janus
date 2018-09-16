@@ -16,6 +16,7 @@
 
 #include "mathutil.h"
 #include "rendererinterface.h"
+#include "cookiejar.h"
 #include "abstractwebview.h"
 
 class MainWindow;
@@ -43,6 +44,8 @@ public:
     static void HideSplash();
     static void SetProgressBar(int i);
 
+    static void UpdateCookies();
+
     static void CreateNewWebView(int tag);
     static void RemoveWebView(int tag);
     static void AttachWebViewToMainLayout(int tag);
@@ -69,6 +72,8 @@ public:
     static void MousePressWebView(int tag, int x, int y);
     static void MouseMoveWebView(int tag, int x, int y);
     static void MouseReleaseWebView(int tag, int x, int y);
+    static void KeyPressWebView(int tag, int code, int state);
+    static void KeyReleaseWebView(int tag, int code, int state);
     static bool GetRepaintRequestedAtWebView(int tag);
     static bool GetScrollRequestedAtWebView(int tag);
     static bool GetURLChangedAtWebView(int tag);
@@ -138,6 +143,7 @@ private:
     static jmethodID m_hideSplashMID;
     static jmethodID m_setProgressBarMID;
 
+    static jmethodID m_getCookieMID;
     static jmethodID m_createNewWebViewMID;
     static jmethodID m_removeWebViewMID;
     static jmethodID m_attachWebViewToMainLayoutMID;
@@ -164,6 +170,8 @@ private:
     static jmethodID m_mousePressWebViewMID;
     static jmethodID m_mouseMoveWebViewMID;
     static jmethodID m_mouseReleaseWebViewMID;
+    static jmethodID m_keyPressWebViewMID;
+    static jmethodID m_keyReleaseWebViewMID;
     static jmethodID m_getRepaintRequestedAtWebViewMID;
     static jmethodID m_getScrollRequestedAtWebViewMID;
     static jmethodID m_getURLChangedAtWebViewMID;

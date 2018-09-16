@@ -80,6 +80,8 @@ public:
     void SetProperties(QVariantMap d);
     QPointer <DOMNode> GetProperties();
 
+    QString GetTagName() const;
+
     void SetType(const QString t);        
     QString GetType() const;    
 

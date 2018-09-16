@@ -1,11 +1,9 @@
 #include "audioutil.h"
 
-const int AudioUtil::_FRAME_SIZE = 2880;
-const int AudioUtil::_MAX_FRAME_SIZE = 2880 * 6;
-const int AudioUtil::_SAMPLE_RATE = 48000;
+const int AudioUtil::_FRAME_SIZE = 2880; //2880; //2646; // 2646 is 60ms of 44.1khz playback... 2880;
+const int AudioUtil::_SAMPLE_RATE = 48000; //44100;
 const int AudioUtil::_CHANNELS = 1;
 const int AudioUtil::_APPLICATION = OPUS_APPLICATION_VOIP;
-const int AudioUtil::_MAX_PACKET_SIZE = 2880*8;
 
 OpusEncoder * AudioUtil::encoder = NULL;
 OpusDecoder * AudioUtil::decoder = NULL;
@@ -23,9 +21,7 @@ QByteArray AudioUtil::encode(QByteArray decoded)
     //Create Opus encoder state
     int error = 0;
     if (encoder == NULL) {
-        encoder = opus_encoder_create(AudioUtil::_SAMPLE_RATE, AudioUtil::_CHANNELS, AudioUtil::_APPLICATION, &error);
-        opus_encoder_ctl(encoder, OPUS_SET_MAX_BANDWIDTH(OPUS_BANDWIDTH_MEDIUMBAND));
-        opus_encoder_ctl(encoder, OPUS_SET_BITRATE(48000)); //4KB/sec
+        encoder = opus_encoder_create(AudioUtil::_SAMPLE_RATE, AudioUtil::_CHANNELS, AudioUtil::_APPLICATION, &error);        
     }
     if (error<0)
     {
@@ -34,16 +30,19 @@ QByteArray AudioUtil::encode(QByteArray decoded)
         return QByteArray();
     }
 
+    //these crash if encoder is NULL
+    opus_encoder_ctl(encoder, OPUS_SET_MAX_BANDWIDTH(OPUS_BANDWIDTH_MEDIUMBAND));
+//        opus_encoder_ctl(encoder, OPUS_SET_BITRATE(48000)); //4KB/sec
+
     //Encode a frame
     const unsigned int s = AudioUtil::_FRAME_SIZE*AudioUtil::_CHANNELS;
     opus_int16 in[s];
     memcpy(in, decoded.data(), s*sizeof(opus_int16)); //conversion from samples to 16-bit type
 
-    QByteArray encoded;
-    encoded.resize(AudioUtil::_MAX_PACKET_SIZE);
-
-    unsigned char * encoded_str = (unsigned char *)encoded.data();
-    const int len = opus_encode(encoder, in, AudioUtil::_FRAME_SIZE, encoded_str, AudioUtil::_MAX_PACKET_SIZE);
+    //4000 - recommended maximum number of bytes per packet
+    int max_size = 4000; //4000
+    QByteArray encoded(max_size, '\0');
+    const int len = opus_encode(encoder, in, AudioUtil::_FRAME_SIZE, (unsigned char *)encoded.data(), max_size);
 //    qDebug() << "encode len" << decoded.length() << len;
     if (len < 0) {
         //qDebug("ERROR: Failed to encode: %s\n", opus_strerror(len));
@@ -51,7 +50,7 @@ QByteArray AudioUtil::encode(QByteArray decoded)
     }
 
     encoded.resize(len);
-    encoded.squeeze();
+//    encoded.squeeze();
 
     //Return encoded data
     return encoded;
@@ -72,17 +71,15 @@ QByteArray AudioUtil::decode(QByteArray encoded)
     }
 
     //Decode a frame
-    QByteArray decoded;
-    decoded.resize(AudioUtil::_MAX_FRAME_SIZE * AudioUtil::_CHANNELS * sizeof(opus_int16));
-    if (decoded.size() != AudioUtil::_MAX_FRAME_SIZE * AudioUtil::_CHANNELS * sizeof(opus_int16))
+    const int decode_size = AudioUtil::_FRAME_SIZE * AudioUtil::_CHANNELS * sizeof(opus_int16);
+    QByteArray decoded(decode_size, '\0');
+    if (decoded.size() != decode_size)
     {
         qDebug("ERROR: Failed to allocate memory for decoded data");
         return QByteArray();
     }
 
-    unsigned char * encoded_str = (unsigned char *)encoded.data();
-
-    const int len = opus_decode(decoder, encoded_str, encoded.size(), (opus_int16*)decoded.data(), AudioUtil::_MAX_FRAME_SIZE, 0);
+    const int len = opus_decode(decoder, (unsigned char *)encoded.data(), encoded.size(), (opus_int16*)decoded.data(), AudioUtil::_FRAME_SIZE, 0);
     if (len<0)
     {
         //qDebug("ERROR: Failed to decode: %s\n", opus_strerror(len));
@@ -90,7 +87,7 @@ QByteArray AudioUtil::decode(QByteArray encoded)
     }
 
     decoded.resize(len * sizeof(opus_int16));
-    decoded.squeeze();
+//    decoded.squeeze();
 
     //Return decoded data
     return decoded;
@@ -114,7 +111,7 @@ bool AudioUtil::isWav(QByteArray ba)
         fmt_id[4] = '\0';
         data_id[4] = '\0';
 
-        if(strcmp(riff_id, "RIFF") == 0 && strcmp(riff_format, "WAVE") == 0 && strcmp(fmt_id, "fmt ") == 0 && strcmp(data_id, "data") == 0) {
+        if (strcmp(riff_id, "RIFF") == 0 && strcmp(riff_format, "WAVE") == 0 && strcmp(fmt_id, "fmt ") == 0 && strcmp(data_id, "data") == 0) {
             return true;
         }
     }

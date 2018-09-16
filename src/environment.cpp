@@ -25,6 +25,12 @@ void Environment::SetLaunchURL(const QString & s)
 {
     launch_url = s;
     launch_url.replace("janus://", "http://", Qt::CaseInsensitive);
+
+    //60.0 - get URL representation for local filesystem files
+    QFile f(launch_url);
+    if (f.exists()) {
+        launch_url = QUrl::fromLocalFile(launch_url).toString();
+    }
 }
 
 QString Environment::GetLaunchURL()

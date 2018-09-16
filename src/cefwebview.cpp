@@ -69,6 +69,43 @@ bool CEFV8Handler::Execute(const CefString& name,
     return false;
 }
 
+CEFCookieVisitor::CEFCookieVisitor()
+{
+
+}
+
+bool CEFCookieVisitor::Visit(const CefCookie& cookie, int count, int total, bool& deleteCookie)
+{
+    QNetworkCookie c;
+    c.setSecure((cookie.secure == 0)?false:true);
+    c.setHttpOnly((cookie.httponly == 0)?false:true);
+
+    if (cookie.has_expires)
+    {
+        cef_time_t cef_expiry = cookie.expires;
+        QDate expiry_date(cef_expiry.year, cef_expiry.month, cef_expiry.day_of_month);
+        QTime expiry_time(cef_expiry.hour, cef_expiry.minute, cef_expiry.second, cef_expiry.millisecond);
+        QDateTime expiry(expiry_date, expiry_time);
+        c.setExpirationDate(expiry);
+    }
+
+    c.setDomain(StringFromCefString(cookie.domain));
+    c.setPath(StringFromCefString(cookie.path));
+    c.setName(StringFromCefString(cookie.name).toLatin1());
+    c.setValue(StringFromCefString(cookie.value).toLatin1());
+
+    QString domainStr = c.domain();
+    if (!domainStr.isEmpty() && domainStr.at(0) == '.') {
+        domainStr.remove(0,1);
+    }
+    domainStr = QString("http://") + domainStr;
+    CookieJar::cookie_jar->setCookiesFromUrl(QList<QNetworkCookie>({c}), domainStr);
+    CookieJar::cookie_jar->SaveToDisk();
+
+    deleteCookie = false;
+    return true;
+}
+
 CEFDOMVisitor::CEFDOMVisitor()
 {
 
@@ -162,7 +199,7 @@ void CEFRenderHandler::SetViewportSize(const int w, const int h)
 //    qDebug() << "CEFRenderHandler::SetViewportSize" << w << h;
     QImage img(w, h, QImage::Format_ARGB32_Premultiplied);
     img.fill(0x00000000);
-    m_tex_handle = RendererInterface::m_pimpl->CreateTextureQImage(img, true, true, true, TextureHandle::ALPHA_TYPE::BLENDED, TextureHandle::COLOR_SPACE::SRGB);    
+    m_tex_handle = RendererInterface::m_pimpl->CreateTextureQImage(img, true, true, true, TextureHandle::ALPHA_TYPE::BLENDED, TextureHandle::COLOR_SPACE::SRGB);
 }
 
 bool CEFRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect)
@@ -187,7 +224,7 @@ void CEFRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType t
 {
 //    qDebug() << "CEFRenderHandler::OnPaint()" << browser << QTime::currentTime().msecsSinceStartOfDay() << width << height << dirtyRects.size() << QString(browser->GetMainFrame()->GetURL().ToString().c_str());
     RendererInterface::m_pimpl->UpdateTextureHandleData(m_tex_handle.get(), 0, 0, 0, width, height, (int)GL_BGRA, (int)GL_UNSIGNED_BYTE, (void *)buffer, width * height * 4);
-    RendererInterface::m_pimpl->GenerateTextureHandleMipMap(m_tex_handle.get());    
+    RendererInterface::m_pimpl->GenerateTextureHandleMipMap(m_tex_handle.get());
 //    QImage img(width, height, QImage::Format_ARGB32_Premultiplied);
 //    memcpy(img.bits(), buffer, width * height * 4);
 //    img.save("test.png");
@@ -195,6 +232,53 @@ void CEFRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType t
 
 void CEFRenderHandler::OnCursorChange( CefRefPtr< CefBrowser > browser, CefCursorHandle cursor ) {
 //    qDebug() << "CEFRenderHandler::OnCursorChange";
+}
+
+CEFJSDialogHandler::CEFJSDialogHandler()
+{
+
+}
+
+bool CEFJSDialogHandler::OnJSDialog(CefRefPtr<CefBrowser> browser,
+                const CefString& origin_url,
+                JSDialogType dialog_type,
+                const CefString& message_text,
+                const CefString& default_prompt_text,
+                CefRefPtr<CefJSDialogCallback> callback,
+                bool& suppress_message)
+{
+   auto msg = message_text.ToString();
+   QString s = QString(msg.c_str());
+   if (s.left(16) == "janus_hittest://"){
+       mDOMHitTestResult = s.remove(0,16);
+       //qDebug() << "hittest" << mDOMHitTestResult;
+   }
+   else {
+       mDOMHitTestResult = "null";
+   }
+   return true;
+}
+
+bool CEFJSDialogHandler::OnBeforeUnloadDialog(CefRefPtr<CefBrowser> browser,
+                                  const CefString& message_text,
+                                  bool is_reload,
+                                  CefRefPtr<CefJSDialogCallback> callback)
+{
+  return false;
+}
+
+void CEFJSDialogHandler::OnResetDialogState(CefRefPtr<CefBrowser> browser)
+{
+
+}
+
+void CEFJSDialogHandler::OnDialogClosed(CefRefPtr<CefBrowser> browser) {
+
+}
+
+QString CEFJSDialogHandler::getHitTest()
+{
+    return mDOMHitTestResult;
 }
 
 bool CEFBrowserClient::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
@@ -223,11 +307,12 @@ void CEFBrowserClient::ClearLaunchURL()
 
 CEFWebView::CEFWebView() :
     browser_focus(false)
-{    
+{
 //    qDebug() << "CEFWebView::CEFWebView()" << this;
     focusHandler = new CEFFocusHandler();
     renderHandler = new CEFRenderHandler();
     lifespanHandler = new CEFLifeSpanHandler();
+    jsDialogHandler = new CEFJSDialogHandler();
 
     // create browser-window
     CefWindowInfo window_info;
@@ -238,12 +323,12 @@ CEFWebView::CEFWebView() :
 #ifdef WIN32
     window_info.SetAsWindowless(NULL); // false means no transparency (site background colour)
 #else
-    std::size_t windowHandle = 0;    
+    std::size_t windowHandle = 0;
     window_info.SetAsWindowless(windowHandle); // false means no transparency (site background colour)
 #endif
 
-    browserClient = new CEFBrowserClient(renderHandler, focusHandler, lifespanHandler);
-    browser = CefBrowserHost::CreateBrowserSync(window_info, browserClient.get(), "about:blank", browserSettings, nullptr);   
+    browserClient = new CEFBrowserClient(renderHandler, focusHandler, lifespanHandler, jsDialogHandler);
+    browser = CefBrowserHost::CreateBrowserSync(window_info, browserClient.get(), "about:blank", browserSettings, nullptr);
 
     browser_list.push_back(browser);
 
@@ -303,6 +388,10 @@ void CEFWebView::update()
         browser->GetMainFrame()->LoadURL(lifespanHandler->GetPopupURL().toStdString());
         lifespanHandler->ClearPopupURL();
     }
+
+    CefRefPtr<CefCookieManager> cm = CefCookieManager::GetGlobalManager(NULL);
+    cm->VisitUrlCookies(browser->GetMainFrame()->GetURL(), true, new CEFCookieVisitor());
+
 }
 
 void CEFWebView::mousePressEvent(QMouseEvent * e)
@@ -316,11 +405,25 @@ void CEFWebView::mousePressEvent(QMouseEvent * e)
 }
 
 void CEFWebView::mouseMoveEvent(QMouseEvent * e)
-{    
+{
     CefMouseEvent mouse_event;
     mouse_event.x = e->x();
-    mouse_event.y = e->y();    
+    mouse_event.y = e->y();
     browser->GetHost()->SendMouseMoveEvent(mouse_event, false);
+
+    if (!hit_test_timer.isValid() || hit_test_timer.elapsed() > 100) // Hit test every 100 ms
+    {
+        CefString script =
+                "var n = document.elementFromPoint(" + std::to_string(e->x()) + "," + std::to_string(e->y()) + ");"
+                "if (n != null) {"
+                "if (n.tagName.toLowerCase() == 'img' && n.parentNode.tagName.toLowerCase() == 'a') {alert('janus_hittest://' + n.parentNode.href);}"
+                "else if (n.tagName.toLowerCase() == 'a') {alert('janus_hittest://' + n.href);}"
+                "else {alert('janus_hittest://' + n.src);}"
+                "}";
+        //qDebug() << script.ToString().c_str();
+        browser->GetFocusedFrame()->ExecuteJavaScript(script,browser->GetMainFrame()->GetURL(), 0);
+        hit_test_timer.restart();
+    }
 }
 
 void CEFWebView::mouseReleaseEvent(QMouseEvent * e)
@@ -468,18 +571,22 @@ void CEFWebView::dropEvent(QDropEvent *)
 
 void CEFWebView::setCookieJar(QPointer <CookieJar> j)
 {
-
+    cookie_jar = j;
 }
 
 WebHitTestResult CEFWebView::getHitTestContent(QPoint p)
 {
     WebHitTestResult h;
 
+    h.link_url = QUrl(jsDialogHandler->getHitTest());
+    h.bounding_rect = QRect();
+    h.is_null = (jsDialogHandler->getHitTest() == "null" || jsDialogHandler->getHitTest() == "undefined");
+
     return h;
 }
 
 bool CEFWebView::getTextEditing()
-{    
+{
 //    qDebug() << "CEFWebView::getTextEditing()" << browser_focus;
     return browser_focus;
 }
@@ -505,7 +612,7 @@ void CEFWebView::evaluateJavaScript(QString s)
 
 void CEFWebView::render(QPainter* p, QRect r)
 {
-//    qDebug() << "CEFWebView::render" << r;    
+//    qDebug() << "CEFWebView::render" << r;
 }
 
 QPalette CEFWebView::palette()
@@ -547,11 +654,11 @@ void CEFWebView::setScrollPosition(QPoint p)
 
 QPoint CEFWebView::scrollPosition()
 {
-    return QPoint(0,0);    
+    return QPoint(0,0);
 }
 
 QUrl CEFWebView::url()
-{    
+{
     return QUrl(browser->GetMainFrame()->GetURL().ToString().c_str());
 }
 
@@ -611,7 +718,7 @@ void CEFWebView::SetFocus(const bool b)
 }
 
 bool CEFWebView::GetFocus() const
-{        
+{
     return browser_focus;
 }
 
@@ -631,6 +738,6 @@ void CEFWebView::Shutdown()
             browser_list[i]->GetHost()->CloseBrowser(true);
 //            delete browser_list[i];
         }
-    }    
+    }
 //    browser_list.clear();
 }

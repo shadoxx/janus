@@ -131,7 +131,7 @@ public:
 
     static void Update(QPointer <Player> player);
 
-    static QList <QByteArray> & GetMicBuffers();
+    static QList <QByteArray> GetMicBuffers();
     static void ClearMicBuffers();   
 
     static int input_frequency;

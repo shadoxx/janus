@@ -6,26 +6,34 @@ AssetRecording::AssetRecording() :
     packet_index(0),
     playing(false)
 {
+    mutex.lock();
 //    qDebug() << "AssetRecording::AssetRecording()";
     SetS("_type", "assetrecording");
+    SetS("_tagname", "AssetRecording");
     SetI("sample_rate", 44100);
     dt_time.start();
+    mutex.unlock();
 }
 
 AssetRecording::~AssetRecording()
 {
-
+    mutex.lock();
+    mutex.unlock();
 }
 
 void AssetRecording::Load()
 {
 //    qDebug() << "AssetRecording::Load()" << GetS("_src_url");
+    mutex.lock();
     WebAsset::Load(QUrl(GetS("_src_url")));
+    mutex.unlock();
 }
 
 void AssetRecording::Unload()
 {
+    mutex.lock();
     WebAsset::Unload();
+    mutex.unlock();
 }
 
 bool AssetRecording::GetLoaded() const
@@ -133,6 +141,16 @@ bool AssetRecording::GetPlaying() const
 
 void AssetRecording::LoadDataThread()
 {
+    if (!mutex.tryLock()) {
+        SetProcessing(false);
+        return;
+    }
+
+    if (GetProcessed()) {
+        mutex.unlock();
+        return;
+    }
+
     const QByteArray & ba = GetData();
     QTextStream ifs(ba);
 
@@ -177,6 +195,8 @@ void AssetRecording::LoadDataThread()
     SetProcessed(true);
     SetFinished(true);
     ClearData();
+
+    mutex.unlock();
 }
 
 void AssetRecording::SetRoomID(const QString s)

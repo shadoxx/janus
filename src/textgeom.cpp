@@ -162,6 +162,7 @@ QMatrix4x4 TextGeom::GetModelMatrix() const
 
 void TextGeom::CreateVBO()
 {
+//    qDebug() << "TextGeom::CreateVBO()" << this;
     const uint8_t indices_per_glyph = 6;
     const uint8_t vertices_per_glyph = 4;
     const uint8_t elements_per_position = 4;

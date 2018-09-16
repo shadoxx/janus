@@ -2497,7 +2497,7 @@ void Room::SaveXML(QTextStream & ofs)
     ofs << "<body>\n";
     ofs << "<!--\n";
     ofs << "<FireBoxRoom>\n";
-    ofs << "<assets>\n";
+    ofs << "<Assets>\n";
 
     //iterate over all asset types
     QList <QPointer <Asset> > assets = GetAllAssets();
@@ -2507,8 +2507,8 @@ void Room::SaveXML(QTextStream & ofs)
         }
     }
 
-    ofs << "</assets>\n";
-    ofs << "<room";
+    ofs << "</Assets>\n";
+    ofs << "<Room";
 
     //write out all room attributes
     QVariantMap rd;
@@ -2582,16 +2582,17 @@ void Room::SaveXML(QTextStream & ofs)
     }
     ofs << ">\n";
 
-    //write the environment objects out, easy
+    //60.0 - write out only root level envobjects (nested/child ones get
+    //       output by their parent)
     for (QPointer <RoomObject> & obj : envobjects) {
-        if (obj && obj->GetSaveToMarkup() &&
-                (obj->GetType() != "link" ||
-                 (obj->GetType() == "link" && obj != GetEntranceObject() && obj->GetSaveToMarkup()))) {
+        if (obj && obj->GetSaveToMarkup()
+                && obj->GetParentObject().isNull() //root-level condition
+                && obj != entrance_object) {
             ofs << obj->GetXMLCode(false) << "\n";
         }
     }
 
-    ofs << "</room>\n";
+    ofs << "</Room>\n";
     ofs << "</FireBoxRoom>\n";
     ofs << "-->\n";
     ofs << "<script src=\"https://web.janusvr.com/janusweb.js\"></script>\n";

@@ -70,6 +70,8 @@ private:
 
     QString room_id;
     QString original_room_id;
+
+    QMutex mutex;
 };
 
 #endif // ASSETRECORDING_H

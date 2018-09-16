@@ -324,6 +324,45 @@ void RoomObject::SetType(const QString t)
 //    qDebug() << "RoomObject::SetType"  << GetJSID() << GetID() << "allocated" << objects_allocated << "type" << GetType();
 }
 
+QString RoomObject::GetTagName() const
+{
+    const QString t = GetType();
+
+    if (t == "image") {
+        return "Image";
+    }
+    else if (t == "object") {
+        return "Object";
+    }
+    else if (t == "video") {
+        return "Video";
+    }
+    else if (t == "text") {
+        return "Text";
+    }
+    else if (t == "ghost") {
+        return "Ghost";
+    }
+    else if (t == "paragraph") {
+        return "Paragraph";
+    }
+    else if (t == "sound") {
+        return "Sound";
+    }
+    else if (t == "image3d") {
+        return "Image3D";
+    }
+    else if (t == "link") {
+        return "Link";
+    }
+    else if (t == "particle") {
+        return "Particle";
+    }
+    else if (t == "light") {
+        return "Light";
+    }
+}
+
 QString RoomObject::GetType() const
 {
     return GetS("_type");
@@ -2948,13 +2987,40 @@ QVariantMap RoomObject::GetJSONCode(const bool show_defaults) const
 QString RoomObject::GetXMLCode(const bool show_defaults) const
 {        
     const QString t = GetType();
+    const QString tagname = GetTagName();
 
-    QString code_str = QString("<") + t;
+    QString code_str = QString("<") + tagname;
 
     if (props) {
         QList <QByteArray> p = props->dynamicPropertyNames();
+
+        QList <QByteArray> list_order;
+        list_order.push_back("id");
+        list_order.push_back("js_id");
+        list_order.push_back("pos");
+        list_order.push_back("xdir");
+        list_order.push_back("ydir");
+        list_order.push_back("zdir");
+        list_order.push_back("scale");
+        list_order.push_back("col");
+        list_order.push_back("collision_id");
+        list_order.push_back("collision_scale");
+        list_order.push_back("lighting");
+        list_order.push_back("cull_face");
+        list_order.push_back("draw_order");
+
+        //60.0 - ensure specific ordering for a few key attributes
+        while (!list_order.isEmpty()) {
+            const QByteArray s = list_order.last();
+            list_order.pop_back();
+            if (p.contains(s)) {
+                p.removeAll(s);
+                p.push_front(s);
+            }
+        }
+
         for (int i=0; i<p.size(); ++i) {
-            const bool save_attrib = props->GetSaveAttribute(p[i].data(), show_defaults);
+            const bool save_attrib = props->GetSaveAttribute(p[i].data(), show_defaults) ;
     //        qDebug() << "attrib" << p[i] << save_attrib;
             if (save_attrib) {
                 code_str += QString(" ") + QString(p[i]) + "=\"" + props->GetS(p[i]) + "\"";
@@ -2996,7 +3062,7 @@ QString RoomObject::GetXMLCode(const bool show_defaults) const
         }
 
         //closing tag
-        code_str += QString("</") + t + QString(">");
+        code_str += QString("</") + tagname + QString(">");
     }
 
     return code_str;

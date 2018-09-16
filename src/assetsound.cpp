@@ -6,6 +6,7 @@ AssetSound::AssetSound() :
     default_volume(70)
 {
     SetS("_type", "assetsound");
+    SetS("_tagname", "AssetSound");
 }
 
 AssetSound::~AssetSound()

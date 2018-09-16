@@ -13,7 +13,11 @@ AndroidWebView::AndroidWebView()
     JNIUtil::CreateNewWebView(androidID());
     JNIUtil::AttachWebViewToMainLayout(androidID());
 
-    move(10000, 10000);
+#ifdef OCULUS_SUBMISSION_BUILD
+    move(0, 0);
+#else
+    move(5000,5000);
+#endif
 }
 
 AndroidWebView::~AndroidWebView()
@@ -80,14 +84,98 @@ void AndroidWebView::mouseReleaseEvent(QMouseEvent * e)
     JNIUtil::MouseReleaseWebView(androidID(), e->x(), e->y());
 }
 
+unsigned int AndroidWebView::GetCode(QKeyEvent *e) const
+{
+    unsigned int key_code;
+
+    unsigned int key = e->key();
+
+    if (key >= Qt::Key_A && key <= Qt::Key_Z) {
+        //Qt::Key_A = 0x41 = 65; AKEYCODE_A = 29
+        key_code = key - (abs(Qt::Key_A - AKEYCODE_A));
+    }
+    else if (key >= Qt::Key_0 && key <= Qt::Key_9) {
+        //Qt::Key_0 = 0x30 = 48; AKEYCODE_A = 29
+        key_code = key - (abs(Qt::Key_0 - AKEYCODE_0));
+    }
+    else if (key == Qt::Key_Backspace) {
+        key_code = AKEYCODE_DEL;
+    }
+    else if (key == Qt::Key_Alt) {
+        key_code = AKEYCODE_ALT_LEFT;
+    }
+    else if (key == Qt::Key_CapsLock) {
+        key_code = AKEYCODE_CAPS_LOCK;
+    }
+    else if (key == Qt::Key_Semicolon) {
+        key_code = AKEYCODE_SEMICOLON;
+    }
+    else if (key == Qt::Key_Apostrophe) {
+        key_code = AKEYCODE_APOSTROPHE;
+    }
+    else if (key == Qt::Key_Comma) {
+        key_code = AKEYCODE_COMMA;
+    }
+    else if (key == Qt::Key_Control) {
+        key_code = AKEYCODE_CTRL_LEFT;
+    }
+    else if (key == Qt::Key_Minus) {
+        key_code = AKEYCODE_MINUS;
+    }
+    else if (key == Qt::Key_Return) {
+        key_code = AKEYCODE_ENTER;
+    }
+    else if (key == Qt::Key_Equal) {
+        key_code = AKEYCODE_EQUALS;
+    }
+    else if (key == Qt::Key_Period) {
+        key_code = AKEYCODE_PERIOD;
+    }
+    else if (key == Qt::Key_Shift) {
+        key_code = AKEYCODE_SHIFT_LEFT;
+    }
+    else if (key == Qt::Key_Slash) {
+        key_code = AKEYCODE_SLASH;
+    }
+    else if (key == Qt::Key_Space) {
+        key_code = AKEYCODE_SPACE;
+    }
+    else if (key == Qt::Key_QuoteLeft) {
+        key_code = AKEYCODE_GRAVE;
+    }
+
+    return key_code;
+}
+
+unsigned int AndroidWebView::GetModifiers(QKeyEvent *e) const
+{
+    unsigned int mod = 0;
+    if (e->modifiers() & Qt::ShiftModifier) {
+        mod |= AMETA_SHIFT_ON;
+    }
+    if (e->modifiers() & Qt::AltModifier) {
+        mod |= AMETA_ALT_ON;
+    }
+    if (e->modifiers() & Qt::ControlModifier) {
+        mod |= AMETA_CTRL_ON;
+    }
+    return mod;
+}
+
 void AndroidWebView::keyPressEvent(QKeyEvent * e)
 {
-
+    unsigned int code = GetCode(e);
+    unsigned int modifiers = GetModifiers(e);
+    //qDebug() << "keycode" << code << (modifiers & AMETA_SHIFT_ON) << (modifiers & AMETA_ALT_ON) << (modifiers & AMETA_CTRL_ON);
+    JNIUtil::KeyPressWebView(androidID(), code, modifiers);
 }
 
 void AndroidWebView::keyReleaseEvent(QKeyEvent * e)
 {
-
+    unsigned int code = GetCode(e);
+    unsigned int modifiers = GetModifiers(e);
+    //qDebug() << "keycode" << code << (modifiers & AMETA_SHIFT_ON) << (modifiers & AMETA_ALT_ON) << (modifiers & AMETA_CTRL_ON);
+    JNIUtil::KeyReleaseWebView(androidID(), code, modifiers);
 }
 
 void AndroidWebView::wheelEvent(QWheelEvent * e)
@@ -127,7 +215,8 @@ WebHitTestResult AndroidWebView::getHitTestContent(QPoint p)
 
 bool AndroidWebView::getTextEditing()
 {
-    return false;
+    browser_focus = getHitTestContent(QPoint()).editable;
+    return browser_focus;
 }
 
 QPoint AndroidWebView::getTextCursorPosition()
@@ -315,5 +404,5 @@ void AndroidWebView::SetFocus(const bool b)
 
 bool AndroidWebView::GetFocus() const
 {
-    return false;
+    return browser_focus;
 }

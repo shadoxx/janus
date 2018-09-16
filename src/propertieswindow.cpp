@@ -688,7 +688,7 @@ void PropertiesWindow::ShowColourDialog(const bool)
 {
     if (cur_object) {
         col_dialog->setCurrentColor(cur_object->GetC("col"));
-        col_dialog->exec();
+        col_dialog->open();
     }
 }
 

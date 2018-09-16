@@ -27,17 +27,22 @@ AssetImage::AssetImage() :
     max_img_resolution(1024),    
     next_frame_time(-1)
 {
+    mutex.lock();
     SetS("_type", "assetimage");
+    SetS("_tagname", "AssetImage");
 
     InitializeImporters();
     Unload();   
 
     time.start();
+    mutex.unlock();
 }
 
 AssetImage::~AssetImage()
 {
+    mutex.lock();
     Unload();
+    mutex.unlock();
 }
 
 QPointer<BaseAssetData> AssetImage::LoadAssetImage(const QByteArray& buffer, QString extension, QPointer <DOMNode> props, bool& is_gli)
@@ -253,6 +258,7 @@ void AssetImage::CreateFromText(const QString & s, const float font_size, const 
 
 void AssetImage::Load()
 {    
+    mutex.lock();
 //    qDebug() << "AssetImage::Load()" << src_url;
     if (GetS("src").left(5) == "data:") {
         WebAsset::Load(QUrl(GetS("src")));
@@ -260,6 +266,7 @@ void AssetImage::Load()
     else {
         WebAsset::Load(QUrl(GetS("_src_url")));
     }
+    mutex.unlock();
 }
 
 void AssetImage::UnloadTextures()
@@ -532,6 +539,16 @@ bool AssetImage::GetIsHDR()
 
 void AssetImage::LoadImageDataThread()
 {
+    if (!mutex.tryLock()) {
+        SetProcessing(false);
+        return;
+    }
+
+    if (GetProcessed()) {
+        mutex.unlock();
+        return;
+    }
+
 //    qDebug() << "AssetImage::LoadImageDataThread() started" << src_url;
     QString web_asset_url = GetURL().toString();
     QString extension = web_asset_url.right(web_asset_url.size() - (web_asset_url.lastIndexOf(".") +1));
@@ -542,11 +559,14 @@ void AssetImage::LoadImageDataThread()
 
     if (textureData.isNull())
     {
+        mutex.unlock();
         return; //56.0 - we will load with gli instead (don't clear the webasset data)
     }
     ClearData();
     aspect = float(textureData->GetHeight()) / float(textureData->GetWidth());
 //    qDebug() << "AssetImage::LoadImageDataThread() completed" << src_url;
+
+    mutex.unlock();
 }
 
 void AssetImage::LoadTextures()

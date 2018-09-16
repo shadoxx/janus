@@ -94,6 +94,8 @@ private:
 
     float secs_per_frame;
     QVector <GhostFrame> frames;
+
+    QMutex mutex;
 };
 
 #endif // ASSETGHOST_H

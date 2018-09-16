@@ -18,6 +18,7 @@ import android.os.Message;
 import android.os.Vibrator;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.inputmethod.InputMethodManager;
 import android.view.Gravity;
 import android.view.Surface;
@@ -27,6 +28,7 @@ import android.view.Window;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.widget.FrameLayout;
 
@@ -108,6 +110,8 @@ public class JanusActivity extends org.qtproject.qt5.android.bindings.QtActivity
             }
 
             webViewManager = new WebViewManager(JanusActivity.this);
+
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
             View decorView = getWindow().getDecorView();
             //int uiOptions = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY| View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
@@ -250,6 +254,16 @@ public class JanusActivity extends org.qtproject.qt5.android.bindings.QtActivity
             return gearManager.getShowingVR() || gvrManager.getShowingVR();
         }
 
+        @Override
+        public void onActionModeStarted(ActionMode mode) {
+            super.onActionModeStarted(mode);
+
+            if (!getShowingVR()){
+                mode.getMenu().clear();
+                mode.getMenu().close();
+            }
+        }
+
         //============================================================================================================
         //Splash
         //============================================================================================================
@@ -346,6 +360,10 @@ public class JanusActivity extends org.qtproject.qt5.android.bindings.QtActivity
         //============================================================================================================
         //WebView
         //============================================================================================================
+
+        public String getCookie() {
+            return webViewManager.getCookie();
+        }
 
         public void createNewWebView(int tag) {
             webViewManager.createNewWebView(tag);
@@ -453,6 +471,14 @@ public class JanusActivity extends org.qtproject.qt5.android.bindings.QtActivity
 
         public void mouseReleaseWebView(int tag, int x, int y) {
             webViewManager.mouseReleaseWebView(tag,x,y);
+        }
+
+        public void keyPressWebView(int tag, int code, int state) {
+            webViewManager.keyPressWebView(tag,code,state);
+        }
+
+        public void keyReleaseWebView(int tag, int code, int state) {
+            webViewManager.keyReleaseWebView(tag,code,state);
         }
 
         public boolean getRepaintRequestedAtWebView(int tag) {

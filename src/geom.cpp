@@ -474,19 +474,24 @@ Geom::Geom() :
     uses_tex_file(false),
     cur_time(0.0),
     anim_speed(1.0f),
-    loop(false)
+    loop(false),
+    started(false)
 {
+    mutex.lock();
 //    qDebug() << "Geom::Geom()" << this;
     time.start();
     skin_joints.resize(ASSETSHADER_MAX_JOINTS);
     final_poses.resize(ASSETSHADER_MAX_JOINTS);
     iosystem = new GeomIOSystem();
+    mutex.unlock();
 }
 
 Geom::~Geom()
 {
 //    qDebug() << "Geom::~Geom()" << this;
 //    delete iosystem; //59.9 - should we delete this iosystem?  memleak if we don't
+    mutex.lock();
+    mutex.unlock();
 }
 
 void Geom::SetPath(const QString & p)
@@ -507,6 +512,11 @@ void Geom::SetReady(const bool b)
 bool Geom::GetReady() const
 {
     return ready;
+}
+
+bool Geom::GetStarted() const
+{
+    return started;
 }
 
 float Geom::GetProgress() const
@@ -687,6 +697,16 @@ bool Geom::GetHasMeshData() const
 void Geom::Load()
 {
 //    qDebug() << "Geom::Load()" << this << path;
+    if (!mutex.tryLock()) {
+        return;
+    }
+
+    if (ready){
+        mutex.unlock();
+        return;
+    }
+
+    started = true;
 
     //C++ method with IO handlers (load files from network)
     bool gzipped = false;
@@ -752,10 +772,13 @@ void Geom::Load()
     }
 
 //    qDebug() << "Geom::Load completed" << path;
+    mutex.unlock();
 }
 
 void Geom::Unload()
 {
+    mutex.lock();
+
     //iosystem.Clear();
 //    importer.FreeScene(); //called automatically by destructor
 //    scene = NULL;
@@ -764,6 +787,7 @@ void Geom::Unload()
         scene = nullptr;
     }*/
     ready = false;
+    started = false;
     error = false;
     textures_started = false;
     textures_ready = false;
@@ -777,6 +801,8 @@ void Geom::Unload()
     skin_joints.clear();
     final_poses.clear();
     bone_offset_matrix.clear();
+
+    mutex.unlock();
 }
 
 void Geom::Update()

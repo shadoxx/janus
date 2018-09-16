@@ -91,6 +91,24 @@ private:
 
 };
 
+class CEFCookieVisitor : public CefCookieVisitor
+{
+public:
+    CEFCookieVisitor();
+    bool Visit(const CefCookie& cookie, int count, int total, bool& deleteCookie);
+
+private:
+    QString StringFromCefString(cef_string_t s)
+    {
+        CefString cef_string;
+        cef_string.Attach(&s, false);
+        return QString(cef_string.ToString().c_str());
+    }
+
+public:
+    IMPLEMENT_REFCOUNTING(CEFCookieVisitor);
+};
+
 class CEFDOMVisitor : public CefDOMVisitor
 {
 public:
@@ -116,7 +134,7 @@ public:
 
 };
 
-class CEFRenderHandler : public CefRenderHandler        
+class CEFRenderHandler : public CefRenderHandler
 {
 public:
 
@@ -128,6 +146,7 @@ public:
     bool GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect);
     bool GetRootScreenRect(CefRefPtr<CefBrowser> browser, CefRect &rect);
     void OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void *buffer, int width, int height);
+
     void OnCursorChange( CefRefPtr< CefBrowser > browser, CefCursorHandle cursor );
 
 public:
@@ -138,14 +157,44 @@ private:
     std::shared_ptr<TextureHandle> m_tex_handle;
 };
 
+class CEFJSDialogHandler : public CefJSDialogHandler
+{
+public:
+    CEFJSDialogHandler();
+
+    bool OnJSDialog(CefRefPtr<CefBrowser> browser,
+                    const CefString& origin_url,
+                    JSDialogType dialog_type,
+                    const CefString& message_text,
+                    const CefString& default_prompt_text,
+                    CefRefPtr<CefJSDialogCallback> callback,
+                    bool& suppress_message);
+
+    bool OnBeforeUnloadDialog(CefRefPtr<CefBrowser> browser,
+                                      const CefString& message_text,
+                                      bool is_reload,
+                                      CefRefPtr<CefJSDialogCallback> callback);
+    void OnResetDialogState(CefRefPtr<CefBrowser> browser);
+    void OnDialogClosed(CefRefPtr<CefBrowser> browser);
+
+    QString getHitTest();
+
+public:
+    IMPLEMENT_REFCOUNTING(CefJSDialogHandler);
+
+private:
+    QString mDOMHitTestResult;
+};
+
 // for manual render handler
 class CEFBrowserClient : public CefClient
 {
 public:
-    CEFBrowserClient(CEFRenderHandler *renderHandler, CEFFocusHandler *focusHandler, CEFLifeSpanHandler *lifespanHandler)
+    CEFBrowserClient(CEFRenderHandler *renderHandler, CEFFocusHandler *focusHandler, CEFLifeSpanHandler *lifespanHandler, CEFJSDialogHandler *jsDialogHandler)
         : m_renderHandler(renderHandler),
           m_focusHandler(focusHandler),
-          m_lifespanHandler(lifespanHandler)
+          m_lifespanHandler(lifespanHandler),
+          m_JSDialogHandler(jsDialogHandler)
     {
 //        qDebug() << "CEFBrowserClient::CEFBrowserClient()" << this;
     }
@@ -164,6 +213,11 @@ public:
         return m_lifespanHandler;
     }
 
+    virtual CefRefPtr<CefJSDialogHandler> GetJSDialogHandler()
+    {
+        return m_JSDialogHandler;
+    }
+
     virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
                                           CefProcessId source_process,
                                           CefRefPtr<CefProcessMessage> message);
@@ -173,6 +227,7 @@ public:
     CefRefPtr<CEFFocusHandler> m_focusHandler;
     CefRefPtr<CEFRenderHandler> m_renderHandler;
     CefRefPtr<CEFLifeSpanHandler> m_lifespanHandler;
+    CefRefPtr<CEFJSDialogHandler> m_JSDialogHandler;
 
     QString launchurl;
 
@@ -254,11 +309,16 @@ private:
     CEFFocusHandler * focusHandler;
     CEFRenderHandler * renderHandler;
     CEFLifeSpanHandler * lifespanHandler;
+    CEFJSDialogHandler * jsDialogHandler;
     CefRefPtr<CefBrowser> browser;
     CefRefPtr<CEFBrowserClient> browserClient;
 
     bool browser_focus;
 
     static QList <CefRefPtr<CefBrowser> > browser_list;
+
+    QPointer <CookieJar> cookie_jar;
+
+    QTime hit_test_timer;
 };
 #endif // CEFWEBVIEW_H

@@ -348,6 +348,9 @@ private:
 
     static QEvent::Type keypress;
 
+    QTime deltat_time;
+    float delta_time;
+
 #ifdef __ANDROID__
     QGyroscope * gyroscope;
 

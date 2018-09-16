@@ -63,12 +63,9 @@ public:
     static QByteArray stereoToMono(QByteArray mono); // Convert a stereo WAV byte array to a mono one
 
     static const int _FRAME_SIZE;
-    static const int _MAX_FRAME_SIZE;
     static const int _SAMPLE_RATE;
     static const int _CHANNELS;
     static const int _APPLICATION;
-
-    static const int _MAX_PACKET_SIZE;
 
     static OpusEncoder * encoder;
     static OpusDecoder * decoder;

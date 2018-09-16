@@ -215,6 +215,7 @@ private:
     QMenu * ellipsisMenu;
     QPushButton * button_ellipsis;
 
+    QWidget * topbarwidget;
     QPushButton * button_back;    
     QPushButton * button_forward;
     QPushButton * button_reload;    
@@ -224,14 +225,12 @@ private:
     QPushButton * button_bookmark;
     int button_bookmark_state;
     QPointer <GLWidget> glwidget;
+    QMenu *fileMenu;
 #ifndef __ANDROID__
-    QMenu *webspaceMenu;
     QMenu *usersMenu;
-    QMenu *panelsMenu;
+    QMenu *windowMenu;
 #endif
-    QMenu *assetsMenu;
     QMenu *bookmarkMenu;
-    QMenu *viewMenu;
     QAction *newAct;
     QAction *openAct;
     QAction *saveAct;

@@ -3,8 +3,12 @@
 Asset::Asset()
 {        
     props = new DOMNode();
-    SetS("_type", "asset");        
+    SetS("_type", "asset");
+    SetS("_tagname", "Asset");
 //    qDebug() << "Asset::Asset()" << props;
+
+    //60.0 - make js_id property invalid for Assets
+    props->setProperty("js_id", QVariant());
 }
 
 void Asset::SetV(const char * name, const QVector3D p)
@@ -142,7 +146,7 @@ void Asset::SetProperties(const QVariantMap & d)
 
 QString Asset::GetXMLCode() const
 {
-    QString s = QString("<") + GetS("_type");
+    QString s = QString("<") + GetS("_tagname");
     QList <QByteArray> p = props->dynamicPropertyNames();
     for (int i=0; i<p.size(); ++i) {
         if (props->GetSaveAttribute(p[i].data(), false)) {

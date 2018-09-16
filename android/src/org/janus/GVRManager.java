@@ -118,7 +118,7 @@ public class GVRManager
             int count = 0;
             while(!gvr_setup && count < 10){
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(50);
                 } catch (Exception e) {
                 }
                 count++;

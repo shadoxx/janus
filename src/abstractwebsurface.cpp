@@ -3,6 +3,7 @@
 AbstractWebSurface::AbstractWebSurface()
 {
     SetS("_type", "assetwebsurface");
+    SetS("_tagname", "AssetWebSurface");
 }
 
 AbstractWebSurface::~AbstractWebSurface()

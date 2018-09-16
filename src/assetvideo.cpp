@@ -6,6 +6,7 @@ AssetVideo::AssetVideo() :
     default_volume(70)
 {
     SetS("_type", "assetvideo");
+    SetS("_tagname", "AssetVideo");
     SetB("sbs3d", false);
     SetB("ou3d", false);
     SetB("reverse3d", false);

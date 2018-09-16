@@ -24,9 +24,9 @@ QByteArray SoundManager::bufferdata;
 QVector <ALuint> SoundManager::buffer_input_pool;
 QList <ALuint> SoundManager::buffer_input_queue;
 
-int SoundManager::input_frequency = 44100; //used to be 24000, resulting in bad VOIP quality
-int SoundManager::input_capture_size = 2880; //1024
-int SoundManager::input_buffer_pool_size = 32;
+int SoundManager::input_frequency = 44100; //44100; //used to be 24000, resulting in bad VOIP quality
+int SoundManager::input_capture_size = 2880; //2880; //2646; //2880; //1024
+int SoundManager::input_buffer_pool_size = 128; //32
 
 float SoundManager::gain_mic = 1.0f;
 
@@ -151,7 +151,7 @@ void SoundManager::Load(QString device_id, QString capture_device_id)
 #endif
 
             buffer_input_pool = QVector<ALuint>(input_buffer_pool_size, 0);
-            bufferdata_input.resize(input_capture_size*sizeof(short));
+            bufferdata_input = QByteArray(input_capture_size*sizeof(short), '\0');
 
 #ifdef __ANDROID__
             if (sl_stream) {
@@ -532,7 +532,7 @@ void SoundManager::Update(QPointer <Player> player)
 //    }
 }
 
-QList <QByteArray> & SoundManager::GetMicBuffers()
+QList <QByteArray> SoundManager::GetMicBuffers()
 {
     return input_mic_buffers;
 }

@@ -10,7 +10,6 @@ GLWidget::GLWidget()
     counted_frames = 0;
     fps = 0;
     framerate_time.start();
-    deltat_time.start();
 
     take_screenshot = false;
     take_screenshot_cubemap = false;
@@ -638,14 +637,7 @@ void GLWidget::paintGL()
     }
 
     //int64_t t1 = JNIUtil::GetTimestampNsec();
-    game->SetDrawCursor(this->hasFocus());
-
-    //delta_t processing
-    double delta_t = 0.0;
-    if (deltat_time.elapsed() > 0) {
-        delta_t = double(deltat_time.restart()) / 1000.0;
-    }
-    game->GetPlayer()->SetF("delta_time", delta_t);
+    game->SetDrawCursor(this->hasFocus());   
     game->Update();
 
     //60.0 - note, get curroom AFTER call to update (crossportals can change it!)

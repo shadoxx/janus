@@ -10,6 +10,9 @@
 #include "abstractwebview.h"
 #include "cookiejar.h"
 
+#include <android/input.h>
+#include <android/keycodes.h>
+
 class AndroidWebView : public AbstractWebView
 {
     Q_OBJECT
@@ -31,6 +34,9 @@ public:
     virtual void mousePressEvent(QMouseEvent * e);
     virtual void mouseMoveEvent(QMouseEvent * e);
     virtual void mouseReleaseEvent(QMouseEvent * e);
+
+    unsigned int GetCode(QKeyEvent * e) const;
+    unsigned int GetModifiers(QKeyEvent * e) const;
 
     virtual void keyPressEvent(QKeyEvent * e);
     virtual void keyReleaseEvent(QKeyEvent * e);
@@ -91,6 +97,8 @@ public slots:
 
 private:
     std::shared_ptr<TextureHandle> m_tex_handle;
+
+    bool browser_focus;
 };
 
 #endif // ANDROIDWEBVIEW_H

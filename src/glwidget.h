@@ -107,9 +107,7 @@ private:
     GLsizei m_cube_face_height;
 
     QPointer <Game> game;
-    QPointer <AbstractHMDManager> hmd_manager;
-
-    QTime deltat_time;
+    QPointer <AbstractHMDManager> hmd_manager;   
 
     static bool novsync;
     static DisplayMode disp_mode;

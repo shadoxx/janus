@@ -2,6 +2,8 @@
 
 VirtualKeyboard::VirtualKeyboard() :    
     shift_modifier(false),
+    control_modifier(false),
+    alt_modifier(false),
     capslock(false),
     visible(false)
 {
@@ -143,6 +145,12 @@ void VirtualKeyboard::Update()
             if (shift_modifier && cit.value()->GetS("js_id") == "__menu_shift") {
                 cit.value()->SetAssetImage(keypress_img);
             }
+            else if (control_modifier && cit.value()->GetS("js_id") == "__menu_control") {
+                cit.value()->SetAssetImage(keypress_img);
+            }
+            else if (alt_modifier && cit.value()->GetS("js_id") == "__menu_alt") {
+                cit.value()->SetAssetImage(keypress_img);
+            }
             else if (capslock && cit.value()->GetS("js_id") == "__menu_capslock") {
                 cit.value()->SetAssetImage(keypress_img);
             }
@@ -194,6 +202,12 @@ void VirtualKeyboard::mousePressEvent(const int index)
 
     if (cur_selected[index] == envobjects["__menu_shift"]) {
         shift_modifier = !shift_modifier;
+    }
+    else if (cur_selected[index] == envobjects["__menu_control"]) {
+        control_modifier = !control_modifier;
+    }
+    else if (cur_selected[index] == envobjects["__menu_alt"]) {
+        alt_modifier = !alt_modifier;
     }
     else if (cur_selected[index] == envobjects["__menu_capslock"]) {
         capslock = !capslock;
@@ -292,7 +306,24 @@ void VirtualKeyboard::mousePressEvent(const int index)
                  key_code = 65288;
              }
 
+#ifdef __ANDROID__
+             unsigned int mod = 0;
+             if (shift_modifier || (capslock && key >= Qt::Key_A && key <= Qt::Key_Z)){
+                mod |= Qt::ShiftModifier;
+                shift_modifier = false;
+             }
+             else if (control_modifier){
+                 mod |= Qt::ControlModifier;
+                 control_modifier = false;
+             }
+             else if (alt_modifier){
+                 mod |= Qt::AltModifier;
+                 alt_modifier = false;
+             }
+             QKeyEvent e(QEvent::KeyPress, key, (Qt::KeyboardModifier) mod, 0, key_code, 0, s);
+#else
              QKeyEvent e(QEvent::KeyPress, key, Qt::NoModifier, 0, key_code, 0, s);
+#endif
              websurface->keyPressEvent(&e);
         }
     }

@@ -54,6 +54,8 @@ private:
     QHash <QString, Qt::Key> jstokeys;   
 
     bool shift_modifier;
+    bool control_modifier;
+    bool alt_modifier;
     bool capslock;
 
     bool visible;
