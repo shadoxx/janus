@@ -271,6 +271,7 @@ public:
 
     static QVector3D GetVectorFromQVariant(const QVariant v);
     static QVector4D GetVector4FromQVariant(const QVariant v);
+    static QVector4D GetColourFromQVariant(const QVariant v);
 
     static QString GetTranslatorPath();
     static QString GetApplicationPath();

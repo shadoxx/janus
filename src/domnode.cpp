@@ -79,7 +79,7 @@ DOMNode::DOMNode(QObject *parent) : QObject(parent)
     save_to_markup = true;
     primitive = false;
     locked = false;
-    interpolate = true;
+    interpolate = false; //60.1 - false by default (can push user around otherwise, e.g. pocketspace geometry)
     circular = false;
     highlighted = false;
     draw_back = false;
@@ -255,7 +255,7 @@ void DOMNode::SetProperties(const QVariantMap & d)
         SetShaderID(d["shader_id"].toString());
     }
     if (d.contains("col")) {
-        SetColour(MathUtil::GetVector4FromQVariant(d["col"]));
+        SetColour(MathUtil::GetColourFromQVariant(d["col"]));
     }
     if (d.contains("near_dist")) {
         SetNearDist(d["near_dist"].toFloat());
@@ -266,7 +266,7 @@ void DOMNode::SetProperties(const QVariantMap & d)
     if (d.contains("grab_dist")) {
         SetGrabDist(d["grab_dist"].toFloat());
     }
-    if (d.contains("fog")) {
+    if (d.contains("fog")) {        
         SetFog(d["fog"].toBool());
     }
     if (d.contains("fog_density")) {
@@ -279,7 +279,7 @@ void DOMNode::SetProperties(const QVariantMap & d)
         SetFogEnd(d["fog_end"].toFloat());
     }
     if (d.contains("fog_col")) {
-        SetFogCol(MathUtil::GetVector4FromQVariant(d["fog_col"]));
+        SetFogCol(MathUtil::GetColourFromQVariant(d["fog_col"]));
     }
     if (d.contains("fog_mode")) {
         SetFogMode(d["fog_mode"].toString());
@@ -366,11 +366,8 @@ void DOMNode::SetProperties(const QVariantMap & d)
         }
         SetXDirs(x,y,z);
     }
-    if (d.contains("col")) {
-        SetColour(MathUtil::GetVector4FromQVariant(d["col"]));
-    }
     if (d.contains("chromakey_col")) {
-        SetChromaKeyColour(MathUtil::GetVector4FromQVariant(d["chromakey_col"]));
+        SetChromaKeyColour(MathUtil::GetColourFromQVariant(d["chromakey_col"]));
     }
     if (d.contains("scale")) {
         SetScale(MathUtil::GetVectorFromQVariant(d["scale"]));
@@ -490,10 +487,10 @@ void DOMNode::SetProperties(const QVariantMap & d)
         SetFontSize(d["font_size"].toFloat());
     }
     if (d.contains("back_col")) {
-        SetBackCol(MathUtil::GetVector4FromQVariant(d["back_col"]));
+        SetBackCol(MathUtil::GetColourFromQVariant(d["back_col"]));
     }
     if (d.contains("text_col")) {
-        SetTextCol(MathUtil::GetVector4FromQVariant(d["text_col"]));
+        SetTextCol(MathUtil::GetColourFromQVariant(d["text_col"]));
     }
     if (d.contains("back_alpha")) {
         SetBackAlpha(d["back_alpha"].toFloat());

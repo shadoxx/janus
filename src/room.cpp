@@ -601,6 +601,7 @@ void Room::BindShader(QPointer <AssetShader> shader)
     shader->SetFogColour(MathUtil::GetVector4AsColour(props->GetFogCol()->toQVector4D()));
     shader->SetUseLighting(false);
     shader->SetPlayerPosition(player_pos_trans);    
+//    qDebug() << "roombindshader" << props->GetFog() << fog_mode << props->GetFogDensity() << props->GetFogStart() << props->GetFogEnd() << MathUtil::GetVector4AsColour(props->GetFogCol()->toQVector4D());
 
     shader->UpdateFrameUniforms();
     shader->UpdateObjectUniforms();
@@ -713,7 +714,7 @@ void Room::BindCubemaps(QPointer <AssetShader> shader)
         if (has_valid_cubemap
             && (!has_radiance_cubemap || !has_irradiance_cubemap)
             && current_processing_state == PROCESSING_STATE::INVALID)
-        {
+        {            
             QString room_url_md5_string = QString::number(room_url_md5);
             QString room_save_filename = GetSaveFilename();
             bool is_room_local = QFileInfo(room_save_filename).exists();
@@ -1393,7 +1394,8 @@ void Room::UpdateObjects(QPointer <Player> player, MultiPlayerManager *multi_pla
             if (a) {
                 ++nObjects;
                 progress += a->GetProgress();
-                if (!a->GetFinished()) {
+                if (!a->GetFinished() && !a->GetError()) {
+//                    qDebug() << "WAITING ON" << a->GetProperties()->GetID() << a->GetProperties()->GetTypeAsString() << a->GetFinished() << a->GetError();
                     is_room_ready = false;
                     is_room_ready_for_screenshot = false;
                 }
@@ -1408,7 +1410,7 @@ void Room::UpdateObjects(QPointer <Player> player, MultiPlayerManager *multi_pla
             if (a) {
                 ++nImages;
                 progress += a->GetProgress();
-                if (!a->GetFinished()) {
+                if (!a->GetFinished() && !a->GetError()) {
                     is_room_ready_for_screenshot = false;
                 }
 //                qDebug() << "image" << a->GetProperty("src") << a->GetFinished();
@@ -1542,11 +1544,14 @@ void Room::UpdateJS(QPointer <Player> player)
 {    
     bool all_scripts_ready = (!assetscripts.isEmpty() && GetProcessed());
     const QVector3D d = player->GetProperties()->GetDir()->toQVector3D();
+//    qDebug() << "Room::UpdateJS()" << assetscripts.size();
     for (QPointer <AssetScript> & script : assetscripts) {
         if (script) {
             script->Update();
             LogErrorOnException();
 //            qDebug() << "Room::UpdateJS evaluating" << script->GetS("src");
+
+//            qDebug() << "Room::UpdateJS" << script->GetFinished() << script->GetOnLoadInvoked();
 
             if (script->GetFinished()) {
 
@@ -1560,6 +1565,7 @@ void Room::UpdateJS(QPointer <Player> player)
                 }
                 else {
 //                    qDebug() << " calling update";
+//                    qDebug() << "setdeltatime" << (int)(player->GetDeltaTime()* 1000);
                     QList<QPointer <RoomObject> > objectsAdded = script->DoRoomUpdate(envobjects, player, QScriptValueList() << (int)(player->GetDeltaTime()* 1000));
                     LogErrorOnException();
                     AddRoomObjects(objectsAdded);
@@ -2333,16 +2339,16 @@ void Room::SaveXML(QTextStream & ofs)
     if (entrance_object) {
 //        qDebug() << "Room::SaveFireBoxRoom() - saving" << entrance_object << entrance_object->GetPos();
         if (entrance_object->GetPos() != QVector3D(0,0,0)) {
-            ofs << " pos=" << MathUtil::GetVectorAsString(entrance_object->GetPos(), false);
+            ofs << " pos=" << MathUtil::GetVectorAsString(entrance_object->GetPos(), true);
         }
         if (entrance_object->GetXDir() != QVector3D(1,0,0)) {
-            ofs << " xdir=" << MathUtil::GetVectorAsString(entrance_object->GetXDir(), false);
+            ofs << " xdir=" << MathUtil::GetVectorAsString(entrance_object->GetXDir(), true);
         }
         if (entrance_object->GetYDir() != QVector3D(0,1,0)) {
-            ofs << " ydir=" << MathUtil::GetVectorAsString(entrance_object->GetYDir(), false);
+            ofs << " ydir=" << MathUtil::GetVectorAsString(entrance_object->GetYDir(), true);
         }
         if (entrance_object->GetZDir() != QVector3D(0,0,1)) {
-            ofs << " zdir=" << MathUtil::GetVectorAsString(entrance_object->GetZDir(), false);
+            ofs << " zdir=" << MathUtil::GetVectorAsString(entrance_object->GetZDir(), true);
         }
     }
 
@@ -2430,7 +2436,7 @@ void Room::SaveXML(QTextStream & ofs)
         ofs << " fog_end=\"" << MathUtil::GetNumber(props->GetFogEnd()) << "\"";
     }
     if (MathUtil::GetVector4AsColour(props->GetFogCol()->toQVector4D()) != QColor(0, 0, 0)) {
-        ofs << " fog_col=" << MathUtil::GetColourAsString(MathUtil::GetVector4AsColour(props->GetFogCol()->toQVector4D()));
+        ofs << " fog_col=" << MathUtil::GetColourAsString(MathUtil::GetVector4AsColour(props->GetFogCol()->toQVector4D()), true);
     }
     if (props->GetTeleportMinDist() != 0.0f) {
         ofs << " teleport_min_dist=\"" << MathUtil::GetNumber(props->GetTeleportMinDist()) << "\"";
@@ -2442,7 +2448,7 @@ void Room::SaveXML(QTextStream & ofs)
         ofs << " shader_id=\"" << props->GetShaderID() << "\"";
     }
     if (props->GetResetVolume().first != QVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX) && props->GetResetVolume().second != QVector3D(-FLT_MAX, -100.0f, -FLT_MAX)) {
-        ofs << " reset_volume=" << MathUtil::GetAABBAsString(props->GetResetVolume());
+        ofs << " reset_volume=" << MathUtil::GetAABBAsString(props->GetResetVolume(), true);
     }
 
     ofs << ">\n";

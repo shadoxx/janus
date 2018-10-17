@@ -1625,6 +1625,9 @@ void MainWindow::DoOpenURL(const QString url)
     else if (s.toLower() == "home") {
         s = SettingsManager::GetLaunchURL();
     }
+    else if (s.toLower() == "bookmarks" || s.toLower() == "workspaces") {
+
+    }
     else if (s.left(4).toLower() != "http") {
         s = "http://" + s;
     }

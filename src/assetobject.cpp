@@ -90,7 +90,7 @@ void AssetObject::SetMTLFile(const QString & mtl)
 
 void AssetObject::Load()
 {   
-//    qDebug() << "AssetObject::Load()" << src_url;
+//    qDebug() << "AssetObject::Load()" << props->GetSrcURL();
     SetStarted(true);
 
     for (int i=0; i<tex_url_str.size(); ++i) {
@@ -106,6 +106,10 @@ void AssetObject::Load()
     }
     else {
         qDebug() << "AssetObject::Load() ERROR: Tried to load with an empty url" << props->GetID() << props->GetSrc();
+        SetLoaded(true);
+        SetProcessed(true);
+        SetFinished(true);
+        this->SetStatusCode(404);
     }
 }
 
@@ -280,6 +284,6 @@ int AssetObject::GetNumTris()
 float AssetObject::GetProgress()
 {        
 //    qDebug() << "AssetObject::GetProgress()" << this << this->GetS("src") << geom->GetProgress() << geom->GetTextureProgress();
-    return (geom->GetProgress() + geom->GetTextureProgress()) * 0.5f;
+    return GetError() ? 1.0f : ((geom->GetProgress() + geom->GetTextureProgress()) * 0.5f);
 }
 

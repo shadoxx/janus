@@ -3270,7 +3270,7 @@ QString RoomObject::GetXMLCode(const bool show_defaults) const
         code_str += " auto_play=" + MathUtil::GetBoolAsString(props->GetAutoPlay());
     }
     if ((t == TYPE_OBJECT || t == TYPE_GHOST) && (show_defaults || props->GetCullFace() != "back")) {
-        code_str += " cull_face=" + props->GetCullFace();
+        code_str += " cull_face=" + MathUtil::GetStringAsString(props->GetCullFace());
     }
     if (t != TYPE_OBJECT && (show_defaults || props->GetPlayOnce())) {
         code_str += " play_once=" + MathUtil::GetBoolAsString(props->GetPlayOnce());
@@ -4627,6 +4627,9 @@ void RoomObject::DrawGhostUserIDChat(QPointer <AssetShader> shader)
     m.setRow(3, QVector4D(0,0,0,1));
     MathUtil::LoadModelMatrix(m);
 
+    //disable active textures
+//    shader->SetUseTextureAll(false);
+
     //draw grey box
     MathUtil::PushModelMatrix();
     MathUtil::ModelMatrix().scale(width, height, 1);
@@ -4659,7 +4662,7 @@ void RoomObject::DrawGhostUserIDChat(QPointer <AssetShader> shader)
     MathUtil::MultModelMatrix(textgeom_player_id->GetModelMatrix());
     textgeom_player_id->DrawGL(shader);
 
-    //draw speaker if talking
+    //draw speaker if talking    
     if (ghost_frame.speaking && sound_img) {
         MathUtil::ModelMatrix().translate(-width*0.5f -1.0f,0,0);
         MathUtil::ModelMatrix().scale(2.0f, 2.0f, 1.0f);

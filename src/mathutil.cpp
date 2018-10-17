@@ -1161,6 +1161,12 @@ QVector4D MathUtil::GetVector4FromQVariant(const QVariant v)
     return (v0 ? v0->toQVector4D() : GetStringAsVector4(v.toString()));
 }
 
+QVector4D MathUtil::GetColourFromQVariant(const QVariant v)
+{
+    ScriptableVector * v0 = qvariant_cast<ScriptableVector *>(v);
+    return (v0 ? (v0->toQVector4D()) : MathUtil::GetColourAsVector4(GetStringAsColour(v.toString())));
+}
+
 QVector3D MathUtil::GetStringAsVector(const QString & s)
 {
     QString s2 = s.trimmed();

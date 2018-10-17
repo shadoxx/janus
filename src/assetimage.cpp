@@ -263,7 +263,16 @@ void AssetImage::Load()
         WebAsset::Load(QUrl(props->GetSrc()));
     }
     else {
-        WebAsset::Load(QUrl(props->GetSrcURL()));
+        if (props->GetSrcURL().isEmpty()) {
+            qDebug() << "AssetImage::Load() ERROR: Tried to load with an empty url" << props->GetID() << props->GetSrc();
+            SetLoaded(true);
+            SetProcessed(true);
+            SetFinished(true);
+            this->SetStatusCode(404);
+        }
+        else {
+            WebAsset::Load(QUrl(props->GetSrcURL()));
+        }
     }
     mutex.unlock();
 }

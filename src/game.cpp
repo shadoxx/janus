@@ -311,7 +311,7 @@ void Game::Update()
     if (deltat_time.elapsed() > 0) {
         delta_time = double(deltat_time.restart()) / 1000.0;
     }
-    player->SetDeltaTime(delta_time);
+    player->SetDeltaTime(delta_time);    
 
     //deallocation includes opengl delete calls
     if (!do_exit) {
@@ -3037,13 +3037,13 @@ void Game::UpdateOverlays()
                 info_text_geom.AddText(QString(" collision_scale=\"") + MathUtil::GetVectorAsString(obj->GetProperties()->GetCollisionScale()->toQVector3D()) + "\"", QColor(0,255,0));
             }
             else if (state == JVR_STATE_UNIT_LIGHTING) {
-                info_text_geom.AddText(QString(" lighting=\"") + obj->GetProperties()->GetLighting() + "\"", QColor(0,255,0));
+                info_text_geom.AddText(QString(" lighting=") + MathUtil::GetBoolAsString(obj->GetProperties()->GetLighting()), QColor(0,255,0));
             }
             else if (state == JVR_STATE_UNIT_CULL_FACE) {
                 info_text_geom.AddText(QString(" cull_face=\"") + obj->GetProperties()->GetCullFace() + "\"", QColor(0,255,0));
             }
             else if (state == JVR_STATE_UNIT_MIRROR) {
-                info_text_geom.AddText(QString(" mirror=\"") + obj->GetProperties()->GetMirror() + "\"", QColor(0,255,0));
+                info_text_geom.AddText(QString(" mirror=") + MathUtil::GetBoolAsString(obj->GetProperties()->GetMirror()), QColor(0,255,0));
             }
 
             if (obj->GetType() == TYPE_TEXT) {

@@ -53,6 +53,7 @@ public:
     float GetProgress() const;
 
     bool GetError() const;
+    void SetStatusCode(const int s);
     int GetStatusCode() const;
     QString GetErrorString() const;
 
