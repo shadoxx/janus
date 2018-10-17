@@ -135,7 +135,7 @@ void CodeEditorWindow::Update()
                     textedits[i]->setPlainText("Loading...");
                 }
 
-                tabwidget->addTab(textedits[i], a->GetS("src"));
+                tabwidget->addTab(textedits[i], a->GetProperties()->GetSrc());
             }
         }
 
@@ -207,7 +207,7 @@ void CodeEditorWindow::SlotSaveChanges()
                 }
                 a->SetJSCode(textedits[i]->toPlainText());
 
-                const QString js_filename = QUrl(a->GetS("_src_url")).toLocalFile();
+                const QString js_filename = QUrl(a->GetProperties()->GetSrcURL()).toLocalFile();
 
     //            qDebug() << "a->GetFullURL();" << a->GetFullURL() << js_filename;
                 QFile file(js_filename);

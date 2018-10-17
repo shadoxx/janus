@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 # Define version
-__VERSION=60.0
+__VERSION=60.1
 
 #JamesMcCrae: define this when doing Oculus-submitted builds (either for Rift of GearVR app categories)
 #DEFINES += OCULUS_SUBMISSION_BUILD
@@ -46,9 +46,6 @@ CONFIG(release, debug|release) {
 
 QT       += core opengl gui network xml script scripttools websockets
 
-#!android {
-#    QT += webengine webenginewidgets
-#}
 android{
     QT += androidextras sensors
 }

@@ -3,8 +3,7 @@
 AssetObject::AssetObject()
 {    
 //    qDebug() << "AssetObject::AssetObject" << props;
-    SetS("_type", "assetobject");
-    SetS("_tagname", "AssetObject");
+    props->SetType(TYPE_ASSETOBJECT);
     geom = new Geom();
     tex_url_str = QVector <QString> (ASSETSHADER_NUM_TEXTURES, QString(""));    
     img_error = 0;       
@@ -79,14 +78,14 @@ void AssetObject::SetTextureFile(const QString & tex, const unsigned int index)
     //qDebug() << "AssetObject::SetTextureFile() - URL" << tex;
     if (index < ASSETSHADER_NUM_TEXTURES && tex.length() > 0) {
         geom->SetUsesTexFile(true);
-        tex_url_str[index] = QUrl(GetS("_base_url")).resolved(tex).toString();
+        tex_url_str[index] = QUrl(props->GetBaseURL()).resolved(tex).toString();
     }
 }
 
 void AssetObject::SetMTLFile(const QString & mtl)
 {    
-    SetS("mtl", mtl);
-    geom->SetMTLFile(QUrl(GetS("_base_url")).resolved(mtl).toString());
+    props->SetMTL(mtl);
+    geom->SetMTLFile(QUrl(props->GetBaseURL()).resolved(mtl).toString());
 }
 
 void AssetObject::Load()
@@ -101,12 +100,12 @@ void AssetObject::Load()
         }
     }
 
-    geom->SetPath(GetS("_src_url"));
-    if ((!GetS("_src_url").isEmpty() || geom->GetHasMeshData()) && !geom->GetStarted()) {
+    geom->SetPath(props->GetSrcURL());
+    if ((!props->GetSrcURL().isEmpty() || geom->GetHasMeshData()) && !geom->GetStarted()) {
         QtConcurrent::run(geom.data(), &Geom::Load);
     }
     else {
-        qDebug() << "AssetObject::Load() ERROR: Tried to load with an empty url" << GetS("id") << GetS("src");
+        qDebug() << "AssetObject::Load() ERROR: Tried to load with an empty url" << props->GetID() << props->GetSrc();
     }
 }
 
@@ -123,7 +122,7 @@ bool AssetObject::UpdateGL()
 void AssetObject::Update()
 {
     if (geom) {
-        if ((!GetS("_src_url").isEmpty() || geom->GetHasMeshData()) && !geom->GetStarted()) {
+        if ((!props->GetSrcURL().isEmpty() || geom->GetHasMeshData()) && !geom->GetStarted()) {
             QtConcurrent::run(geom.data(), &Geom::Load);
         }
         geom->Update();
@@ -142,7 +141,7 @@ void AssetObject::DrawGL(QPointer <AssetShader> shader, const QColor col, const 
 
         if (img_error.isNull()) {
             img_error = new AssetImage();
-            img_error->CreateFromText(QString("<p align=\"center\">error loading: ") + GetS("_src_url") + QString("</p>"), 24, true, QColor(255,128,192), QColor(25,25,128), 1.0f, 256, 256, true);
+            img_error->CreateFromText(QString("<p align=\"center\">error loading: ") + props->GetSrcURL() + QString("</p>"), 24, true, QColor(255,128,192), QColor(25,25,128), 1.0f, 256, 256, true);
         }
 
         shader->SetUseTextureAll(false);

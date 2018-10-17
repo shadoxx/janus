@@ -307,7 +307,7 @@ QWidget * SettingsWindow::GetDeveloperWidget()
 
 void SettingsWindow::Update()
 {
-    lineedit_userid->setText(game->GetPlayer()->GetS("userid"));
+    lineedit_userid->setText(game->GetPlayer()->GetProperties()->GetUserID());
     lineedit_customportalshader->setText(game->GetMultiPlayerManager()->GetCustomPortalShader());
     checkbox_editmode->setChecked(SettingsManager::GetEditModeEnabled());
     checkbox_editmodeicons->setChecked(SettingsManager::GetEditModeIconsEnabled());

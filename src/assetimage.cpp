@@ -28,8 +28,7 @@ AssetImage::AssetImage() :
     next_frame_time(-1)
 {
     mutex.lock();
-    SetS("_type", "assetimage");
-    SetS("_tagname", "AssetImage");
+    props->SetType(TYPE_ASSETIMAGE);
 
     InitializeImporters();
     Unload();   
@@ -260,11 +259,11 @@ void AssetImage::Load()
 {    
     mutex.lock();
 //    qDebug() << "AssetImage::Load()" << src_url;
-    if (GetS("src").left(5) == "data:") {
-        WebAsset::Load(QUrl(GetS("src")));
+    if (props->GetSrc().left(5) == "data:") {
+        WebAsset::Load(QUrl(props->GetSrc()));
     }
     else {
-        WebAsset::Load(QUrl(GetS("_src_url")));
+        WebAsset::Load(QUrl(props->GetSrcURL()));
     }
     mutex.unlock();
 }
@@ -402,7 +401,7 @@ void AssetImage::DrawSelectedGL(QPointer <AssetShader> shader)
 
 bool AssetImage::GetIsStereoImage()
 {
-     return (GetB("sbs3d") || GetB("ou3d"));
+     return (props->GetSBS3D() || props->GetOU3D());
 }
 
 // this should be pretty much equal to assetobject::DrawGL
@@ -585,14 +584,14 @@ void AssetImage::LoadTextures()
     }
     else if (!GetFinished() && !GetError() && load_gli) {
         // temporary path for loading gli textures
-        const bool tex_linear = props->GetB("tex_linear");
-        const bool tex_mipmap = props->GetB("tex_mipmap");
-        const bool tex_clamp = props->GetB("tex_clamp");
+        const bool tex_linear = props->GetTexLinear();
+        const bool tex_mipmap = props->GetTexMipmap();
+        const bool tex_clamp = props->GetTexClamp();
         TextureHandle::ALPHA_TYPE tex_alpha = TextureHandle::ALPHA_TYPE::UNDEFINED;
-        QString const tex_alpha_string = props->GetS("tex_alpha");
+        QString const tex_alpha_string = props->GetTexAlpha();
 
         TextureHandle::COLOR_SPACE tex_colorspace = TextureHandle::COLOR_SPACE::SRGB;
-        QString const tex_colorspace_string = props->GetS("tex_colorspace");
+        QString const tex_colorspace_string = props->GetTexColorspace();
 
         if (tex_colorspace_string.contains("sRGB")) {
             tex_colorspace = TextureHandle::COLOR_SPACE::SRGB;

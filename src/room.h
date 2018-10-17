@@ -54,29 +54,9 @@ public:
 
     void SetProperties(const QVariantMap & d);
     void SetProperties(QPointer <DOMNode> props);
-    QPointer <DOMNode> GetProperties();
+    QPointer <DOMNode> GetProperties();   
 
-    void SetV(const char * name, QVector3D v);
-    QVector3D GetV(const char * name) const;
-
-    void SetV4(const char * name, QVector4D v);
-    QVector4D GetV4(const char * name) const;
-
-    void SetF(const char * name, float v);
-    float GetF(const char * name) const;
-
-    void SetI(const char * name, int v);
-    int GetI(const char * name) const;
-
-    void SetB(const char * name, bool v);
-    bool GetB(const char * name) const;
-
-    void SetS(const char * name, QString v);
-    QString GetS(const char * name) const;
-
-    void SetC(const char * name, QColor v);
-    QColor GetC(const char * name) const;
-
+    void SetRoomTemplate(const QString & name);
     QPointer <RoomTemplate> GetRoomTemplate() const;
 
     QString GetSaveFilename() const;
@@ -309,7 +289,7 @@ private:
 
     void AddPrimitiveAssetObjects();
 
-    void SetAllObjects(const char * name, const bool b);
+    void SetAllObjectsLocked(const bool b);
 
     void LogErrorOnException();   
 
@@ -358,6 +338,8 @@ private:
 
     QMatrix4x4 player_lastxform;
 
+    QString room_template;
+
     //Connections
     QPointer <RoomObject> entrance_object;
     QPointer <RoomObject> parent_object;
@@ -366,8 +348,7 @@ private:
     QList <QPointer <Room> > children; //my children nodes
     QPointer <Room> last_child; //last visited child node
 
-    bool scripts_ready;
-    bool custom_elements_processed;
+    bool scripts_ready;    
 
     //statics    
     static QList <QPointer <AssetSkybox> > skyboxes;    

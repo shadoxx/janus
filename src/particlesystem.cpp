@@ -26,7 +26,7 @@ void ParticleSystem::Update(QPointer <DOMNode> props, const double dt_sec)
         return;
     }
 
-    const int count = props->GetI("count");
+    const int count = props->GetCount();
     if (particles.size() < count)
 	{
         particles = QVector<Particle>(count);
@@ -38,10 +38,10 @@ void ParticleSystem::Update(QPointer <DOMNode> props, const double dt_sec)
     }
 
     const int msec_passed = p_time.elapsed();
-    const int target_emitted = int(double(props->GetI("rate")) * double(msec_passed) * 0.001);
+    const int target_emitted = int(double(props->GetRate()) * double(msec_passed) * 0.001);
     const int start_emitted = p_emitted;
-    const int msec_lifetime = props->GetF("duration") * 1000;
-    const bool loop = props->GetB("loop");
+    const int msec_lifetime = props->GetDuration() * 1000;
+    const bool loop = props->GetLoop();
 
     //56.0 - if emitting via a mesh, it must be ready
     if (emitter_mesh && emitter_mesh->GetGeom() && !emitter_mesh->GetGeom()->GetReady())
@@ -59,8 +59,8 @@ void ParticleSystem::Update(QPointer <DOMNode> props, const double dt_sec)
 	uint32_t const elements_per_color = 4;
     m_colors.resize(vert_count * elements_per_color); // rgba
 
-    const float fadein = props->GetF("fade_in");
-    const float fadeout = props->GetF("fade_out");
+    const float fadein = props->GetFadeIn();
+    const float fadeout = props->GetFadeOut();
 
     const bool emit_local = (props->property("emit_local").toString().toLower() == "true");
 
@@ -96,17 +96,17 @@ void ParticleSystem::Update(QPointer <DOMNode> props, const double dt_sec)
                 else
                 {
                     if (emit_local) {
-                        p.pos = MathUtil::GetRandomValue(props->GetV("rand_pos"));
+                        p.pos = MathUtil::GetRandomValue(props->GetRandPos()->toQVector3D());
                     }
                     else {
-                        p.pos = props->GetV("pos") + MathUtil::GetRandomValue(props->GetV("rand_pos"));
+                        p.pos = props->GetPos()->toQVector3D() + MathUtil::GetRandomValue(props->GetRandPos()->toQVector3D());
                     }
                 }
 
-                p.vel = props->GetV("vel") + MathUtil::GetRandomValue(props->GetV("rand_vel"));
-                p.accel = props->GetV("accel") + MathUtil::GetRandomValue(props->GetV("rand_accel"));
-                const QColor c = props->GetC("col");
-                const QColor c2 = props->GetC("rand_col");
+                p.vel = props->GetVel()->toQVector3D() + MathUtil::GetRandomValue(props->GetRandVel()->toQVector3D());
+                p.accel = props->GetAccel()->toQVector3D() + MathUtil::GetRandomValue(props->GetRandAccel()->toQVector3D());
+                const QColor c = MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D());
+                const QColor c2 = MathUtil::GetVector4AsColour(props->GetRandColour()->toQVector4D());
 
                 const QVector3D cv = QVector3D(c.redF(), c.greenF(), c.blueF()) + MathUtil::GetRandomValue(QVector3D(c2.redF(), c2.greenF(), c2.blueF()));
 
@@ -114,7 +114,7 @@ void ParticleSystem::Update(QPointer <DOMNode> props, const double dt_sec)
                               qMin(qMax(0.0f, cv.y()), 1.0f),
                               qMin(qMax(0.0f, cv.z()), 1.0f));
                 p.col.setAlphaF(0.0f);
-                p.scale = props->GetV("scale") + MathUtil::GetRandomValue(props->GetV("rand_scale"));
+                p.scale = props->GetScale()->toQVector3D() + MathUtil::GetRandomValue(props->GetRandScale()->toQVector3D());
                 p.active = 1;
                 p.lifetime.start();
                 if (target_emitted <= start_emitted) {

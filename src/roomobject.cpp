@@ -30,7 +30,7 @@ RoomObject::RoomObject() :
 {
     ++objects_allocated;
 
-    SetType("object");
+    SetType(TYPE_OBJECT);
     last_rotation = QVector3D(0,0,0);
     selected = false;    
     tex_width = 1024;
@@ -58,9 +58,8 @@ RoomObject::RoomObject() :
     assetobject_teleport = 0;    
     ghost_frame_index = -1; //49.50 ensures ghosts always load, even for single-frame animations where the frameindex = 0
 
-    interpolate = false;
     interp_val = 1.0f;
-    interp_time = 0.2f;
+    interp_time = 0.1f;
     interp_timer.start();
 
     particle_system = new ParticleSystem();
@@ -105,6 +104,11 @@ RoomObject::~RoomObject()
     if (props) {
         delete props;
     }
+}
+
+QPointer <DOMNode> RoomObject::GetProperties()
+{
+    return props;
 }
 
 void RoomObject::Clear()
@@ -154,7 +158,7 @@ void RoomObject::Clear()
     assetshader.clear();
     // TYPE_PARAGRAPH creates it's own assetimage separate from the usual asset creation pipeline
     // so in this edge-case we need to delete the assetimage to stop it leaking.
-    if (GetType() == "paragraph" && assetimage) {
+    if (GetType() == TYPE_PARAGRAPH && assetimage) {
         delete assetimage;
     }
     assetimage.clear();
@@ -202,7 +206,7 @@ void RoomObject::initializeGL()
 {
     if (linear_gradient_img.isNull()) {
         linear_gradient_img = QPointer<AssetImage>(new AssetImage());
-        linear_gradient_img->SetB("tex_clamp", true);
+        linear_gradient_img->GetProperties()->SetTexClamp(true);
         linear_gradient_img->SetSrc(MathUtil::GetApplicationURL(), "assets/linear_gradient.png");
         linear_gradient_img->Load();
     }
@@ -297,75 +301,31 @@ void RoomObject::initializeGL()
 #endif
 }
 
-QPointer<DOMNode> RoomObject::GetProperties()
-{
-    return props;
-}
-
-void RoomObject::SetType(const QString t)
+void RoomObject::SetType(const ElementType t)
 {
 //    qDebug() << "RoomObject::SetType" << t;
-    SetS("_type", t);   
+    props->SetType(t);
 
-    if (t == "link") {
-        SetV("scale", QVector3D(1.8f, 2.5f, 1.0f));
+    if (t == TYPE_LINK) {
+        props->SetScale(QVector3D(1.8f, 2.5f, 1.0f));
 
         //portals
         if (portal_text.isNull()) {
             portal_text = new RoomObject();
-            portal_text->SetType("paragraph");
-            portal_text->SetF("back_alpha", 0.0f);
-            portal_text->SetI("font_size", 32);
-            portal_text->SetV("pos", QVector3D(0.0f, 0.0f, 0.0f));
-            portal_text->SetDir(QVector3D(0.0f, 0.0f, 1.0f));
-            portal_text->SetB("lighting", false);
+            portal_text->SetType(TYPE_PARAGRAPH);
+            portal_text->GetProperties()->SetBackAlpha(0.0f);
+            portal_text->GetProperties()->SetFontSize(32);
+            portal_text->GetProperties()->SetPos(QVector3D(0.0f, 0.0f, 0.0f));
+            portal_text->GetProperties()->SetDir(QVector3D(0.0f, 0.0f, 1.0f));
+            portal_text->GetProperties()->SetLighting(false);
         }
     }
 //    qDebug() << "RoomObject::SetType"  << GetJSID() << GetID() << "allocated" << objects_allocated << "type" << GetType();
 }
 
-QString RoomObject::GetTagName() const
+ElementType RoomObject::GetType() const
 {
-    const QString t = GetType();
-
-    if (t == "image") {
-        return "Image";
-    }
-    else if (t == "object") {
-        return "Object";
-    }
-    else if (t == "video") {
-        return "Video";
-    }
-    else if (t == "text") {
-        return "Text";
-    }
-    else if (t == "ghost") {
-        return "Ghost";
-    }
-    else if (t == "paragraph") {
-        return "Paragraph";
-    }
-    else if (t == "sound") {
-        return "Sound";
-    }
-    else if (t == "image3d") {
-        return "Image3D";
-    }
-    else if (t == "link") {
-        return "Link";
-    }
-    else if (t == "particle") {
-        return "Particle";
-    }
-    else if (t == "light") {
-        return "Light";
-    }
-}
-
-QString RoomObject::GetType() const
-{
-    return GetS("_type");
+    return props->GetType();
 }
 
 void RoomObject::SetProperties(QPointer<DOMNode> props)
@@ -375,48 +335,23 @@ void RoomObject::SetProperties(QPointer<DOMNode> props)
 
 void RoomObject::SetProperties(QVariantMap d)
 {
-    if (d.contains("js_id") && d["js_id"].toString().isEmpty()) {
-        d.remove("js_id");
+    if (d.contains("url")) {
+        SetURL(props->GetURL(), d["url"].toString());
+    }
+    if (d.contains("head_pos")) {
+        SetHeadAvatarPos(MathUtil::GetVectorFromQVariant(d["head_pos"])); //56.0 - bugfix @attention joseph, head_pos in markup set's avatar_head_pos (confusing, I know)
+    }
+    if (d.contains("userid_pos")) {
+        SetUserIDPos(MathUtil::GetVectorFromQVariant(d["userid_pos"]));
     }
 
-//    qDebug() << "RoomObject::SetProperties" << this << d;
-    QVariantMap::const_iterator it;
-    for (it=d.begin(); it!=d.end(); ++it) {
-//        qDebug() << " " << it.key() << it.value().toString();
-        const QString key = it.key().trimmed().toLower();
-        if (!key.isEmpty()) {
-            //59.13 - hack to support ScriptableVector
-            if (props) {
-                if (!props->property(key.toLatin1().data()).isNull() && props->property(key.toLatin1().data()).value<ScriptableVector*>()) {
-                    const QString values = it.value().toString().trimmed();
-                    const QStringList splitvals = values.split(" ");
-                    if (splitvals.size() >= 4) {
-                        SetV4(key.toLatin1().data(), MathUtil::GetStringAsVector4(values));
-                    }
-                    else if (splitvals.size() >= 3) {
-                        SetV(key.toLatin1().data(), MathUtil::GetStringAsVector(values));
-                    }
-                }
-                else {
-                    props->setProperty(key.toLatin1().data(), it.value());
-                }
-            }
-        }
-    }
-
-    if (d.contains("fwd")) {
-        SetDir(MathUtil::GetStringAsVector(d["fwd"].toString()));
-    }
-    SetXDirs(GetV("xdir"), GetV("ydir"), GetV("zdir"));
-    if (d.contains("text") || d.contains("innertext")) {
-        SetB("_text_changed", true);
-    }
+    props->SetProperties(d);
 }
 
 bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVector3D> & int_verts, QList <QVector3D> & int_normals, QList <QVector2D> & int_texcoords)
 {
 //    qDebug() << "RoomObject::GetRaycastIntersection" << this->GetID() << this->GetCollisionID();
-    const bool visible = GetB("visible");
+    const bool visible = props->GetVisible();
     const bool edit_mode_enabled = SettingsManager::GetEditModeEnabled();
     const bool edit_mode_icons_enabled = SettingsManager::GetEditModeIconsEnabled();
     const QVector3D ray_p = transform.column(3).toVector3D();
@@ -424,8 +359,8 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
 
     QList <QVector3D> int_pts;
 
-    const QString t = GetType();
-    if (t == "sound" || t == "light" || t == "particle") {
+    const ElementType t = GetType();
+    if (t == TYPE_SOUND || t == TYPE_LIGHT || t == TYPE_PARTICLE) {
         if (edit_mode_enabled && edit_mode_icons_enabled) {
             //manip handle sphere test
             Sphere3D s;
@@ -449,7 +384,7 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
             }
         }
     }
-    else if (t == "object") {
+    else if (t == TYPE_OBJECT) {
         //other tests
         QPointer <AssetObject> obj;
 
@@ -458,7 +393,7 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
         if (assetobject_teleport) {
             obj = assetobject_teleport;
         }
-        else if (assetobject && visible && (GetS("websurface_id").length() > 0 || GetS("video_id").length() > 0)) {
+        else if (assetobject && visible && (props->GetWebsurfaceID().length() > 0 || props->GetVideoID().length() > 0)) {
             obj = assetobject;
         }
         else if (assetobject_collision) {
@@ -475,8 +410,8 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
 
             if (do_collider_transform)
             {
-                const QVector3D cp = GetV("collision_pos");
-                const QVector3D cs = GetV("collision_scale");
+                const QVector3D cp = props->GetCollisionPos()->toQVector3D();
+                const QVector3D cs = props->GetCollisionScale()->toQVector3D();
                 model_matrix.translate(cp.x(), cp.y(), cp.z());
                 model_matrix.scale(cs.x(), cs.y(), cs.z());
             }
@@ -586,7 +521,7 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
         }
 
         //manip handle sphere test 57.1 - note, it should not get in way of normal interaction
-        if (edit_mode_enabled && edit_mode_icons_enabled && int_verts.empty() && GetS("js_id").left(6) != "__menu") {
+        if (edit_mode_enabled && edit_mode_icons_enabled && int_verts.empty() && props->GetJSID().left(6) != "__menu") {
             Sphere3D s;
             s.cent = GetPos();
             s.rad = SpinAnimation::GetIconScale() * 0.5f;
@@ -608,7 +543,7 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
             }
         }
     }
-    else if (t == "ghost") {
+    else if (t == TYPE_GHOST) {
         //compute cursor intersection for ghost
         //billboard plane
         if (visible) {
@@ -632,19 +567,19 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
             }
         }
     }
-    else if (t == "image" || t =="video" || t == "link" || t == "text" || t == "paragraph") {
+    else if (t == TYPE_IMAGE || t == TYPE_VIDEO || t == TYPE_LINK || t == TYPE_TEXT || t == TYPE_PARAGRAPH) {
 //        qDebug() << "TESTING PTAL FOR INTERSECTION" << this->GetID() << this->GetJSID();
         if (visible) {
             QVector4D bbox_min(-1,-1,0,1);
             QVector4D bbox_max(1,1,0.1f,1);
             QMatrix4x4 m = model_matrix_local;
 
-            if (t == "image") {
+            if (t == TYPE_IMAGE) {
                 if (assetimage) {
                     m.scale(1.0f, assetimage->GetAspectRatio(), 1.0f);
                 }
             }
-            else if (t == "video") {
+            else if (t == TYPE_VIDEO) {
                 if (assetimage) {
                     m.scale(1.0f, assetimage->GetAspectRatio(), 1.0f);
                 }
@@ -652,7 +587,7 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
                     m.scale(1.0f, assetvideo->GetAspectRatio(&media_ctx), 1.0f);
                 }
             }
-            else if (t == "text") {
+            else if (t == TYPE_TEXT) {
                 if (textgeom) {
                     const float f = float(textgeom->GetText().length());
                     m.scale(f * 0.5f, 1, 1);
@@ -694,50 +629,50 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
 
 void RoomObject::SetAttributeModelMatrix(const QMatrix4x4 & m)
 {
-    SetV("xdir", m.column(0).toVector3D().normalized());
-    SetV("ydir", m.column(1).toVector3D().normalized());
-    SetV("zdir", m.column(2).toVector3D().normalized());
-    SetV("pos", m.column(3).toVector3D());
-    SetV("scale", QVector3D(m.column(0).toVector3D().length(),
+    props->SetXDir(m.column(0).toVector3D().normalized());
+    props->SetYDir(m.column(1).toVector3D().normalized());
+    props->SetZDir(m.column(2).toVector3D().normalized());
+    props->SetPos(m.column(3).toVector3D());
+    props->SetScale(QVector3D(m.column(0).toVector3D().length(),
                               m.column(1).toVector3D().length(),
                               m.column(2).toVector3D().length()));
 }
 
 QMatrix4x4 RoomObject::GetAttributeModelMatrix() const
 {
-    const QVector3D s = GetV("scale");
+    const QVector3D s = props->GetScale()->toQVector3D();
     QMatrix4x4 m;
-    m.setColumn(0, GetV("xdir") * s.x());
-    m.setColumn(1, GetV("ydir") * s.y());
-    m.setColumn(2, GetV("zdir") * s.z());
-    m.setColumn(3, GetV("pos"));
+    m.setColumn(0, props->GetXDir()->toQVector3D() * s.x());
+    m.setColumn(1, props->GetYDir()->toQVector3D() * s.y());
+    m.setColumn(2, props->GetZDir()->toQVector3D() * s.z());
+    m.setColumn(3, props->GetPos()->toQVector3D());
     m.setRow(3, QVector4D(0,0,0,1));
     return m;
 }
 
 void RoomObject::SetAttributeModelMatrixNoScaling(const QMatrix4x4 & m)
 {
-    SetV("xdir", m.column(0).toVector3D().normalized());
-    SetV("ydir", m.column(1).toVector3D().normalized());
-    SetV("zdir", m.column(2).toVector3D().normalized());
-    SetV("pos", m.column(3).toVector3D());
+    props->SetXDir(m.column(0).toVector3D().normalized());
+    props->SetYDir(m.column(1).toVector3D().normalized());
+    props->SetZDir(m.column(2).toVector3D().normalized());
+    props->SetPos(m.column(3).toVector3D());
 }
 
 QMatrix4x4 RoomObject::GetAttributeModelMatrixNoScaling() const
 {
     QMatrix4x4 m;
-    m.setColumn(0, GetV("xdir"));
-    m.setColumn(1, GetV("ydir"));
-    m.setColumn(2, GetV("zdir"));
-    m.setColumn(3, GetV("pos"));
+    m.setColumn(0, props->GetXDir()->toQVector3D());
+    m.setColumn(1, props->GetYDir()->toQVector3D());
+    m.setColumn(2, props->GetZDir()->toQVector3D());
+    m.setColumn(3, props->GetPos()->toQVector3D()) ;
     m.setRow(3, QVector4D(0,0,0,1));
     return m;
 }
 
 QVector3D RoomObject::GetPos() const
 {
-    QVector3D pos = GetV("pos");
-    if (interpolate && interp_val < 1.0f) {
+    QVector3D pos = props->GetPos()->toQVector3D();
+    if (props->GetInterpolate() && interp_val < 1.0f) {
         return interp_pos * (1.0f - interp_val) + pos * interp_val;
     }
     else {
@@ -747,12 +682,12 @@ QVector3D RoomObject::GetPos() const
 
 QVector3D RoomObject::GetVel() const
 {
-    return GetV("vel");
+    return props->GetVel()->toQVector3D();
 }
 
 QVector3D RoomObject::GetAccel() const
 {
-    return GetV("accel");
+    return props->GetAccel()->toQVector3D();
 }
 
 void RoomObject::SetDir(const QVector3D & p)
@@ -761,48 +696,14 @@ void RoomObject::SetDir(const QVector3D & p)
     const QVector3D x = QVector3D::crossProduct(QVector3D(0, 1, 0), z).normalized();
     const QVector3D y = QVector3D::crossProduct(z, x).normalized();
 
-    SetV("xdir", x);
-    SetV("ydir", y);
-    SetV("zdir", z);
+    props->SetXDir(x);
+    props->SetYDir(y);
+    props->SetZDir(z);
 }
 
 QVector3D RoomObject::GetDir() const
 {
-    return GetV("zdir");
-}
-
-void RoomObject::SetXDirs(const QString & x, const QString & y, const QString & z)
-{
-    if (!x.isEmpty()) {
-        SetV("xdir", MathUtil::GetStringAsVector(x));
-    }
-    if (!y.isEmpty()) {
-        SetV("ydir", MathUtil::GetStringAsVector(y));
-    }
-    if (!z.isEmpty()) {
-        SetV("zdir", MathUtil::GetStringAsVector(z).normalized());
-    }
-
-    const QVector3D dy = GetV("ydir");
-    const QVector3D dz = GetV("zdir");
-
-    SetV("ydir", (dy - dz * QVector3D::dotProduct(dy, dz)).normalized());
-    SetV("xdir", QVector3D::crossProduct(dy, dz));
-}
-
-void RoomObject::SetXDirs(const QVector3D & x, const QVector3D & y, const QVector3D & z)
-{
-    SetV("xdir", x);
-    SetV("ydir", y);
-    SetV("zdir", z.normalized());
-
-    const QVector3D dy = GetV("ydir");
-    const QVector3D dz = GetV("zdir");
-
-    //re-orthgonalize/ortho-normalize
-    SetV("ydir", (dy - dz * QVector3D::dotProduct(dy, dz)).normalized());
-    SetV("xdir", QVector3D::crossProduct(dy, dz));
-//    qDebug() << "setting xdirs" << x << y << z << props->GetXDir()->GetQVector3D() << props->GetYDir()->GetQVector3D() << props->GetZDir()->GetQVector3D();
+    return props->GetZDir()->toQVector3D();
 }
 
 void RoomObject::SetSaveToMarkup(const bool b)
@@ -818,9 +719,9 @@ bool RoomObject::GetSaveToMarkup() const
 void RoomObject::SnapXDirsToMajorAxis()
 {
     QVector3D x[3];
-    x[0] = this->GetXDir();
-    x[1] = this->GetYDir();
-    x[2] = this->GetZDir();
+    x[0] = props->GetXDir()->toQVector3D();
+    x[1] = props->GetYDir()->toQVector3D();
+    x[2] = props->GetZDir()->toQVector3D();
 
     QList <QVector3D> a;
     a.push_back(QVector3D(1,0,0));
@@ -847,14 +748,14 @@ void RoomObject::SnapXDirsToMajorAxis()
 
     x[2] = QVector3D::crossProduct(x[0], x[1]);
 
-    SetV("xdir", x[0]);
-    SetV("ydir", x[1]);
-    SetV("zdir", x[2]);
+    props->SetXDir(x[0]);
+    props->SetYDir(x[1]);
+    props->SetZDir(x[2]);
 }
 
 void RoomObject::Update(const double dt_sec)
 {
-    const QString obj_type = GetType();
+    const ElementType obj_type = GetType();
 
     if (assetimage) {
         assetimage->UpdateGL();
@@ -866,21 +767,21 @@ void RoomObject::Update(const double dt_sec)
         }
     }
 
-    if (obj_type != "ghost" || playing) {
+    if (obj_type != TYPE_GHOST || playing) {
         time_elapsed += dt_sec;
     }
 
-    if (!interpolate) {
-        interp_pos = GetV("pos");
-        interp_xdir = GetV("xdir");
-        interp_ydir = GetV("ydir");
-        interp_zdir = GetV("zdir");
-        interp_scale = GetV("scale");
+    if (!props->GetInterpolate()) {
+        interp_pos = props->GetPos()->toQVector3D();
+        interp_xdir = props->GetXDir()->toQVector3D();
+        interp_ydir = props->GetYDir()->toQVector3D();
+        interp_zdir = props->GetZDir()->toQVector3D();
+        interp_scale = props->GetScale()->toQVector3D();
     }
 
     UpdateMatrices();   
 
-    if (obj_type == "particle") {
+    if (obj_type == TYPE_PARTICLE) {
         if (assetobject_emitter) {
             particle_system->SetEmitterMesh(assetobject_emitter);
         }
@@ -892,10 +793,10 @@ void RoomObject::Update(const double dt_sec)
     }
 
     //update child objects
-    for (int i=0; i<child_objects.size(); ++i) {        
+    for (int i=0; i<child_objects.size(); ++i) {
         if (child_objects[i]) {
             child_objects[i]->model_matrix_parent = model_matrix_parent * model_matrix_local;
-            child_objects[i]->Update(dt_sec);            
+            child_objects[i]->Update(dt_sec);
         }
     }
 
@@ -907,10 +808,10 @@ void RoomObject::Update(const double dt_sec)
         bmax = a->GetBBoxMax();
 
         const float d  = 1.0f / (bmax - bmin).length();
-        SetV("scale", QVector3D(d,d,d));
+        props->SetScale(QVector3D(d,d,d));
 
-        SetV("collision_pos", (bmin+bmax)*0.5f);
-        SetV("collision_scale", bmax - bmin);
+        props->SetCollisionPos((bmin+bmax)*0.5f);
+        props->SetCollisionScale(bmax - bmin);
 //        SetCollisionStatic(false);
 
         rescale_on_load_done = true;
@@ -920,28 +821,28 @@ void RoomObject::Update(const double dt_sec)
         float aspect_ratio = 1.0;
         if (assetimage && assetimage->GetFinished()){
             aspect_ratio = assetimage->GetAspectRatio();
-            SetV("scale", QVector3D(1.0f,aspect_ratio,0.1f));
+            props->SetScale(QVector3D(1.0f,aspect_ratio,0.1f));
             rescale_on_load_done = true;
         }
         else if (assetvideo){
             aspect_ratio = assetvideo->GetAspectRatio(&media_ctx);
-            SetV("scale", QVector3D(1.0f,aspect_ratio,0.1f));
+            props->SetScale(QVector3D(1.0f,aspect_ratio,0.1f));
             rescale_on_load_done = true;
         }
     }
 
     //update the object's current_time and total_time members for sound/video playback for JS reads
     if (assetsound) {
-        SetF("current_time", assetsound->GetCurTime(&media_ctx));
-        SetF("total_time", assetsound->GetTotalTime(&media_ctx));
+        props->SetCurTime(assetsound->GetCurTime(&media_ctx));
+        props->SetTotalTime(assetsound->GetTotalTime(&media_ctx));
     }
     else if (assetvideo) {
-        SetF("current_time", assetvideo->GetCurTime(&media_ctx));
-        SetF("total_time", assetvideo->GetTotalTime(&media_ctx));
+        props->SetCurTime(assetvideo->GetCurTime(&media_ctx));
+        props->SetTotalTime(assetvideo->GetTotalTime(&media_ctx));
     }
 
     if (assetsound && !media_ctx.setup) {
-        assetsound->SetupOutput(&media_ctx, GetB("loop"));
+        assetsound->SetupOutput(&media_ctx, props->GetLoop());
     }
 
     if (assetvideo && !media_ctx.setup) {
@@ -950,17 +851,17 @@ void RoomObject::Update(const double dt_sec)
 
     // HACKS: Trigger side-effects on setters.
     // will be fixed when logic is ported over to properties.
-    if (obj_type == "text" && textgeom) { //60.0 - bugfix update text changed by JS
-        if (GetS("text") != textgeom->GetText()) {
-            SetB("_text_changed", true);
+    if (obj_type == TYPE_TEXT && textgeom) { //60.0 - bugfix update text changed by JS
+        if (props->GetText() != textgeom->GetText()) {
+            props->SetTextChanged(true);
         }
     }
-    if (GetB("_text_changed")) {
-        SetText(GetS("text"));
-        SetB("_text_changed", false);
+    if ((obj_type == TYPE_TEXT || obj_type == TYPE_PARAGRAPH) && props->GetTextChanged()) {
+        SetText(props->GetText());
+        props->SetTextChanged(false);
     }
 
-    if (interpolate && interp_time > 0.0f && obj_type != "link" && obj_type != "sound") {
+    if (props->GetInterpolate()  && interp_time > 0.0f && obj_type != TYPE_LINK && obj_type != TYPE_SOUND) {
         interp_val = float(interp_timer.elapsed()) / (interp_time * 1000.0f);
         interp_val = qMax(0.0f, qMin(interp_val, 1.0f));
     }
@@ -968,37 +869,20 @@ void RoomObject::Update(const double dt_sec)
         interp_val = 1.0f;
     }
 
-    if (obj_type == "ghost") {
+    if (obj_type == TYPE_GHOST) {
 //        qDebug() << "RoomObject::Update() time_elapsed" << time.elapsed() << this->GetID() << ghost_packet_index;
 
-        const QString id = GetS("id");
+        const QString id = props->GetID();
         if (id != textgeom_player_id->GetText()) {
             textgeom_player_id->SetText(id);
         }
 
-        if (ghost_frame.hands.first.is_active || ghost_frame.hands.second.is_active) {
-            textgeom_player_id->SetColour(QColor(0,0,255));
-        }
-        else if (ghost_frame.editing) {
-            textgeom_player_id->SetColour(QColor(255,128,255));
-        }
-        else if (ghost_frame.speaking) {
-            const int v = qMin(255, int(512.0f*ghost_frame.current_sound_level));
-            textgeom_player_id->SetColour(QColor(255-v,255,255-v));
-        }
-        else if (ghost_frame.typing) {
-            textgeom_player_id->SetColour(QColor(255,255,0));
-        }
-        else {
-            textgeom_player_id->SetColour(QColor(255,255,255));
-        }
-
         //update active animation for avatar
-        const QString body_id = GetS("body_id");
+        const QString body_id = props->GetBodyID();
         QPointer <AssetObject> assetobj = ghost_assetobjs[body_id];
         if (assetobj) {
             QPointer <Geom> body = assetobj->GetGeom();
-            const QString anim_id = GetS("anim_id");
+            const QString anim_id = props->GetAnimID();
 
             if (body && body->GetReady() &&
                     ghost_assetobjs.contains(anim_id) &&
@@ -1009,7 +893,7 @@ void RoomObject::Update(const double dt_sec)
             }
 
             if (assetobj->GetGeom()) {
-                assetobj->GetGeom()->SetAnimSpeed(GetF("anim_speed"));
+                assetobj->GetGeom()->SetAnimSpeed(props->GetAnimSpeed());
                 assetobj->GetGeom()->SetLoop(true);
             }
         }
@@ -1026,7 +910,7 @@ void RoomObject::Update(const double dt_sec)
 
             //54.8 - auto start/stop only for non-multiplayer avatars
             if (playing && sequence_end && !do_multiplayer_timeout) {
-                if (GetB("loop")) {
+                if (props->GetLoop()) {
                     time_elapsed = 0.0f;
                 }
                 else {
@@ -1076,17 +960,17 @@ void RoomObject::Update(const double dt_sec)
                     if (!ghost_frame.avatar_data.isEmpty()
                             && QString::compare(ghost_frame.avatar_data.left(13), "<FireBoxRoom>") == 0
                             && QString::compare(GetAvatarCode(), ghost_frame.avatar_data) != 0) {
-                        const QString id = GetS("id");
-                        const QString js_id = GetS("js_id");
-                        const bool loop = GetB("loop");
+                        const QString id = props->GetID();
+                        const QString js_id = props->GetJSID();
+                        const bool loop = props->GetLoop();
 //                        qDebug() << this << "setting data:" << ghost_frame.avatar_data;
                         LoadGhost(ghost_frame.avatar_data);
                         SetAvatarCode(ghost_frame.avatar_data);
 
                         //49.50 - Do not let id, js_id, or loop attributes be overwritten
-                        SetS("id", id);
-                        SetS("js_id", js_id);
-                        SetB("loop", loop);
+                        props->SetID(id);
+                        props->SetJSID(js_id);
+                        props->SetLoop(loop);
                     }
                 }
 
@@ -1119,7 +1003,7 @@ void RoomObject::Update(const double dt_sec)
             }
 
             //change the ghost's animation and other attributes
-            SetS("anim_id", ghost_frame.anim_id);
+            props->SetAnimID(ghost_frame.anim_id);
 
             //re-orthogonalize view and up dirs (they get unorthogonalized through slerp)
             ghost_frame.head_xform.setColumn(1, ghost_frame.head_xform.column(1).toVector3D().normalized());
@@ -1129,7 +1013,7 @@ void RoomObject::Update(const double dt_sec)
             ghost_frame.head_xform.setColumn(1, QVector3D::crossProduct(ghost_frame.head_xform.column(2).toVector3D(),
                                                                         ghost_frame.head_xform.column(0).toVector3D()).normalized());
 
-            SetV("pos", ghost_frame.pos);
+            props->SetPos(ghost_frame.pos);
             SetDir(ghost_frame.dir);
             SetHMDType(ghost_frame.hmd_type);
         }
@@ -1322,7 +1206,7 @@ void RoomObject::Update(const double dt_sec)
 //            }
 //        }
     }
-    else if (obj_type == "object") {
+    else if (obj_type == TYPE_OBJECT) {
         if (assetobject && assetobject_anim) {
             QPointer <Geom> body = assetobject->GetGeom();
             QPointer <Geom> body_anim = assetobject_anim->GetGeom();
@@ -1332,12 +1216,12 @@ void RoomObject::Update(const double dt_sec)
         }
 
         if (assetobject && assetobject->GetGeom()) {
-            assetobject->GetGeom()->SetAnimSpeed(GetF("anim_speed"));
-            assetobject->GetGeom()->SetLoop(GetB("loop"));
+            assetobject->GetGeom()->SetAnimSpeed(props->GetAnimSpeed());
+            assetobject->GetGeom()->SetLoop(props->GetLoop());
         }
     }
-    else if (obj_type == "link") {
-        if (GetB("draw_text") && (GetURL() != portal_last_url || GetTitle() != portal_last_title)) {
+    else if (obj_type == TYPE_LINK) {
+        if (props->GetDrawText() && (GetURL() != portal_last_url || GetTitle() != portal_last_title)) {
     //        qDebug() << "Portal::DrawDecorationsGL() updating text" << object->GetURL() << last_url;
             if (portal_text) {
                 portal_text->SetText(QString("<p align=\"center\">") + GetTitle() + QString("<br><font color=\"#0000ff\">") + GetURL() + QString("</font></p>"), false);
@@ -1357,7 +1241,7 @@ void RoomObject::UpdateMedia()
         alGenSources(1, &openal_stream_source);
     }
 
-    const QString obj_type = GetType();
+    const ElementType obj_type = GetType();
 
     const bool positional_env = SettingsManager::GetPositionalEnvEnabled();
     const bool positional_voip = SettingsManager::GetPositionalVOIPEnabled();
@@ -1382,7 +1266,7 @@ void RoomObject::UpdateMedia()
             alSource3f(openal_stream_source, AL_VELOCITY, 0, 0, 0); //set source velocity
         }
 
-        alSourcei(openal_stream_source, AL_LOOPING, GetB("loop") ? AL_TRUE : AL_FALSE);
+        alSourcei(openal_stream_source, AL_LOOPING, props->GetLoop() ? AL_TRUE : AL_FALSE);
         //60.0 - commented these out as they are problematic for VOIP
 //        alSourcef(openal_stream_source, AL_PITCH, GetF("pitch"));
 //        alSourcef(openal_stream_source, AL_GAIN, 2.0f * gain_voip * GetF("gain"));
@@ -1391,9 +1275,9 @@ void RoomObject::UpdateMedia()
 
         if (dir != QVector3D(0,0,1) && positional_voip) {
             alSource3f(openal_stream_source, AL_DIRECTION, dir.x(), dir.y(), dir.z());
-            alSourcef(openal_stream_source, AL_CONE_INNER_ANGLE, GetF("inner_angle"));
-            alSourcef(openal_stream_source, AL_CONE_OUTER_ANGLE, GetF("outer_angle"));
-            alSourcef(openal_stream_source, AL_CONE_OUTER_GAIN, GetF("outer_gain"));
+            alSourcef(openal_stream_source, AL_CONE_INNER_ANGLE, props->GetInnerAngle());
+            alSourcef(openal_stream_source, AL_CONE_OUTER_ANGLE, props->GetOuterAngle());
+            alSourcef(openal_stream_source, AL_CONE_OUTER_GAIN, props->GetOuterGain());
         }
         else if (dir != QVector3D(0,0,1) && !positional_voip){
             alSource3f(openal_stream_source, AL_DIRECTION, 0, 0, 0);
@@ -1471,8 +1355,8 @@ void RoomObject::UpdateMedia()
         media_ctx.vel = GetVel();
         const QVector3D scale = GetScale();
         media_ctx.dist = qMax(scale.x(), qMax(scale.y(), scale.z()));
-        media_ctx.gain = gain_env * GetF("gain");
-        media_ctx.pitch = GetF("pitch");
+        media_ctx.gain = gain_env * props->GetGain();
+        media_ctx.pitch = props->GetPitch();
         media_ctx.positional_sound = (positional_env && media_ctx.pos != QVector3D(0,0,0));
         media_ctx.audio_lock.unlock();
     }
@@ -1485,8 +1369,8 @@ void RoomObject::UpdateMedia()
         media_ctx.vel = GetVel();
         const QVector3D scale = GetScale();
         media_ctx.dist = qMax(scale.x(), qMax(scale.y(), scale.z()));
-        media_ctx.gain = gain_env * GetF("gain");
-        media_ctx.pitch = GetF("pitch");
+        media_ctx.gain = gain_env * props->GetGain();
+        media_ctx.pitch = props->GetPitch();
         media_ctx.positional_sound = (positional_env && media_ctx.pos != QVector3D(0,0,0));
         media_ctx.audio_lock.unlock();
     }
@@ -1592,7 +1476,7 @@ QHash <QString, QPointer <AssetObject> > RoomObject::GetGhostAssetObjects()
 
         const QPointer <AssetObject> a = o->GetAssetObject();
         if (a) {
-            gas[a->GetS("id")] = a;
+            gas[a->GetProperties()->GetID()] = a;
         }
         //add this object's children to list to iterate over
         co += o->GetChildObjects();
@@ -1823,11 +1707,11 @@ QPointer <AssetObject> RoomObject::GetTeleportAssetObject()
 
 void RoomObject::SetInterpolation()
 {
-    interp_pos = GetV("pos");
-    interp_xdir = GetV("xdir");
-    interp_ydir = GetV("ydir");
-    interp_zdir = GetV("zdir");
-    interp_scale = GetV("scale");
+    interp_pos = props->GetPos()->toQVector3D();
+    interp_xdir = props->GetXDir()->toQVector3D();
+    interp_ydir = props->GetYDir()->toQVector3D();
+    interp_zdir = props->GetZDir()->toQVector3D();
+    interp_scale = props->GetScale()->toQVector3D();
 
     interp_val = 0.0f;
     interp_timer.restart();
@@ -1893,112 +1777,6 @@ void RoomObject::Copy(const QPointer <RoomObject> o)
     props->Copy(o->props);    
 }
 
-void RoomObject::SetV(const char * name, const QVector3D p)
-{
-    if (props) {
-        props->SetV(name, p);
-    }
-}
-
-QVector3D RoomObject::GetV(const char * name) const
-{
-    if (props) {
-        return props->GetV(name);
-    }
-    return QVector3D();
-}
-
-void RoomObject::SetV4(const char * name, const QVector4D p)
-{
-    if (props) {
-        props->SetV4(name, p);
-    }
-
-}
-
-QVector4D RoomObject::GetV4(const char * name) const
-{
-    if (props) {
-        return props->GetV4(name);
-    }
-    return QVector4D();
-}
-
-void RoomObject::SetF(const char * name, const float f)
-{
-    if (props) {
-        props->setProperty(name, QString::number(f));
-    }
-}
-
-float RoomObject::GetF(const char * name) const
-{    
-    if (props && props->property(name).isValid()) {
-        return props->property(name).toFloat();
-    }
-    return 0.0f;
-}
-
-void RoomObject::SetI(const char * name, const int i)
-{
-    if (props) {
-        props->setProperty(name, QString::number(i));
-    }
-}
-
-int RoomObject::GetI(const char * name) const
-{
-    if (props && props->property(name).isValid()) {
-        return props->property(name).toInt();
-    }
-    return 0;
-}
-
-void RoomObject::SetB(const char * name, const bool b)
-{
-    if (props) {
-        props->setProperty(name, b ? "true" : "false");
-    }
-}
-
-bool RoomObject::GetB(const char * name) const
-{    
-    if (props && props->property(name).isValid()) {
-        return props->property(name).toString().toLower() == "true";
-    }
-    return false;
-}
-
-void RoomObject::SetS(const char * name, const QString s)
-{
-    if (props) {
-        props->SetS(name, s);
-    }
-}
-
-QString RoomObject::GetS(const char * name) const
-{
-    if (props && props->property(name).isValid()) {
-        return props->GetS(name);
-    }
-    return QString();
-}
-
-void RoomObject::SetC(const char * name, const QColor c)
-{
-    if (props) {
-        props->SetC(name, c);
-    }
-}
-
-QColor RoomObject::GetC(const char * name) const
-{
-    if (props && props->property(name).isValid()) {
-        return props->GetC(name);
-    }
-    return QColor(255,255,255);
-}
-
 QMatrix4x4 RoomObject::GetModelMatrixLocal() const
 {
     return model_matrix_local;
@@ -2018,20 +1796,20 @@ void RoomObject::DrawLoadingGL(QPointer <AssetShader> shader)
     const bool edit_mode_enabled = SettingsManager::GetEditModeEnabled();
     const bool edit_mode_icons_enabled = SettingsManager::GetEditModeIconsEnabled();
 
-    const QString t = GetType();
+    const ElementType t = props->GetType();
 
-    if (t == "object") {
+    if (t == TYPE_OBJECT) {
         if (assetobject && !assetobject->GetFinished()) {
             const float value = assetobject->GetProgress();
             SpinAnimation::DrawGL(shader, value, true);
         }
         else { //59.0 - don't draw the cube icon, it interferes with stuff
-            if (edit_mode_enabled && edit_mode_icons_enabled && GetS("js_id").left(6) != "__menu") {
+            if (edit_mode_enabled && edit_mode_icons_enabled && props->GetJSID().left(6) != "__menu") {
                 DrawIconGL(shader, object_img);
             }
         }
     }
-    else if (t == "video") {
+    else if (t == TYPE_VIDEO) {
         if (assetvideo) {
             if (assetimage && !assetimage->GetFinished() && !GetPlaying()) {
                 const float value = assetimage->GetProgress();
@@ -2039,14 +1817,14 @@ void RoomObject::DrawLoadingGL(QPointer <AssetShader> shader)
             }
         }
     }
-    else if (t == "image") {
+    else if (t == TYPE_IMAGE) {
         if (assetimage && !assetimage->GetFinished()) {
             const float value = assetimage->GetProgress();
             SpinAnimation::DrawGL(shader, value, true);
         }
     }
-    else if (t == "particle") {
-        if (edit_mode_enabled && edit_mode_icons_enabled && GetS("js_id").left(6) != "__menu") {
+    else if (t == TYPE_PARTICLE) {
+        if (edit_mode_enabled && edit_mode_icons_enabled && props->GetJSID().left(6) != "__menu") {
             DrawIconGL(shader, particle_img);
         }
     }
@@ -2055,11 +1833,11 @@ void RoomObject::DrawLoadingGL(QPointer <AssetShader> shader)
 void RoomObject::UpdateMatrices()
 {
     //if any components of the rotation value were updated in JS, modify the xdir/ydir/zdir
-    const QVector3D r = GetV("rotation");
+    const QVector3D r = props->GetRotation()->toQVector3D();
     if (r != last_rotation)
     {
         last_rotation = r;
-        SetV("rotation", r);
+        props->SetRotation(r);
     }
 
     const QVector3D xd = GetXDir();
@@ -2067,9 +1845,9 @@ void RoomObject::UpdateMatrices()
     const QVector3D zd = GetZDir();
     const QVector3D s = GetScale();
     const QVector3D p = GetPos();
-    const QString t = GetType();
+    const ElementType t = props->GetType();
 
-    if (t == "ghost") {
+    if (t == TYPE_GHOST) {
         //compute rotation angle for ghost
         GhostFrame frame;
         if (assetghost) {
@@ -2082,7 +1860,7 @@ void RoomObject::UpdateMatrices()
         model_matrix_local.rotate(angle, 0, 1, 0);
         model_matrix_local.scale(s);
     }
-    else if (t == "text" || t == "paragraph" || t == "image" || t == "video") {
+    else if (t == TYPE_TEXT || t == TYPE_PARAGRAPH || t == TYPE_IMAGE || t == TYPE_VIDEO) {
         model_matrix_local.setColumn(0, xd);
         model_matrix_local.setColumn(1, yd);
         model_matrix_local.setColumn(2, zd);
@@ -2090,11 +1868,11 @@ void RoomObject::UpdateMatrices()
         model_matrix_local.translate(0,0,portal_spacing);
         model_matrix_local.scale(s);
 
-        if (t == "text") {
+        if (t == TYPE_TEXT) {
             model_matrix_local *= textgeom->GetModelMatrix();
         }
     }
-    else if (t == "link") {
+    else if (t == TYPE_LINK) {
         const QVector3D p2 = p + zd * portal_spacing;
 
         model_matrix_local.setColumn(0, QVector4D(xd.x(), xd.y(), xd.z(), 0.0f));
@@ -2102,9 +1880,9 @@ void RoomObject::UpdateMatrices()
         model_matrix_local.setColumn(2, QVector4D(zd.x(), zd.y(), zd.z(), 0.0f));
         model_matrix_local.setColumn(3, QVector4D(p2.x(), p2.y(), p2.z(), 1.0f));
     }
-    else if (t == "particle") {
+    else if (t == TYPE_PARTICLE) {
         //model_matrix_local.setToIdentity();
-        if (GetB("emit_local")) {
+        if (props->GetEmitLocal()) {
             model_matrix_local.setColumn(0, xd);
             model_matrix_local.setColumn(1, yd);
             model_matrix_local.setColumn(2, zd);
@@ -2122,9 +1900,9 @@ void RoomObject::UpdateMatrices()
         model_matrix_local.scale(s);
     }
 
-    if (GetF("rotate_deg_per_sec") != 0.0f) {
-        const float t = time_elapsed * GetF("rotate_deg_per_sec");
-        const QVector3D sa = GetV("rotate_axis");
+    if (props->GetSpinVal() != 0.0f) {
+        const float t = time_elapsed * props->GetSpinVal();
+        const QVector3D sa = props->GetSpinAxis()->toQVector3D();
         model_matrix_local.rotate(t, sa);
     }
 
@@ -2144,14 +1922,14 @@ void RoomObject::UpdateMatrices()
 
 void RoomObject::DrawCursorGL(QPointer <AssetShader> shader)
 {
-    const bool visible = GetB("visible");
+    const bool visible = props->GetVisible();
     if (!visible) {
         return;
     }
 
-    const QString t = GetType();
+    const ElementType t = GetType();
 
-    if (t == "ghost") {
+    if (t == TYPE_GHOST) {
         if (assetghost && assetghost->GetProcessed()) {
 
             //scalar value that affects rendering/disconnect
@@ -2193,21 +1971,21 @@ void RoomObject::DrawCursorGL(QPointer <AssetShader> shader)
 void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, const QVector3D & player_pos)
 {    
 //        qDebug() << "RoomObject::DrawGL()" << GetID() << GetJSID() << GetScale() << GetType() << assetobject << assetobject->GetFinished();
-    if (shader.isNull() || !shader->GetCompiled() || !GetB("visible")) {
+    if (shader.isNull() || !shader->GetCompiled() || !props->GetVisible()) {
         return;
     }
 
-    const QString t = GetType();
-    const QColor col = GetC("col");
+    const ElementType t = GetType();
+    const QColor col = MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D());
 //    qDebug() << "draw" << this << col << t;
-    const QColor chromakey_col = GetC("chromakey_col");
+    const QColor chromakey_col = MathUtil::GetVector4AsColour(props->GetChromaKeyColour()->toQVector4D());
     const bool edit_mode_enabled = SettingsManager::GetEditModeEnabled();
     const bool edit_mode_icons_enabled = SettingsManager::GetEditModeIconsEnabled();
 
     const QVector3D pos = GetPos();
 //    qDebug() << "RoomObject::DrawGL" << GetS("_type") << GetS("id") << GetV("pos") << GetV("xdir") << GetV("ydir") << GetV("zdir") << GetV("scale");
 
-    const QString cf = GetS("cull_face");
+    const QString cf = props->GetCullFace();
     if (cf == "front") {
         RendererInterface::m_pimpl->SetDefaultFaceCullMode(FaceCullMode::FRONT);
     }
@@ -2219,8 +1997,8 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
     }
 //    qDebug() << "cull_face"<< this << cf;
 
-    const QString body_id = GetS("body_id");
-    const QString head_id = GetS("head_id");
+    const QString body_id = props->GetBodyID();
+    const QString head_id = props->GetHeadID();
 
     //get the model matrix (not including the view portion)            
     //    qDebug() << "setting colour" << QVector4D(col.redF(), col.greenF(), col.blueF(), col.alphaF());
@@ -2231,10 +2009,10 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
     shader->SetShininess(20.0f);
     shader->SetConstColour(QVector4D(col.redF(), col.greenF(), col.blueF(), col.alphaF()));
     shader->SetChromaKeyColour(QVector4D(chromakey_col.redF(), chromakey_col.greenF(), chromakey_col.blueF(), chromakey_col.alphaF()));
-    shader->SetUseLighting(GetB("lighting"));
+    shader->SetUseLighting(props->GetLighting());
     shader->SetUseSkelAnim(false); //53.10 - don't know why this solves the problem but it does, skeletal animation is disabled after FBX draw call but this is still needed
-    shader->SetTiling(GetV4("tile")); //59.13 - what is this?
-    shader->SetDrawLayer(GetI("draw_layer"));
+    shader->SetTiling(props->GetTiling()->toQVector4D());
+    shader->SetDrawLayer(props->GetDrawLayer());
 
 //    qDebug() << "draw layer" << this << GetI("draw_layer");
 
@@ -2249,7 +2027,7 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
     shader->SetRoomSpacePositionAndDistance(QVector4D(position.x(), position.y(), position.z(), distance));
 
     //do the draw
-    if (t == "particle") {
+    if (t == TYPE_PARTICLE) {
         bool override_texture = false;
 
         shader->SetUseTextureAll(false);        
@@ -2297,7 +2075,7 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
             RendererInterface::m_pimpl->SetDepthMask(DepthMask::DEPTH_WRITES_ENABLED);
         }
     }
-    else if (t == "text") {
+    else if (t == TYPE_TEXT) {
         RendererInterface::m_pimpl->SetDefaultFaceCullMode(FaceCullMode::DISABLED);
         textgeom->SetColour(col);
         MathUtil::PushModelMatrix();
@@ -2327,7 +2105,7 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
         MathUtil::PopModelMatrix();
         RendererInterface::m_pimpl->SetDefaultFaceCullMode(FaceCullMode::BACK);
     }
-    else if (t == "paragraph") {
+    else if (t == TYPE_PARAGRAPH) {
 
         if (assetimage) {
             assetimage->UpdateGL();
@@ -2374,7 +2152,7 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
             MathUtil::PopModelMatrix();
         }
     }
-    else if (t == "ghost") {
+    else if (t == TYPE_GHOST) {
 
         if (ghost_assetobjs.contains(head_id) && ghost_assetobjs[head_id]) {
 
@@ -2473,7 +2251,7 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
             }
         }
     }
-    else if (t == "video") {
+    else if (t == TYPE_VIDEO) {
         if (assetvideo) {
 
             MathUtil::PushModelMatrix();
@@ -2513,7 +2291,7 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
             MathUtil::PopModelMatrix();
         }
     }
-    else if (t == "image") {
+    else if (t == TYPE_IMAGE) {
         if (assetimage && assetimage->GetFinished()) {
             MathUtil::PushModelMatrix();
             MathUtil::MultModelMatrix(model_matrix_local);
@@ -2528,18 +2306,18 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
 #endif
 
             shader->SetUseTexture(0, true);
-            shader->SetUseLighting(GetB("lighting"));
+            shader->SetUseLighting(props->GetLighting());
             assetimage->DrawGL(shader, left_eye);
 
             MathUtil::PopModelMatrix();
         }       
     }
-    else if (t == "light") {
+    else if (t == TYPE_LIGHT) {
         if (edit_mode_icons_enabled) {
             DrawIconGL(shader, light_img);
         }
     }
-    else if (t == "sound") {
+    else if (t == TYPE_SOUND) {
         if (edit_mode_icons_enabled) {
             DrawIconGL(shader, sound_img);
         }
@@ -2588,7 +2366,7 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
         {
             RendererInterface::m_pimpl->BindTextureHandle(8, assetimage_lmap->GetTextureHandle(left_eye));
             shader->SetUseTexture(8, true, assetimage_lmap->GetIsHDR());
-            QVector4D lmapScale = GetV4("lmap_scale");
+            QVector4D lmapScale = props->GetLightmapScale()->toQVector4D();
             shader->SetLightmapScale(lmapScale);
             override_texture = true;
         }
@@ -2622,8 +2400,8 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
             obj->DrawGL(shader, QColor(128, 255, 128, 255), true);
 
             if (assetobject_collision && assetobject_collision->GetFinished()) {
-                const QVector3D p = GetV("collision_pos");
-                const QVector3D s = GetV("collision_scale");
+                const QVector3D p = props->GetCollisionPos()->toQVector3D();
+                const QVector3D s = props->GetCollisionScale()->toQVector3D();
 
                 MathUtil::PushModelMatrix();
                 MathUtil::ModelMatrix().translate(p);
@@ -2663,7 +2441,7 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
                 }
 
                 //apply a secondary bone xform
-                const QString bone = child_objects[i]->GetS("bone_id");
+                const QString bone = child_objects[i]->GetProperties()->GetBoneID();
                 if (a && a->GetGeom() && bone.length() > 0) {
                     const QMatrix4x4 bone_xform = a->GetGeom()->GetFinalPose(bone);
 
@@ -2729,8 +2507,8 @@ void RoomObject::DrawCollisionModelGL(QPointer <AssetShader> shader)
         return;
     }
 
-    const QString t = GetType();
-    if (t == "object") {
+    const ElementType t = GetType();
+    if (t == TYPE_OBJECT) {
         shader->SetConstColour(QVector4D(1,0.5f,0.5f,1));
         RendererInterface::m_pimpl->SetPolyMode(PolyMode::LINE);
 
@@ -2753,25 +2531,28 @@ void RoomObject::SetText(const QString & s)
 void RoomObject::SetText(const QString & s, const bool add_markup)
 {
 //    qDebug() << "EnvObject::SetText" << s;
-    SetS("text", s);
+    props->SetText(s);
 
-    const QString t = GetType();
+    const ElementType t = GetType();
 
-    if (t == "text") {
-        textgeom->SetText(s, GetC("col"));
+    if (t == TYPE_TEXT) {
+        textgeom->SetText(s, MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D()));
         textgeom->SetMaxSize(1.0f, 1.0f);
     }
-    else if (t == "paragraph") {
+    else if (t == TYPE_PARAGRAPH) {
         if (assetimage.isNull()) {
             assetimage = new AssetImage();
         }
-        assetimage->CreateFromText(s, GetI("font_size"), add_markup, GetC("text_color"), GetC("back_color"), GetF("back_alpha"), tex_width, tex_height, false);
+        assetimage->CreateFromText(s, props->GetFontSize(), add_markup,
+                                   MathUtil::GetVector4AsColour(props->GetTextCol()->toQVector4D()),
+                                   MathUtil::GetVector4AsColour(props->GetBackCol()->toQVector4D()),
+                                   props->GetBackAlpha(), tex_width, tex_height, false);
     }
 }
 
 QString RoomObject::GetText() const
 {
-    return GetS("text");
+    return props->GetText();
 }
 
 void RoomObject::SetFixedSize(const bool fixed_size, const float size) {
@@ -2827,9 +2608,9 @@ QPointer <AssetShader> RoomObject::GetAssetShader()
 
 bool RoomObject::TestPlayerPosition(const QPointF & p)
 {
-    const QRectF trigger_rect = MathUtil::GetStringAsRect(GetS("rect"));
-    if (!GetB("_triggered") && GetType() == "sound" && assetsound && trigger_rect.contains(p)) {
-        SetB("_triggered", true);
+    const QRectF trigger_rect = props->GetTriggerRect();
+    if (!props->GetTriggered() && GetType() == TYPE_SOUND && assetsound && trigger_rect.contains(p)) {
+        props->SetTriggered(true);
         return true;
     }
     return false;
@@ -2837,14 +2618,14 @@ bool RoomObject::TestPlayerPosition(const QPointF & p)
 
 void RoomObject::Seek(const float f)
 {
-    if (GetType() == "sound" && assetsound) {
+    if (props->GetType() == TYPE_SOUND && assetsound) {
         assetsound->Seek(&media_ctx, f);
     }
 }
 
 void RoomObject::Pause()
 {
-    if (GetType() == "sound" && assetsound) {
+    if (GetType() == TYPE_SOUND && assetsound) {
         assetsound->Pause(&media_ctx);
     }
 }
@@ -2852,25 +2633,25 @@ void RoomObject::Pause()
 void RoomObject::Play()
 {
 //    qDebug() << "RoomObject::Play()" << this->GetID() << this->GetJSID() << this->GetPos();
-    const QString t = GetType();
-    if (t == "sound" || t == "link" || t == "object") {
+    const ElementType t = GetType();
+    if (t == TYPE_SOUND || t == TYPE_LINK || t == TYPE_OBJECT) {
         if (assetsound) {
             assetsound->Play(&media_ctx);
             playing = true;
         }
     }
-    else if (t == "ghost"){
+    else if (t == TYPE_GHOST){
         playing = true;
 
         //if not on a loop and finished, restart it
-        if (!GetB("loop") && assetghost) {
+        if (!props->GetLoop() && assetghost) {
             const bool sequence_end = assetghost->GetGhostFrame(time_elapsed, ghost_frame);
             if (sequence_end) {
                 time_elapsed = 0.0f;
             }
         }
     }    
-    else if (t == "video") {
+    else if (t == TYPE_VIDEO) {
         if (assetvideo) {
             assetvideo->Play(&media_ctx);
         }    
@@ -2880,36 +2661,36 @@ void RoomObject::Play()
 
 void RoomObject::Stop()
 {    
-    const QString t = GetType();
-    if (t == "sound") {
+    const ElementType t = GetType();
+    if (t == TYPE_SOUND) {
         if (assetsound) {
             assetsound->Stop(&media_ctx);
         }
     }
-    else if (t == "video") {
+    else if (t == TYPE_VIDEO) {
         if (assetvideo) {
             assetvideo->Stop(&media_ctx);
         }
     }
-    else if (t == "ghost") {
+    else if (t == TYPE_GHOST) {
         playing = false;    
     }
 }
 
 bool RoomObject::GetPlaying() const
 {
-    const QString t = GetType();
-    if (t == "sound") {
+    const ElementType t = GetType();
+    if (t == TYPE_SOUND) {
         if (assetsound) {
             return assetsound->GetPlaying((MediaContext *) &media_ctx);
         }
     }
-    else if (t == "video") {
+    else if (t == TYPE_VIDEO) {
         if (assetvideo) {
             return assetvideo->GetPlaying((MediaContext *) &media_ctx);
         }
     }
-    else if (t == "ghost") {
+    else if (t == TYPE_GHOST) {
         return playing;    
     }
 
@@ -2928,21 +2709,108 @@ void RoomObject::ReadXMLCode(const QString & str)
         QXmlStreamAttributes attributes = reader.attributes();
 
         //qDebug() << reader.tokenString() << reader.text() << reader.name();
-        if (!tag_name.isEmpty() && reader.tokenType() == QXmlStreamReader::StartElement) {
+        if (reader.tokenType() == QXmlStreamReader::StartElement) {
 
-            for (int i=0; i<attributes.size(); ++i) {
-                props->setProperty(attributes[i].name().toString().toLower().trimmed().toLatin1().data(),
-                                   attributes[i].value().toString().trimmed());
-            }
-            SetType(tag_name);
+            if (tag_name == "ghost" ||
+                    tag_name == "object" ||
+                    tag_name == "video" ||
+                    tag_name == "image" ||
+                    tag_name == "link" ||
+                    tag_name == "text" ||
+                    tag_name == "paragraph" ||
+                    tag_name == "sound" ||
+                    tag_name == "particle" ||
+                    tag_name == "light") {
 
-            if (tag_name == "text") {
-                reader.readNext();
-                SetText(reader.text().toString());
-            }
-            else if (tag_name == "paragraph") {
-                reader.readNext();
-                SetText(reader.text().toString());
+                if (attributes.hasAttribute("id")) {
+                    props->SetID(attributes.value("id").toString());
+                }
+                if (attributes.hasAttribute("cubemap_radiance_id")) {
+                    props->SetCubemapRadianceID(attributes.value("cubemap_radiance_id").toString());
+                }
+                if (attributes.hasAttribute("cubemap_irradiance_id")) {
+                    props->SetCubemapIrradianceID(attributes.value("cubemap_irradiance_id").toString());
+                }
+                if (attributes.hasAttribute("collision_id")) {
+                    props->SetCollisionID(attributes.value("collision_id").toString());
+                }
+                if (attributes.hasAttribute("collision_response")) {
+                    props->SetCollisionResponse(MathUtil::GetStringAsBool(attributes.value("collision_response").toString()));
+                }
+                if (attributes.hasAttribute("js_id")) {
+                    props->SetJSID(attributes.value("js_id").toString());
+                }
+                if (attributes.hasAttribute("pos")) {
+                    props->SetPos(MathUtil::GetStringAsVector(attributes.value("pos").toString()));
+                }
+                if (attributes.hasAttribute("vel")) {
+                    props->SetVel(MathUtil::GetStringAsVector(attributes.value("vel").toString()));
+                }
+                if (attributes.hasAttribute("accel")) {
+                    props->SetAccel(MathUtil::GetStringAsVector(attributes.value("accel").toString()));
+                }
+                if (attributes.hasAttribute("xdir")) {
+                    props->SetXDir(MathUtil::GetStringAsVector(attributes.value("xdir").toString()));
+                }
+                if (attributes.hasAttribute("ydir")) {
+                    props->SetYDir(MathUtil::GetStringAsVector(attributes.value("ydir").toString()));
+                }
+                if (attributes.hasAttribute("zdir")) {
+                    props->SetZDir(MathUtil::GetStringAsVector(attributes.value("zdir").toString()));
+                }
+                if (attributes.hasAttribute("rotation_order")) {
+                    props->SetRotationOrder(attributes.value("rotation_order").toString());
+                }
+                if (attributes.hasAttribute("rotation")) {
+                    props->SetRotation(MathUtil::GetStringAsVector(attributes.value("rotation").toString()));
+                }
+                if (attributes.hasAttribute("scale")) {
+                    props->SetScale(MathUtil::GetStringAsVector(attributes.value("scale").toString()));
+                }
+                if (attributes.hasAttribute("col")) {
+                    props->SetColour(MathUtil::GetStringAsColour(attributes.value("col").toString()));
+                }
+                if (attributes.hasAttribute("head_id")) {
+                    props->SetHeadID(attributes.value("head_id").toString());
+                }
+                if (attributes.hasAttribute("head_pos")) {
+                    SetHeadAvatarPos(MathUtil::GetStringAsVector(attributes.value("head_pos").toString()));
+                }
+                if (attributes.hasAttribute("body_id")) {
+                    props->SetBodyID(attributes.value("body_id").toString());
+                }
+                if (attributes.hasAttribute("lighting")) {
+                    props->SetLighting(MathUtil::GetStringAsBool(attributes.value("lighting").toString()));
+                }
+                if (attributes.hasAttribute("collision_static")) {
+                    props->SetCollisionStatic(MathUtil::GetStringAsBool(attributes.value("collision_static").toString()));
+                }
+                if (attributes.hasAttribute("collision_trigger")) {
+                    props->SetCollisionTrigger(MathUtil::GetStringAsBool(attributes.value("collision_trigger").toString()));
+                }
+                if (attributes.hasAttribute("collision_ccdmotionthreshold")) {
+                    props->SetCollisionCcdMotionThreshold(attributes.value("collision_ccdmotionthreshold").toString().toFloat());
+                }
+                if (attributes.hasAttribute("collision_ccdsweptsphereradius")) {
+                    props->SetCollisionCcdSweptSphereRadius(attributes.value("collision_ccdsweptsphereradius").toString().toFloat());
+                }
+                if (attributes.hasAttribute("visible")) {
+                    props->SetVisible(MathUtil::GetStringAsBool(attributes.value("visible").toString()));
+                }
+                if (attributes.hasAttribute("cull_face")) {
+                    props->SetCullFace(attributes.value("cull_face").toString());
+                }
+
+                props->SetType(DOMNode::StringToElementType(tag_name));
+
+                if (tag_name == TYPE_TEXT) {
+                    reader.readNext();
+                    SetText(reader.text().toString());
+                }
+                else if (tag_name == TYPE_PARAGRAPH) {
+                    reader.readNext();
+                    SetText(reader.text().toString());
+                }
             }
         }
     }
@@ -2951,19 +2819,283 @@ void RoomObject::ReadXMLCode(const QString & str)
 QVariantMap RoomObject::GetJSONCode(const bool show_defaults) const
 {
     QVariantMap m;
-    QMap <QString, QVariantList> elementlistmap;   
+    QMap <ElementType, QVariantList> elementlistmap;
 
-    QList <QByteArray> p = props->dynamicPropertyNames();
-    for (int i=0; i<p.size(); ++i) {
-        if (props->GetSaveAttribute(p[i].data(), show_defaults)) {
-            m[p[i]] = props->GetS(p[i]);
+    const ElementType t = props->GetType();
+
+    if (show_defaults || props->GetID().length() > 0) {
+        m["id"] = props->GetID();
+    }
+    if (show_defaults || props->GetJSID().length() > 0) {
+        m["js_id"] = props->GetJSID();
+    }
+    if (show_defaults || props->GetLocked()) {
+        m["locked"] = props->GetLocked();
+    }
+    if (show_defaults || props->GetOnClick().length() > 0) {
+        m["onclick"] = props->GetOnClick();
+    }
+    if (show_defaults || props->GetOnCollision().length() > 0) {
+        m["oncollision"] = props->GetOnCollision();
+    }
+    if (show_defaults || GetInterpTime() != 0.1f) {
+        m["interp_time"] = GetInterpTime();
+    }
+    if (show_defaults || GetPos() != QVector3D(0,0,0)) {
+        m["pos"] = MathUtil::GetVectorAsString(props->GetPos()->toQVector3D(), false);
+    }
+    if (show_defaults || GetVel() != QVector3D(0,0,0)) {
+        m["vel"] = MathUtil::GetVectorAsString(GetVel(), false);
+    }
+    if (show_defaults || GetAccel() != QVector3D(0,0,0)) {
+        m["accel"] = MathUtil::GetVectorAsString(GetAccel(), false);
+    }
+    if (show_defaults || props->GetRotationOrder() != "xyz") {
+        m["rotation_order"] = props->GetRotationOrder();
+    }
+    if (props->GetRotation()->toQVector3D() != QVector3D(0,0,0)) {
+        m["rotation"] = MathUtil::GetVectorAsString(props->GetRotation()->toQVector3D(), false);
+    }
+    else {
+        if (show_defaults || GetXDir() != QVector3D(1,0,0)) {
+            m["xdir"] = MathUtil::GetVectorAsString(props->GetXDir()->toQVector3D(), false);
         }
+        if (show_defaults || GetYDir() != QVector3D(0,1,0)) {
+            m["ydir"] = MathUtil::GetVectorAsString(props->GetYDir()->toQVector3D(), false);
+        }
+        if (show_defaults || GetZDir() != QVector3D(0,0,1)) {
+            m["zdir"] = MathUtil::GetVectorAsString(props->GetZDir()->toQVector3D(), false);
+        }
+    }
+    if (show_defaults || GetScale() != QVector3D(1,1,1) || t == TYPE_GHOST) {
+        m["scale"] = MathUtil::GetVectorAsString(props->GetScale()->toQVector3D(), false);
+    }
+    if (show_defaults || MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D()) != QColor(255,255,255)) {
+        m["col"] = MathUtil::GetColourAsString(MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D()), false);
+    }
+    if (show_defaults || !props->GetLighting()) {
+        m["lighting"] = props->GetLighting();
+    }
+    if (show_defaults || !props->GetCollisionStatic()) {
+        m["collision_static"] = props->GetCollisionStatic();
+    }
+    if (show_defaults || props->GetCollisionTrigger()) {
+        m["collision_trigger"] = props->GetCollisionTrigger();
+    }
+    if (show_defaults || props->GetCollisionCcdMotionThreshold() != 1.0f) {
+        m["collision_ccdmotionthreshold"] = props->GetCollisionCcdMotionThreshold();
+    }
+    if (show_defaults || props->GetCollisionCcdSweptSphereRadius() != 0.0f) {
+        m["collision_ccdsweptsphereradius"] = props->GetCollisionCcdSweptSphereRadius();
+    }
+    if (show_defaults || !props->GetVisible()) {
+        m["visible"] = props->GetVisible();
+    }
+    if (show_defaults || props->GetShaderID().length() > 0) {
+        m["shader_id"] = props->GetShaderID();
+    }
+    if (t == TYPE_PARAGRAPH && (show_defaults || MathUtil::GetVector4AsColour(props->GetBackCol()->toQVector4D()) != QColor(255,255,255))) {
+        m["back_col"] = MathUtil::GetColourAsString(MathUtil::GetVector4AsColour(props->GetBackCol()->toQVector4D()), false);
+    }
+    if (t == TYPE_PARAGRAPH && (show_defaults || props->GetBackAlpha() != 1.0f)) {
+        m["back_alpha"] = props->GetBackAlpha();
+    }
+    if (t == TYPE_PARAGRAPH && (show_defaults || MathUtil::GetVector4AsColour(props->GetTextCol()->toQVector4D()) != QColor(0,0,0))) {
+        m["text_col"] = MathUtil::GetColourAsString(MathUtil::GetVector4AsColour(props->GetTextCol()->toQVector4D()), false);
+    }
+    if (t == TYPE_PARAGRAPH && (show_defaults || props->GetFontSize() != 16)) {
+        m["font_size"] = props->GetFontSize();
+    }
+    if (t == TYPE_GHOST && (show_defaults || props->GetHeadID().length() > 0)) {
+        m["head_id"] = props->GetHeadID();
+    }
+    if (t == TYPE_GHOST && (show_defaults || head_avatar_pos != QVector3D(0,1,0))) {
+        m["head_pos"] = MathUtil::GetVectorAsString(head_avatar_pos, false);
+    }
+    if (t == TYPE_GHOST && (show_defaults || props->GetBodyID().length() > 0)) {
+        m["body_id"] = props->GetBodyID();
+    }
+    if ((t == TYPE_GHOST || t == TYPE_OBJECT) && (show_defaults || props->GetAnimID().length() > 0)) {
+        m["anim_id"] = props->GetAnimID();
+    }
+    if ((t == TYPE_GHOST || t == TYPE_OBJECT) && (show_defaults || props->GetAnimSpeed() != 1.0f)) {
+        m["anim_speed"] = props->GetAnimSpeed();
+    }
+    if (t == TYPE_GHOST && (show_defaults || props->GetEyePos()->toQVector3D() != QVector3D(0,1.6f,0))) {
+        m["eye_pos"] = MathUtil::GetVectorAsString(props->GetEyePos()->toQVector3D(), false);
+    }
+    if (t == TYPE_GHOST && (show_defaults || userid_pos != QVector3D(0,0,0))) {
+        m["userid_pos"] = MathUtil::GetVectorAsString(userid_pos, false);
+    }
+    if (show_defaults || props->GetThumbID().length() > 0) {
+        m["thumb_id"] = props->GetThumbID();
+    }
+    if (t == TYPE_LINK && (show_defaults || props->GetOriginalURL().length() > 0)) {
+        m["url"] = props->GetOriginalURL();
+    }
+    if (t == TYPE_LINK && (show_defaults || GetTitle().length() > 0)) {
+        m["title"] = props->GetTitle();
+    }
+    if (t == TYPE_LINK && (show_defaults || props->GetAutoLoad())) {
+        m["auto_load"] = props->GetAutoLoad();
+    }
+    if (t == TYPE_LINK && (show_defaults || !props->GetDrawText())) {
+        m["draw_text"] = props->GetDrawText();
+    }
+    if (t == TYPE_LINK && (show_defaults || props->GetMirror())) {
+        m["mirror"] = props->GetMirror();
+    }
+    if (t == TYPE_LINK && (show_defaults || !props->GetActive())) {
+        m["active"] = props->GetActive();
+    }
+    if (t == TYPE_SOUND && (show_defaults || props->GetTriggerRect()!= QRect(0,0,0,0))) {
+        m["rect"] = MathUtil::GetRectangleAsString(props->GetTriggerRect(), false);
+    }
+    if (show_defaults || props->GetLoop()) {
+        m["loop"] = props->GetLoop();
+    }
+    if (t != TYPE_OBJECT && (show_defaults || props->GetGain() != 1.0f)) {
+        m["gain"] = props->GetGain();
+    }
+    if (t != TYPE_OBJECT && (show_defaults || props->GetPitch() != 1.0f)) {
+        m["pitch"] = props->GetPitch();
+    }
+    if (t != TYPE_OBJECT && (show_defaults || props->GetAutoPlay())) {
+        m["auto_play"] = props->GetAutoPlay();
+    }
+    if ((t == TYPE_OBJECT || t == TYPE_GHOST) && (show_defaults || props->GetCullFace() != "back")) {
+        m["cull_face"] = props->GetCullFace();
+    }
+    if (t != TYPE_OBJECT && (show_defaults || props->GetPlayOnce())) {
+        m["play_once"] = props->GetPlayOnce();
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetEmitterID().length() > 0)) {
+        m["emitter_id"] = props->GetEmitterID();
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetEmitLocal())) {
+        m["emit_local"] = props->GetEmitLocal();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetCollisionID().length() > 0)) {
+        m["collision_id"] = props->GetCollisionID();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetCollisionRadius() != 0)) {
+        m["collision_radius"] = props->GetCollisionRadius();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetCollisionResponse() == false)) {
+        m["collision_response"] = props->GetCollisionResponse();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetWebsurfaceID().length() > 0)) {
+        m["websurface_id"] = props->GetWebsurfaceID();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetTeleportID().length() > 0)) {
+        m["teleport_id"] = props->GetTeleportID();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetVideoID().length() > 0)) {
+        m["video_id"] = props->GetVideoID();
+    }
+    if ((t == TYPE_OBJECT || t == TYPE_PARTICLE) && (show_defaults || props->GetImageID().length() > 0)) {
+        m["image_id"] = props->GetImageID();
+    }
+    if ((t == TYPE_OBJECT || t == TYPE_LIGHT) && (show_defaults || props->GetSpinAxis()->toQVector3D() != QVector3D(0,1,0))) {
+        m["rotate_axis"] = MathUtil::GetVectorAsString(props->GetSpinAxis()->toQVector3D(), false);
+    }
+    if ((t == TYPE_OBJECT || t == TYPE_LIGHT) && (show_defaults || props->GetSpinVal() != 0)) {
+        m["rotate_deg_per_sec"] = props->GetSpinVal();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetBlend0ID().length() > 0)) {
+        m["blend0_id"] = props->GetBlend0ID();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetBlend1ID().length() > 0)) {
+        m["blend1_id"] = props->GetBlend1ID();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetBlend2ID().length() > 0)) {
+        m["blend2_id"] = props->GetBlend2ID();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetBlend3ID().length() > 0)) {
+        m["blend3_id"] = props->GetBlend3ID();
+    }
+    if (t == TYPE_SOUND && (show_defaults || props->GetOuterGain() != 0.0f)) {
+        m["outer_gain"] = props->GetOuterGain();
+    }
+    if (t == TYPE_SOUND && (show_defaults || props->GetInnerAngle() != 360.0f)) {
+        m["inner_angle"] = props->GetInnerAngle();
+    }
+    if (t == TYPE_SOUND && (show_defaults || props->GetOuterAngle() != 360.0f)) {
+        m["outer_angle"] =props->GetOuterAngle();
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetCount() != 0)) {
+        m["count"] = props->GetCount();
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRate() != 1)) {
+        m["rate"] = props->GetRate();
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetDuration() != 1.0f)) {
+        m["duration"] = props->GetDuration();
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetFadeIn() != 1.0f)) {
+        m["fade_in"] = props->GetFadeIn();
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetFadeOut() != 1.0f)) {
+        m["fade_out"] = props->GetFadeOut();
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRandPos()->toQVector3D() != QVector3D(0,0,0))) {
+        m["rand_pos"] = MathUtil::GetVectorAsString(props->GetRandPos()->toQVector3D(), false);
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRandVel()->toQVector3D() != QVector3D(0,0,0))) {
+        m["rand_vel"] = MathUtil::GetVectorAsString(props->GetRandVel()->toQVector3D(), false);
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRandAccel()->toQVector3D() != QVector3D(0,0,0))) {
+        m["rand_accel"] = MathUtil::GetVectorAsString(props->GetRandAccel()->toQVector3D(), false);
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRandColour()->toQVector3D() != QVector3D(0,0,0))) {
+        m["rand_col"] = MathUtil::GetVectorAsString(props->GetRandColour()->toQVector3D(), false);
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRandScale()->toQVector3D() != QVector3D(0,0,0))) {
+        m["rand_scale"] = MathUtil::GetVectorAsString(props->GetRandScale()->toQVector3D(), false);
+    }
+    if (t == TYPE_OBJECT && (show_defaults || m_cubemap_radiance)) {
+        if (m_cubemap_radiance) {
+            m["cubemap_radiance_id"] = m_cubemap_radiance->GetProperties()->GetID();
+        }
+    }
+    if (t == TYPE_OBJECT && (show_defaults || m_cubemap_irradiance)) {
+        if (m_cubemap_irradiance) {
+            m["cubemap_irradiance_id"] = m_cubemap_irradiance->GetProperties()->GetID();
+        }
+    }
+    if (t == TYPE_LIGHT) {
+        m["light_intensity"] = props->GetLightIntensity();
+    }
+    if (t == TYPE_LIGHT) {
+        m["light_cone_angle"] = props->GetLightConeAngle();
+    }
+    if (t == TYPE_LIGHT) {
+        m["light_cone_exponent"] = props->GetLightConeExponent();
+    }
+    if (t == TYPE_LIGHT) {
+        m["light_range"] = props->GetLightRange();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetCollisionPos()->toQVector3D() != QVector3D(0,0,0))) {
+        m["collision_pos"] = MathUtil::GetVectorAsString(props->GetCollisionPos()->toQVector3D(), false);
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetCollisionScale()->toQVector3D() != QVector3D(1,1,1))) {
+        m["collision_scale"] = MathUtil::GetVectorAsString(props->GetCollisionScale()->toQVector3D(), false);
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetBoneID().length() > 0)) {
+        m["bone_id"] = props->GetBoneID();
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetDrawLayer() != 0)) {
+        m["draw_layer"] = props->GetDrawLayer();
     }
 
     //add text stuff if there is any in the middle
-    const QString t = GetType();
-    if (t == "text" || t == "paragraph") {
-        m["innertext"] = GetText();        
+    switch (t) {
+    case TYPE_TEXT:
+    case TYPE_PARAGRAPH:
+        m["innertext"] = GetText();
+        break;
+    default:
+        break;
     }
 
     //We have to add this node's children
@@ -2976,9 +3108,9 @@ QVariantMap RoomObject::GetJSONCode(const bool show_defaults) const
         }
     }
 
-    QMap <QString, QVariantList>::const_iterator ele_cit;
+    QMap <ElementType, QVariantList>::const_iterator ele_cit;
     for (ele_cit = elementlistmap.begin(); ele_cit != elementlistmap.end(); ++ele_cit) {
-        m.insert(ele_cit.key(), ele_cit.value());
+        m.insert(DOMNode::ElementTypeToString(ele_cit.key()), ele_cit.value());
     }
 
     return m;
@@ -2986,70 +3118,304 @@ QVariantMap RoomObject::GetJSONCode(const bool show_defaults) const
 
 QString RoomObject::GetXMLCode(const bool show_defaults) const
 {        
-    const QString t = GetType();
-    const QString tagname = GetTagName();
+//    qDebug() << "RoomObject::GetXMLCode" << this << props->GetJSID();
+    const ElementType t = props->GetType();
+    const QString t_str = DOMNode::ElementTypeToTagName(t);
 
-    QString code_str = QString("<") + tagname;
+    QString code_str = QString("<") + t_str;
 
-    if (props) {
-        QList <QByteArray> p = props->dynamicPropertyNames();
-
-        QList <QByteArray> list_order;
-        list_order.push_back("id");
-        list_order.push_back("js_id");
-        list_order.push_back("pos");
-        list_order.push_back("xdir");
-        list_order.push_back("ydir");
-        list_order.push_back("zdir");
-        list_order.push_back("scale");
-        list_order.push_back("col");
-        list_order.push_back("collision_id");
-        list_order.push_back("collision_scale");
-        list_order.push_back("lighting");
-        list_order.push_back("cull_face");
-        list_order.push_back("draw_order");
-
-        //60.0 - ensure specific ordering for a few key attributes
-        while (!list_order.isEmpty()) {
-            const QByteArray s = list_order.last();
-            list_order.pop_back();
-            if (p.contains(s)) {
-                p.removeAll(s);
-                p.push_front(s);
-            }
+    if (show_defaults || props->GetID().length() > 0) {
+        code_str += " id=" + MathUtil::GetStringAsString(props->GetID());
+    }
+    bool jsid_ok;
+    props->GetJSID().toFloat(&jsid_ok);
+    if (show_defaults || (props->GetJSID().length() > 0 && !jsid_ok)) {
+        code_str += " js_id=" + MathUtil::GetStringAsString(props->GetJSID());
+    }
+    if (show_defaults || props->GetLocked()) {
+        code_str += " locked=" + MathUtil::GetBoolAsString(props->GetLocked());
+    }
+    if (show_defaults || props->GetOnClick().length() > 0) {
+        code_str += " onclick=" + MathUtil::GetStringAsString(props->GetOnClick());
+    }
+    //    if ((show_defaults && !network_optimize) || GetOnCollision().length() > 0) {
+    //        code_str += " oncollision=" + MathUtil::GetStringAsString(GetOnCollision());
+    //    }
+    if (show_defaults || GetInterpTime() != 0.1f) {
+        code_str += " interp_time=" + MathUtil::GetFloatAsString(GetInterpTime());
+    }
+    if (show_defaults || GetPos() != QVector3D(0,0,0)) {
+        code_str += " pos=" + MathUtil::GetVectorAsString(props->GetPos()->toQVector3D());
+    }
+    if (show_defaults || GetVel() != QVector3D(0,0,0)) {
+        code_str += " vel=" + MathUtil::GetVectorAsString(GetVel());
+    }
+    if (show_defaults || GetAccel() != QVector3D(0,0,0)) {
+        code_str += " accel=" + MathUtil::GetVectorAsString(GetAccel());
+    }
+    if (show_defaults || props->GetRotationOrder() != "xyz") {
+        code_str += " rotation_order=" + MathUtil::GetStringAsString(props->GetRotationOrder());
+    }
+    if (props->GetRotation()->toQVector3D() != QVector3D(0,0,0)) {
+        code_str += " rotation=" + MathUtil::GetVectorAsString(props->GetRotation()->toQVector3D());
+    }
+    else {
+        if (show_defaults || GetXDir() != QVector3D(1,0,0)) {
+            code_str += " xdir=" + MathUtil::GetVectorAsString(props->GetXDir()->toQVector3D());
         }
-
-        for (int i=0; i<p.size(); ++i) {
-            const bool save_attrib = props->GetSaveAttribute(p[i].data(), show_defaults) ;
-    //        qDebug() << "attrib" << p[i] << save_attrib;
-            if (save_attrib) {
-                code_str += QString(" ") + QString(p[i]) + "=\"" + props->GetS(p[i]) + "\"";
-            }
+        if (show_defaults || GetYDir() != QVector3D(0,1,0)) {
+            code_str += " ydir=" + MathUtil::GetVectorAsString(props->GetYDir()->toQVector3D());
+        }
+        if (show_defaults || GetZDir() != QVector3D(0,0,1)) {
+            code_str += " zdir=" + MathUtil::GetVectorAsString(props->GetZDir()->toQVector3D());
         }
     }
-
-//    qDebug() << "RoomObject::GetXMLCode" << this << code_str;
+    if (show_defaults || GetScale() != QVector3D(1,1,1) || t == TYPE_GHOST) {
+        code_str += " scale=" + MathUtil::GetVectorAsString(props->GetScale()->toQVector3D());
+    }
+    if (show_defaults || MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D()) != QColor(255,255,255)) {
+        code_str += " col=" + MathUtil::GetColourAsString(MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D()));
+    }
+    if (show_defaults || !props->GetLighting()) {
+        code_str += " lighting=" + MathUtil::GetBoolAsString(props->GetLighting());
+    }
+    if (show_defaults || !props->GetCollisionStatic()) {
+        code_str += " collision_static=" + MathUtil::GetBoolAsString(props->GetCollisionStatic());
+    }
+    if (show_defaults || props->GetCollisionTrigger()) {
+        code_str += " collision_trigger=" + MathUtil::GetBoolAsString(props->GetCollisionTrigger());
+    }
+    if (show_defaults || props->GetCollisionCcdMotionThreshold() != 1.0f) {
+        code_str += " collision_ccdmotionthreshold=" + MathUtil::GetFloatAsString(props->GetCollisionCcdMotionThreshold());
+    }
+    if (show_defaults || props->GetCollisionCcdSweptSphereRadius() != 0.0f) {
+        code_str += " collision_ccdsweptsphereradius=" + MathUtil::GetFloatAsString(props->GetCollisionCcdSweptSphereRadius());
+    }
+    if (show_defaults || !props->GetVisible()) {
+        code_str += " visible=" + MathUtil::GetBoolAsString(props->GetVisible());
+    }
+    if (show_defaults || props->GetShaderID().length() > 0) {
+        code_str += " shader_id=" + MathUtil::GetStringAsString(props->GetShaderID());
+    }
+    if (t == TYPE_PARAGRAPH && (show_defaults || MathUtil::GetVector4AsColour(props->GetBackCol()->toQVector4D()) != QColor(255,255,255))) {
+        code_str += " back_col=" + MathUtil::GetColourAsString(MathUtil::GetVector4AsColour(props->GetBackCol()->toQVector4D()));
+    }
+    if (t == TYPE_PARAGRAPH && (show_defaults || props->GetBackAlpha() != 1.0f)) {
+        code_str += " back_alpha=" + MathUtil::GetFloatAsString(props->GetBackAlpha());
+    }
+    if (t == TYPE_PARAGRAPH && (show_defaults || MathUtil::GetVector4AsColour(props->GetTextCol()->toQVector4D())  != QColor(0,0,0))) {
+        code_str += " text_col=" + MathUtil::GetVector4AsString(props->GetTextCol()->toQVector4D());
+    }
+    if (t == TYPE_PARAGRAPH && (show_defaults || props->GetFontSize() != 16)) {
+        code_str += " font_size=" + MathUtil::GetFloatAsString(props->GetFontSize());
+    }
+    if (t == TYPE_GHOST && (show_defaults || props->GetHeadID().length() > 0)) {
+        code_str += " head_id=" + MathUtil::GetStringAsString(props->GetHeadID());
+    }
+    if (t == TYPE_GHOST && (show_defaults || head_avatar_pos != QVector3D(0,1,0))) {
+        code_str += " head_pos=" + MathUtil::GetVectorAsString(head_avatar_pos);
+    }
+    if (t == TYPE_GHOST && (show_defaults || props->GetBodyID().length() > 0)) {
+        code_str += " body_id=" + MathUtil::GetStringAsString(props->GetBodyID());
+    }
+    if ((t == TYPE_GHOST || t == TYPE_OBJECT) && ((show_defaults) || props->GetAnimID().length() > 0)) {
+        code_str += " anim_id=" + MathUtil::GetStringAsString(props->GetAnimID());
+    }
+    if ((t == TYPE_GHOST || t == TYPE_OBJECT) && ((show_defaults) || props->GetAnimSpeed() != 1.0f)) {
+        code_str += " anim_speed=" + MathUtil::GetFloatAsString(props->GetAnimSpeed());
+    }
+    if (t == TYPE_GHOST && (show_defaults || props->GetEyePos()->toQVector3D() != QVector3D(0,1.6f,0))) {
+        code_str += " eye_pos=" + MathUtil::GetVectorAsString(props->GetEyePos()->toQVector3D());
+    }
+    if (t == TYPE_GHOST && (show_defaults || userid_pos != QVector3D(0,0,0))) {
+        code_str += " userid_pos=" + MathUtil::GetVectorAsString(userid_pos);
+    }
+    if (t == TYPE_GHOST && (show_defaults || eye_ipd != 0.0f)) {
+        code_str += " eye_ipd=" + MathUtil::GetFloatAsString(eye_ipd);
+    }
+    if (show_defaults || props->GetThumbID().length() > 0) {
+        code_str += " thumb_id=" + MathUtil::GetStringAsString(props->GetThumbID());
+    }
+    if (t == TYPE_LINK && (show_defaults || props->GetOriginalURL().length() > 0)) {
+        code_str += " url=" + MathUtil::GetStringAsString(props->GetOriginalURL());
+    }
+    if (t == TYPE_LINK && (show_defaults || GetTitle().length() > 0)) {
+        code_str += " title=" + MathUtil::GetStringAsString(GetTitle());
+    }
+    if (t == TYPE_LINK && (show_defaults || props->GetAutoLoad())) {
+        code_str += " auto_load=" + MathUtil::GetBoolAsString(props->GetAutoLoad());
+    }
+    if (t == TYPE_LINK && (show_defaults || !props->GetDrawText())) {
+        code_str += " draw_text=" + MathUtil::GetBoolAsString(props->GetDrawText());
+    }
+    if (t == TYPE_LINK && (show_defaults || props->GetMirror())) {
+        code_str += " mirror=" + MathUtil::GetBoolAsString(props->GetMirror());
+    }
+    if (t == TYPE_LINK && (show_defaults || !props->GetActive())) {
+        code_str += " active=" + MathUtil::GetBoolAsString(props->GetActive());
+    }
+    if (t == TYPE_SOUND && (show_defaults || props->GetTriggerRect() != QRect(0,0,0,0))) {
+        code_str += " rect=" + MathUtil::GetRectangleAsString(props->GetTriggerRect());
+    }
+    if (t != TYPE_OBJECT && (show_defaults || props->GetLoop())) {
+        code_str += " loop=" + MathUtil::GetBoolAsString(props->GetLoop());
+    }
+    if (t != TYPE_OBJECT && (show_defaults || props->GetGain() != 1.0f)) {
+        code_str += " gain=" + MathUtil::GetFloatAsString(props->GetGain());
+    }
+    if (t != TYPE_OBJECT && (show_defaults || props->GetPitch() != 1.0f)) {
+        code_str += " pitch=" + MathUtil::GetFloatAsString(props->GetPitch());
+    }
+    if (t != TYPE_OBJECT && (show_defaults || props->GetAutoPlay())) {
+        code_str += " auto_play=" + MathUtil::GetBoolAsString(props->GetAutoPlay());
+    }
+    if ((t == TYPE_OBJECT || t == TYPE_GHOST) && (show_defaults || props->GetCullFace() != "back")) {
+        code_str += " cull_face=" + props->GetCullFace();
+    }
+    if (t != TYPE_OBJECT && (show_defaults || props->GetPlayOnce())) {
+        code_str += " play_once=" + MathUtil::GetBoolAsString(props->GetPlayOnce());
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetCollisionID().length() > 0)) {
+        code_str += " collision_id=" + MathUtil::GetStringAsString(props->GetCollisionID());
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetCollisionRadius() != 0)) {
+        code_str += " collision_radius=" + MathUtil::GetFloatAsString(props->GetCollisionRadius());
+    }
+    if (t == TYPE_OBJECT && (show_defaults || props->GetCollisionResponse() == false)) {
+        code_str += " collision_response=" + MathUtil::GetBoolAsString(props->GetCollisionResponse());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetWebsurfaceID().length() > 0)) {
+        code_str += " websurface_id=" + MathUtil::GetStringAsString(props->GetWebsurfaceID());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetTeleportID().length() > 0)) {
+        code_str += " teleport_id=" + MathUtil::GetStringAsString(props->GetTeleportID());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetBoneID().length() > 0)) {
+        code_str += " bone_id=" + MathUtil::GetStringAsString(props->GetBoneID());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetVideoID().length() > 0)) {
+        code_str += " video_id=" + MathUtil::GetStringAsString(props->GetVideoID());
+    }
+    if ((t == TYPE_OBJECT || t == TYPE_PARTICLE) && (show_defaults || props->GetImageID().length() > 0)) {
+        code_str += " image_id=" + MathUtil::GetStringAsString(props->GetImageID());
+    }
+    if ((t == TYPE_OBJECT || t == TYPE_LIGHT) && (show_defaults || props->GetSpinAxis()->toQVector3D() != QVector3D(0,1,0))) {
+        code_str += " rotate_axis=" + MathUtil::GetVectorAsString(props->GetSpinAxis()->toQVector3D());
+    }
+    if ((t == TYPE_OBJECT || t == TYPE_LIGHT) && ((show_defaults) || props->GetSpinVal() != 0)) {
+        code_str += " rotate_deg_per_sec=" + MathUtil::GetFloatAsString(props->GetSpinVal());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetBlend0ID().length() > 0)) {
+        code_str += " blend0_id="+ MathUtil::GetStringAsString(props->GetBlend0ID());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetBlend1ID().length() > 0)) {
+        code_str += " blend1_id="+ MathUtil::GetStringAsString(props->GetBlend1ID());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetBlend2ID().length() > 0)) {
+        code_str += " blend2_id="+ MathUtil::GetStringAsString(props->GetBlend2ID());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetBlend3ID().length() > 0)) {
+        code_str += " blend3_id="+ MathUtil::GetStringAsString(props->GetBlend3ID());
+    }
+    if (t == TYPE_SOUND && (show_defaults || props->GetOuterGain() != 0.0f)) {
+        code_str += " outer_gain=" + MathUtil::GetFloatAsString(props->GetOuterGain());
+    }
+    if (t == TYPE_SOUND && (show_defaults || props->GetInnerAngle() != 360.0f)) {
+        code_str += " inner_angle=" + MathUtil::GetFloatAsString(props->GetInnerAngle());
+    }
+    if (t == TYPE_SOUND && (show_defaults || props->GetOuterAngle() != 360.0f)) {
+        code_str += " outer_angle=" + MathUtil::GetFloatAsString(props->GetOuterAngle());
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetCount() != 0)) {
+        code_str += " count=" + MathUtil::GetIntAsString(props->GetCount());
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRate() != 1)) {
+        code_str += " rate=" + MathUtil::GetIntAsString(props->GetRate());
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetDuration() != 1.0f)) {
+        code_str += " duration=" + MathUtil::GetFloatAsString(props->GetDuration());
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetFadeIn() != 1.0f)) {
+        code_str += " fade_in=" + MathUtil::GetFloatAsString(props->GetFadeIn());
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetFadeOut() != 1.0f)) {
+        code_str += " fade_out=" + MathUtil::GetFloatAsString(props->GetFadeOut());
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRandPos()->toQVector3D() != QVector3D(0,0,0))) {
+        code_str += " rand_pos=" + MathUtil::GetVectorAsString(props->GetRandPos()->toQVector3D());
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRandVel()->toQVector3D() != QVector3D(0,0,0))) {
+        code_str += " rand_vel=" + MathUtil::GetVectorAsString(props->GetRandVel()->toQVector3D());
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRandAccel()->toQVector3D() != QVector3D(0,0,0))) {
+        code_str += " rand_accel=" + MathUtil::GetVectorAsString(props->GetRandAccel()->toQVector3D());
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRandColour()->toQVector3D() != QVector3D(0,0,0))) {
+        code_str += " rand_col=" + MathUtil::GetVectorAsString(props->GetRandColour()->toQVector3D());
+    }
+    if (t == TYPE_PARTICLE && (show_defaults || props->GetRandScale()->toQVector3D() != QVector3D(0,0,0))) {
+        code_str += " rand_scale=" + MathUtil::GetVectorAsString(props->GetRandScale()->toQVector3D());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || m_cubemap_radiance != 0)) {
+        if (m_cubemap_radiance) {
+            code_str += " cubemap_radiance_id=\"" + m_cubemap_radiance->GetProperties()->GetID() + "\"";
+        }
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || m_cubemap_irradiance != 0)) {
+        if (m_cubemap_irradiance) {
+            code_str += " cubemap_irradiance_id=\"" + m_cubemap_irradiance->GetProperties()->GetID() + "\"";
+        }
+    }
+    if (t == TYPE_LIGHT) {
+        code_str += " light_intensity=" + MathUtil::GetFloatAsString(props->GetLightIntensity());
+    }
+    if (t == TYPE_LIGHT) {
+        code_str += " light_cone_angle=" + MathUtil::GetFloatAsString(props->GetLightConeAngle());
+    }
+    if (t == TYPE_LIGHT) {
+        code_str += " light_cone_exponent=" + MathUtil::GetFloatAsString(props->GetLightConeExponent());
+    }
+    if (t == TYPE_LIGHT) {
+        code_str += " light_range=" + MathUtil::GetFloatAsString(props->GetLightRange());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetCollisionPos()->toQVector3D() != QVector3D(0,0,0))) {
+        code_str += " collision_pos=" + MathUtil::GetVectorAsString(props->GetCollisionPos()->toQVector3D());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetCollisionScale()->toQVector3D() != QVector3D(1,1,1))) {
+        code_str += " collision_scale=" + MathUtil::GetVectorAsString(props->GetCollisionScale()->toQVector3D());
+    }
+    if (t == TYPE_OBJECT && ((show_defaults) || props->GetDrawLayer() != 0)) {
+        code_str += " draw_layer=" + MathUtil::GetIntAsString(props->GetDrawLayer());
+    }
 
     //add text stuff if there is any in the middle
-    if (t == "text") {
+    switch (t) {
+    case TYPE_TEXT:
         code_str += ">";
         code_str += GetText();
-    }
-    else if (t == "paragraph") {
+        break;
+
+    case TYPE_PARAGRAPH:
         code_str += ">";
-        code_str += GetText();        
+        code_str += GetText();
+        break;
+
+    default:
+        break;
     }
 
     //now close it off
     if (child_objects.empty()) {
-        if (t == "text") {
-            code_str += QString("</text>");
-        }
-        else if (t == "paragraph") {
-            code_str += "</paragraph>";
-        }
-        else {
-            code_str += " />";            
+        switch (t) {
+        case TYPE_TEXT:
+            code_str += QString("</Text>");
+            break;
+        case TYPE_PARAGRAPH:
+            code_str += "</Paragraph>";
+            break;
+        default:
+            code_str += " />";
+            break;
         }
     }
     else {
@@ -3062,7 +3428,7 @@ QString RoomObject::GetXMLCode(const bool show_defaults) const
         }
 
         //closing tag
-        code_str += QString("</") + tagname + QString(">");
+        code_str += QString("</") + t_str + QString(">");
     }
 
     return code_str;
@@ -3071,23 +3437,23 @@ QString RoomObject::GetXMLCode(const bool show_defaults) const
 void RoomObject::SetURL(const QString & base, const QString & s)
 {
 //    qDebug() << "RoomObject::SetURL" << this << base << s;
-    SetS("url", s);
+    props->SetURL(s);
 
     //do extra stuff - if this is a link, has an attached websurface, etc.
-    if (GetType() == "link") {
+    if (GetType() == TYPE_LINK) {
         if (QString::compare(s, "workspaces") != 0 && QString::compare(s, "bookmarks") != 0) {
 //            qDebug() << "RoomObject::SetURL setting url" << base << s;
             QUrl base_url(base);
             QString resolved_url = QUrl::fromPercentEncoding(base_url.resolved(s).toString().toLatin1());
-            SetS("url", resolved_url);
-            if (GetS("_original_url").isEmpty()) {
-                SetS("_original_url", resolved_url);
+            props->SetURL(resolved_url);
+            if (props->GetOriginalURL().isEmpty()) {
+                props->SetOriginalURL(resolved_url);
             }
         }
-        textgeom_url->SetText(ShortenString(GetS("url")));
+        textgeom_url->SetText(ShortenString(props->GetURL()));
     }
     else {
-        if (GetS("websurface_id").length() > 0 && assetwebsurface && assetwebsurface->GetB("_save_to_markup")) {
+        if (props->GetWebsurfaceID().length() > 0 && assetwebsurface && assetwebsurface->GetProperties()->GetSaveToMarkup()) {
             assetwebsurface->SetURL(s);
         }
     }
@@ -3100,18 +3466,18 @@ void RoomObject::SetURL(const QString & s)
 
 QString RoomObject::GetURL() const
 {
-    return GetS("url");
+    return props->GetURL();
 }
 
 void RoomObject::SetTitle(const QString & s)
 {
-    SetS("title", s);
+    props->SetTitle(s);
     textgeom_title->SetText(ShortenString(s));
 }
 
 QString RoomObject::GetTitle() const
 {
-    return GetS("title");
+    return props->GetTitle();
 }
 
 QPointer <TextGeom> RoomObject::GetTextGeomURL()
@@ -3130,11 +3496,9 @@ void RoomObject::DrawPortalGL(QPointer <AssetShader> shader)
         return;
     }
 
-    const float w = GetScale().x() * 0.5f;
-    const float h = GetScale().y() * 0.5f;
-
-    //53.9 NOTE!    
-    UpdateMatrices();
+    const QVector3D scale = GetScale();
+    const float w = scale.x() * 0.5f;
+    const float h = scale.y() * 0.5f;
 
     MathUtil::PushModelMatrix();
     MathUtil::MultModelMatrix(model_matrix_local);
@@ -3144,7 +3508,6 @@ void RoomObject::DrawPortalGL(QPointer <AssetShader> shader)
 
     shader->SetUseTextureAll(false);    
     shader->SetUseLighting(false);
-    shader->SetUseSkelAnim(false); //53.11 - TODO: find out why is this necessary?
 
     if (selected) {
         shader->SetConstColour(QVector4D(0.5f, 1.0f, 0.5f, 1.0f));
@@ -3179,12 +3542,12 @@ void RoomObject::DrawPortalGL(QPointer <AssetShader> shader)
 
     shader->SetUseTexture(0, true);
     shader->SetConstColour(QVector4D(1,1,1,1));
-    shader->SetUseLighting(GetB("lighting"));
+    shader->SetUseLighting(props->GetLighting());
 
-    if (!GetB("open")) {
+    if (!props->GetOpen()) {
         DrawPortalInsideGL(shader);
     }
-    if (GetB("_draw_back")) {
+    if (props->GetDrawBack()) {
         DrawPortalBackGL(shader);
     }
 
@@ -3208,7 +3571,7 @@ void RoomObject::DrawPortalDecorationsGL(QPointer <AssetShader> shader, const fl
     MathUtil::ModelMatrix().scale(w, h, 1.0f);
     MathUtil::ModelMatrix().translate(0,0,portal_spacing);
 
-    if (GetB("draw_text") && portal_text && portal_text->GetTextGeomTitle()) {
+    if (props->GetDrawText() && portal_text && portal_text->GetTextGeomTitle()) {
         shader->SetUseTexture(0, true);
         shader->SetConstColour(QVector4D(1,1,1,1));
 
@@ -3244,7 +3607,7 @@ void RoomObject::DrawPortalBackGL(QPointer <AssetShader> shader) const
     shader->SetUseTextureAll(false);
     shader->SetUseTexture(0, use_thumb);
 
-    const QColor col = GetC("col");
+    const QColor col = MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D());
     if (use_thumb) {
         const float max_col = qMax(qMax(col.redF(), col.greenF()), col.blueF());
         shader->SetConstColour(QVector4D(max_col, max_col, max_col, 1));
@@ -3259,7 +3622,7 @@ void RoomObject::DrawPortalBackGL(QPointer <AssetShader> shader) const
     MathUtil::ModelMatrix().scale(-1.0f, 1.0f, -1.0f); //scales and does 180 rotation
 
     shader->UpdateObjectUniforms();
-    if (GetB("_circular")) {
+    if (props->GetCircular()) {
         RendererInterface * renderer = RendererInterface::m_pimpl;
         AbstractRenderCommand a(PrimitiveType::TRIANGLE_FAN,
                                 renderer->GetDiscPrimCount(),
@@ -3319,12 +3682,12 @@ void RoomObject::DrawPortalInsideGL(QPointer <AssetShader> shader) const
 
     //qDebug() << "EnvObject::DrawPortalInsideGL" << this->GetURL() << thumb_image << GetColour();
     const bool use_thumb = (portal_thumb_img && portal_thumb_img->GetFinished() && !portal_thumb_img->GetError() && portal_thumb_img->GetTextureHandle(true) != nullptr);
-    QColor col = GetC("col");
+    QColor col = MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D());
 
     if (col == QColor(0,0,0,0) || col == QColor(0,0,0,255)) {
         col = QColor(255,255,255,255);
     }
-    if (!GetB("_highlighted")) {
+    if (!props->GetHighlighted()) {
         col = col.darker(150);
     }
 
@@ -3344,7 +3707,7 @@ void RoomObject::DrawPortalInsideGL(QPointer <AssetShader> shader) const
     MathUtil::PushModelMatrix();
 
     shader->UpdateObjectUniforms();        
-    if (GetB("_circular")) {
+    if (props->GetCircular()) {
         RendererInterface * renderer = RendererInterface::m_pimpl;
         AbstractRenderCommand a(PrimitiveType::TRIANGLE_FAN,
                                 renderer->GetDiscPrimCount(),
@@ -3407,7 +3770,7 @@ void RoomObject::DrawPortalFrameGL(QPointer <AssetShader> shader)
         return;
     }   
 
-    const QColor col = GetC("col");
+    const QColor col = MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D());
     auto tex_id = linear_gradient_img->GetTextureHandle(true);
     RendererInterface::m_pimpl->BindTextureHandle(1, tex_id);
 
@@ -3415,8 +3778,8 @@ void RoomObject::DrawPortalFrameGL(QPointer <AssetShader> shader)
 
     MathUtil::PushModelMatrix();
 
-    if (GetB("_circular")) {
-        MathUtil::ModelMatrix().scale(1.0f, 1.0f, !GetB("open") ? 0.2f : 0.1f);
+    if (props->GetCircular()) {
+        MathUtil::ModelMatrix().scale(1.0f, 1.0f, !props->GetOpen() ? 0.2f : 0.1f);
         shader->UpdateObjectUniforms();
         RendererInterface * renderer = RendererInterface::m_pimpl;
         AbstractRenderCommand a(PrimitiveType::TRIANGLES,
@@ -3591,7 +3954,7 @@ void RoomObject::DrawPortalStencilGL(QPointer <AssetShader> shader, const bool d
 
     shader->UpdateObjectUniforms();   
 
-    if (GetB("_circular")) {
+    if (props->GetCircular()) {
         RendererInterface * renderer = RendererInterface::m_pimpl;
         AbstractRenderCommand a(PrimitiveType::TRIANGLE_FAN,
                                 renderer->GetDiscPrimCount(),
@@ -3703,16 +4066,16 @@ bool RoomObject::Clicked(const QVector3D & p)
 {
     const QVector3D p_local = GetLocal(p);
 
-    const QString t = GetType();
+    const ElementType t = GetType();
 
-    if (t == "video") {
+    if (t == TYPE_VIDEO) {
         if (assetvideo) {
             if (fabsf(p_local.x()) < 1.0f && fabsf(p_local.y()) < assetvideo->GetAspectRatio(&media_ctx) && p_local.z() > 0.0f && p_local.z() < 1.0f) {
                 return true;
             }
         }
     }
-    else if (t == "object") {
+    else if (t == TYPE_OBJECT) {
         if (assetobject) {
             const QVector3D bbmin = assetobject->GetBBoxMin() - QVector3D(0.1f, 0.1f, 0.1f);
             const QVector3D bbmax = assetobject->GetBBoxMax() + QVector3D(0.1f, 0.1f, 0.1f);
@@ -3723,12 +4086,12 @@ bool RoomObject::Clicked(const QVector3D & p)
             }
         }
     }
-    else if (t == "ghost") {
+    else if (t == TYPE_GHOST) {
         if (fabsf(p_local.x()) < 1.0f && fabsf(p_local.y()) < 2.0f && fabsf(p_local.z()) < 1.0f) {
             return true;
         }
     }
-    else if (t == "image") {
+    else if (t == TYPE_IMAGE) {
         if (assetimage) {
             if (fabsf(p_local.x()) < 1.0f && fabsf(p_local.y()) < assetimage->GetAspectRatio() && p_local.z() > 0.0f && p_local.z() < 1.0f) {
                 return true;
@@ -3739,35 +4102,45 @@ bool RoomObject::Clicked(const QVector3D & p)
     return false;
 }
 
-QVector3D RoomObject::GetLocal(const QVector3D & p) const
+QVector3D RoomObject::GetLocal(const QVector3D & pos) const
 {
-    const QVector3D d = (p - (GetPos() + GetZDir() * RoomObject::portal_spacing));
-    return QVector3D(QVector3D::dotProduct(d, GetXDir()) / GetScale().x(),
-                     QVector3D::dotProduct(d, GetYDir()) / GetScale().y(),
-                     QVector3D::dotProduct(d, GetZDir()) / GetScale().z());
+    const QVector3D p = GetPos();
+    const QVector3D x = GetXDir();
+    const QVector3D y = GetYDir();
+    const QVector3D z = GetZDir();
+    const QVector3D s = GetScale();
+    const QVector3D d = (pos - (p + z * RoomObject::portal_spacing));
+    return QVector3D(QVector3D::dotProduct(d, x) / s.x(),
+                     QVector3D::dotProduct(d, y) / s.y(),
+                     QVector3D::dotProduct(d, z) / s.z());
 }
 
-QVector3D RoomObject::GetGlobal(const QVector3D & p) const
+QVector3D RoomObject::GetGlobal(const QVector3D & pos) const
 {
-    return p.x() * GetXDir() * GetScale().x() +
-            p.y() * GetYDir() * GetScale().y() +
-            p.z() * GetZDir() * GetScale().z() +
-            GetPos() + GetZDir() * RoomObject::portal_spacing;
+    const QVector3D p = GetPos();
+    const QVector3D x = GetXDir();
+    const QVector3D y = GetYDir();
+    const QVector3D z = GetZDir();
+    const QVector3D s = GetScale();
+    return pos.x() * x * s.x() +
+            pos.y() * y * s.y() +
+            pos.z() * z * s.z() +
+            p + z * RoomObject::portal_spacing;
 }
 
 int RoomObject::GetNumTris() const
 {
-    const QString t = GetType();
-    if (t == "text" || t == "paragraph") {
+    const ElementType t = GetType();
+    if (t == TYPE_TEXT || t == TYPE_PARAGRAPH) {
         return 2;
     }
-    else if (t == "image" || t == "video") {
+    else if (t == TYPE_IMAGE || t == TYPE_VIDEO) {
         return 12;
     }
-    else if (t == "link") {
+    else if (t == TYPE_LINK) {
         return 4;
     }
-    else if (t == "object") {
+    else if (t == TYPE_OBJECT) {
         if (assetobject) {
             return assetobject->GetNumTris();
         }
@@ -3775,7 +4148,7 @@ int RoomObject::GetNumTris() const
             return 0;
         }
     }
-    else if (t == "ghost") {
+    else if (t == TYPE_GHOST) {
         int total = 0;        
         for (const QPointer <AssetObject> & a: ghost_assetobjs) {
             if (a) {
@@ -3798,16 +4171,6 @@ float RoomObject::GetInterpTime() const
     return interp_time;
 }
 
-void RoomObject::SetInterpolate(const bool b)
-{
-    interpolate = b;
-}
-
-bool RoomObject::GetInterpolate()
-{
-    return interpolate;
-}
-
 void RoomObject::SetDirty(const bool val)
 {
     if (props) {
@@ -3826,12 +4189,12 @@ bool RoomObject::IsDirty() const
 QPointer <RoomObject> RoomObject::CreateText(const QString & js_id, const float fixed_size, const QString & text, const QColor col, QVector3D scale)
 {
     QPointer <RoomObject> obj(new RoomObject());
-    obj->SetType("text");
-    obj->SetS("js_id", js_id);
+    obj->SetType(TYPE_TEXT);
+    obj->GetProperties()->SetJSID(js_id);
     obj->SetFixedSize(true, fixed_size);
     obj->SetText(text);
-    obj->SetC("col", col);
-    obj->SetV("scale", scale);
+    obj->GetProperties()->SetColour(MathUtil::GetColourAsVector4(col));
+    obj->GetProperties()->SetScale(scale);
     return obj;
 }
 
@@ -3839,34 +4202,34 @@ QPointer <RoomObject> RoomObject::CreateText(const QString & js_id, const float 
 QPointer <RoomObject> RoomObject::CreateImage(const QString & js_id, const QString & id, const QColor col, const bool lighting)
 {
     QPointer <RoomObject> obj(new RoomObject());
-    obj->SetType("image");
-    obj->SetS("js_id", js_id);
-    obj->SetS("id", id);
-    obj->SetC("col", col);
-    obj->SetB("lighting", lighting);
+    obj->SetType(TYPE_IMAGE);
+    obj->GetProperties()->SetJSID(js_id);
+    obj->GetProperties()->SetID(id);
+    obj->GetProperties()->SetColour(MathUtil::GetColourAsVector4(col));
+    obj->GetProperties()->SetLighting(lighting);
     return obj;
 }
 
 QPointer <RoomObject> RoomObject::CreateObject(const QString & js_id, const QString & id, const QColor col, const bool lighting)
 {
     QPointer <RoomObject> obj(new RoomObject());
-    obj->SetType("object");
-    obj->SetS("js_id", js_id);
-    obj->SetS("id", id);
-    obj->SetC("col", col);
-    obj->SetB("lighting", lighting);
+    obj->SetType(TYPE_OBJECT);
+    obj->GetProperties()->SetJSID(js_id);
+    obj->GetProperties()->SetID(id);
+    obj->GetProperties()->SetColour(MathUtil::GetColourAsVector4(col));
+    obj->GetProperties()->SetLighting(lighting);
     return obj;
 }
 
 QPointer <RoomObject> RoomObject::CreateParagraph(const QString & js_id, const QString & id, const QString & text, const QColor col, const bool lighting)
 {
     QPointer <RoomObject> obj(new RoomObject());
-    obj->SetType("paragraph");
-    obj->SetS("js_id", js_id);
-    obj->SetS("id", id);
-    obj->SetText(text);    
-    obj->SetC("col", col);
-    obj->SetB("lighting", lighting);
+    obj->SetType(TYPE_PARAGRAPH);
+    obj->GetProperties()->SetJSID(js_id);
+    obj->GetProperties()->SetID(id);
+    obj->SetText(text);
+    obj->GetProperties()->SetColour(MathUtil::GetColourAsVector4(col));
+    obj->GetProperties()->SetLighting(lighting);
     return obj;
 }
 
@@ -3932,7 +4295,7 @@ void RoomObject::LoadGhost_Helper(const int depth, const QVariantMap & d, QPoint
         QVariantList l = d["ghost"].toList();
         for (int i=0; i<l.size(); ++i) {
             QVariantMap o = l[i].toMap();
-            SetType("ghost");
+            SetType(TYPE_GHOST);
             SetProperties(o);
             LoadGhost_Helper(depth+1, o, this, asset_obj_list, asset_shader_list);
         }
@@ -3944,7 +4307,7 @@ void RoomObject::LoadGhost_Helper(const int depth, const QVariantMap & d, QPoint
             QVariantMap o = l[i].toMap();
 
             QPointer <RoomObject> new_thing(new RoomObject());
-            new_thing->SetType("object");
+            new_thing->SetType(TYPE_OBJECT);
             new_thing->SetProperties(o);
 
             //make sure we can link this Object to an AssetObject
@@ -4019,7 +4382,7 @@ void RoomObject::DoGhostMoved(const QVariantMap & m)
         }
 
         //set first and last frames to be the same (current packet)
-        SetV("pos", frame1.pos);
+        props->SetPos(frame1.pos);
         SetDir(frame1.dir);
 
         ghost_frame = frame1;
@@ -4119,7 +4482,7 @@ void RoomObject::RemoveChildByJSID(QString jsid)
 {
     for (int i=0; i<child_objects.size(); ++i)
     {
-        if (child_objects[i]->GetS("js_id") == jsid)
+        if (child_objects[i]->GetProperties()->GetJSID() == jsid)
         {
             child_objects[i]->SetParentObject(NULL);
             child_objects.removeAt(i);
@@ -4130,8 +4493,8 @@ void RoomObject::RemoveChildByJSID(QString jsid)
 
 void RoomObject::GetLight(LightContainer* p_container, QMatrix4x4* p_model_matrix)
 {
-    if (GetType() == "light") {
-        float light_cone_angle = GetF("light_cone_angle");
+    if (GetType() == TYPE_LIGHT) {
+        float light_cone_angle = props->GetLightConeAngle();
         if (light_cone_angle == -1.0f) {
             return; // Skip over when light is disabled
         }
@@ -4140,16 +4503,16 @@ void RoomObject::GetLight(LightContainer* p_container, QMatrix4x4* p_model_matri
         float zScale = p_model_matrix->column(2).length();
         float averageScale = (xScale + yScale + zScale) / 3;
 
-        QColor color = GetC("col");
+        QColor color = MathUtil::GetVector4AsColour(props->GetColour()->toQVector4D());
         QVector3D light_intensity_color(color.redF(), color.greenF(), color.blueF());
-        light_intensity_color *= GetF("light_intensity");
+        light_intensity_color *= props->GetLightIntensity();
         light_intensity_color *= averageScale * averageScale;
         if (light_intensity_color == QVector3D(0.0f, 0.0f, 0.0f))
         {
             return; // Skip over when light has no intensity
         }
 
-        float light_range = GetF("light_range") * averageScale;
+        float light_range = props->GetLightRange() * averageScale;
         if (light_range == 0.0f)
         {
             return; // Skip over when light has no range
@@ -4180,7 +4543,7 @@ void RoomObject::GetLight(LightContainer* p_container, QMatrix4x4* p_model_matri
         QMatrix4x4 rotation_matrix = room_matrix * model_matrix_normalized;
         light_direction = (rotation_matrix * QVector4D(light_direction, 0.0f)).toVector3D();
 
-        float light_exponent = GetF("light_cone_exponent");
+        float light_exponent = props->GetLightConeExponent();
         p_container->m_lights.push_back(Light(light_intensity_color, light_cone_angle, light_pos, light_range, light_direction, light_exponent));
     }
 }
@@ -4267,7 +4630,25 @@ void RoomObject::DrawGhostUserIDChat(QPointer <AssetShader> shader)
     //draw grey box
     MathUtil::PushModelMatrix();
     MathUtil::ModelMatrix().scale(width, height, 1);
-    SpinAnimation::DrawPlaneGL(shader, QColor(0,0,0,128));
+
+    QColor col;
+    if (ghost_frame.speaking) {
+        const int v = qMin(255, int(512.0f*ghost_frame.current_sound_level));
+        col = QColor(0,v,0,128);
+    }
+    else if (ghost_frame.typing) {
+        col = QColor(128,128,0,128);
+    }
+    else if (ghost_frame.editing) {
+        col = QColor(128,0,128,128);
+    }
+    else if (ghost_frame.hands.first.is_active || ghost_frame.hands.second.is_active) {
+        col = QColor(0,0,128,128);
+    }
+    else {
+        col = QColor(0,0,0,128);
+    }
+    SpinAnimation::DrawPlaneGL(shader, col);
     MathUtil::PopModelMatrix();
 
     MathUtil::ModelMatrix().translate(0,height*0.5f-row_height*0.5f,0);
@@ -4290,6 +4671,7 @@ void RoomObject::DrawGhostUserIDChat(QPointer <AssetShader> shader)
     }
 
     MathUtil::PopModelMatrix();
+
 
     MathUtil::PushModelMatrix();
 

@@ -8,9 +8,8 @@ AssetRecording::AssetRecording() :
 {
     mutex.lock();
 //    qDebug() << "AssetRecording::AssetRecording()";
-    SetS("_type", "assetrecording");
-    SetS("_tagname", "AssetRecording");
-    SetI("sample_rate", 44100);
+    props->SetType(TYPE_ASSETRECORDING);
+    props->SetSampleRate(44100);
     dt_time.start();
     mutex.unlock();
 }
@@ -25,7 +24,7 @@ void AssetRecording::Load()
 {
 //    qDebug() << "AssetRecording::Load()" << GetS("_src_url");
     mutex.lock();
-    WebAsset::Load(QUrl(GetS("_src_url")));
+    WebAsset::Load(QUrl(props->GetSrcURL()));
     mutex.unlock();
 }
 
@@ -61,8 +60,8 @@ void AssetRecording::Update()
     }
     else {
         //trigger for autoplay
-        if (GetLoaded() && GetProcessed() && GetB("auto_play")) {
-            Play(GetB("loop"));
+        if (GetLoaded() && GetProcessed() && props->GetAutoPlay()) {
+            Play(props->GetLoop());
         }
     }
 }
@@ -70,7 +69,7 @@ void AssetRecording::Update()
 void AssetRecording::Play(const bool loop)
 {
 //    qDebug() << "AssetRecording::Play" << loop;
-    SetB("loop", loop);
+    props->SetLoop(loop);
     packet_index = 0;
     playing = true;
     play_time_elapsed = 0.0;
@@ -124,7 +123,7 @@ QList <AssetRecordingPacket> AssetRecording::GetPackets()
 
     //restart if loop is set to true
     if (playing && packet_index >= recording_data.size()-1) {
-        if (GetB("loop")) {
+        if (props->GetLoop()) {
             packet_index = 0;
             play_time_elapsed = 0.0;
         }

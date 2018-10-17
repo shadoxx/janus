@@ -12,8 +12,8 @@ AssetWebSurface::AssetWebSurface() :
     cursor_active(false)
 {
 //    qDebug() << "AssetWebSurface::AssetWebSurface" << this;
-    SetI("width", 1000);
-    SetI("height", 800);
+    props->SetWidth(1000);
+    props->SetHeight(800);
 
     cursor_pos = QPoint(500, 400);
 
@@ -71,16 +71,16 @@ void AssetWebSurface::SetSrc(const QString & base, const QString & u)
 //    qDebug() << "AssetWebSurface::SetURL()" << base << u;
     Asset::SetSrc(base, u);
     if (original_url.isEmpty()) {
-        original_url = GetS("_src_url");
+        original_url = props->GetSrcURL();
     }
-    URLChanged(QUrl(GetS("_src_url")));
+    URLChanged(QUrl(props->GetSrcURL()));
 }
 
 void AssetWebSurface::Load()
 {
 //    qDebug() << "AssetWebSurface::Load()" << url;
     if (webview) {        
-        webview->load(GetS("_src_url"));
+        webview->load(props->GetSrcURL());
     }
 }
 
@@ -175,18 +175,18 @@ QUrl AssetWebSurface::GetLinkClicked(const int cursor_index)
             return hit_test_result[cursor_index].imageUrl();
         }
         else {
-            return webview->url();
+            return QUrl("");
         }
     }
     else {
-        return webview->url();
+        return QUrl("");
     }
 }
 
-void AssetWebSurface::mousePressEvent(QMouseEvent * e, const int cursor_index)
+void AssetWebSurface::mousePressEvent(QMouseEvent * e, const int )
 {
 //    qDebug() << "AssetWebSurface::mousePressEvent" << this << e->pos();
-    const int height = GetI("height");
+    const int height = props->GetHeight();
 
     cursor_pos = e->pos();
 
@@ -197,27 +197,27 @@ void AssetWebSurface::mousePressEvent(QMouseEvent * e, const int cursor_index)
     if (webview) {
         QMouseEvent e2(QEvent::MouseButtonPress, e->pos(), e->button(), e->buttons(), e->modifiers());
         webview->mousePressEvent(&e2);
-        hit_test_result[cursor_index] = webview->getHitTestContent(e->pos());
     }
 }
 
-void AssetWebSurface::mouseMoveEvent(QMouseEvent * e, const int )
+void AssetWebSurface::mouseMoveEvent(QMouseEvent * e, const int cursor_index)
 {
 //    qDebug() << "AssetWebSurface::mouseMoveEvent" << this << e->pos();
-    const int height = GetI("height");
+    const int height = props->GetHeight();
 
     cursor_pos = e->pos();
 
     if (webview) {        
         QMouseEvent e2(QEvent::MouseMove, e->pos(), e->button(), e->buttons(), e->modifiers());
         webview->mouseMoveEvent(&e2); //TODO/BUG: uncommenting this causes render loop to stall when clicking UI URL bar thing
+        hit_test_result[cursor_index] = webview->getHitTestContent(e->pos());
     }
 }
 
 void AssetWebSurface::mouseReleaseEvent(QMouseEvent * e, const int cursor_index)
 {
 //    qDebug() << "AssetWebSurface::mouseReleaseEvent" << this << e->pos();
-    const int height = GetI("height");
+    const int height = props->GetHeight();
 
     if (webview) {
         QMouseEvent e2(QEvent::MouseButtonRelease, e->pos(), e->button(), e->buttons(), e->modifiers());
@@ -228,7 +228,7 @@ void AssetWebSurface::mouseReleaseEvent(QMouseEvent * e, const int cursor_index)
 
 void AssetWebSurface::keyPressEvent(QKeyEvent * e)
 {
-    const int height = GetI("height");
+    const int height = props->GetHeight();
 
     if (webview) {
         webview->keyPressEvent(e);
@@ -237,7 +237,7 @@ void AssetWebSurface::keyPressEvent(QKeyEvent * e)
 
 void AssetWebSurface::keyReleaseEvent(QKeyEvent * e)
 {
-    const int height = GetI("height");
+    const int height = props->GetHeight();
 
     if (webview) {        
         webview->keyReleaseEvent(e);
@@ -276,8 +276,8 @@ void AssetWebSurface::GoBack()
 
 void AssetWebSurface::SetCursorPosition(const QPoint & p)
 {
-    const int width = GetI("width");
-    const int height = GetI("height");
+    const int width = props->GetWidth();
+    const int height = props->GetHeight();
 
     cursor_pos = p;
     if (cursor_pos.x() < 0.0) {
@@ -309,29 +309,29 @@ QPoint AssetWebSurface::GetTextCursorPosition() const
 
 void AssetWebSurface::SetWidth(const int w)
 {
-    const int width = GetI("height");
-    const int height = GetI("height");
+    const int width = props->GetWidth();
+    const int height = props->GetHeight();
 
     if (w != width && w <= m_max_width) {
         cursor_pos = QPoint(w/2, height/2);
         update_viewport = true;
 
         dirty_rects.clear();
-        SetI("width", w);
+        props->SetWidth(w);
     }
 }
 
 void AssetWebSurface::SetHeight(const int h)
 {
-    const int width = GetI("height");
-    const int height = GetI("height");
+    const int width = props->GetWidth();
+    const int height = props->GetHeight();
 
     if (h != height && h <= m_max_height) {
         cursor_pos = QPoint(width/2, h/2);
         update_viewport = true;
 
         dirty_rects.clear();
-        SetI("height", h);
+        props->SetHeight(h);
     }
 }
 
@@ -342,12 +342,12 @@ TextureHandle* AssetWebSurface::GetTextureHandle() const
 
 void AssetWebSurface::UpdateTexture()
 {
-    UpdateTexture(QRect(0,0,GetI("width"),GetI("height")));
+    UpdateTexture(QRect(0,0,props->GetWidth(), props->GetHeight()));
 }
 
 void AssetWebSurface::UpdateTextureURLBar()
 {
-    UpdateTexture(QRect(0,this->GetURLBarPos().y(),GetI("width"),GetI("height")-this->GetURLBarPos().y()));
+    UpdateTexture(QRect(0,this->GetURLBarPos().y(),props->GetWidth(),props->GetHeight()-this->GetURLBarPos().y()));
 }
 
 void AssetWebSurface::UpdateTexture(QRect r)
@@ -380,12 +380,12 @@ void AssetWebSurface::URLChanged(QUrl url)
 
 QPoint AssetWebSurface::GetURLBarPos() const
 {
-    return QPoint(168, GetI("height")-GetURLBarHeight());
+    return QPoint(168, props->GetHeight()-GetURLBarHeight());
 }
 
 int AssetWebSurface::GetURLBarWidth() const
 {
-    return GetI("width") - 176;
+    return props->GetWidth() - 176;
 }
 
 int AssetWebSurface::GetURLBarHeight() const
@@ -407,8 +407,8 @@ void AssetWebSurface::UpdateViewport()
 
 void AssetWebSurface::UpdateGL()
 {
-    const int width = GetI("width");
-    const int height = GetI("height");
+    const int width = props->GetWidth();
+    const int height = props->GetHeight();
 
     if (QSize(width, height) != webview->viewportSize()) {
         webview->setViewportSize(QSize(width, height));

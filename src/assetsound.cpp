@@ -5,8 +5,7 @@ AssetSound::AssetSound() :
     volume(70),
     default_volume(70)
 {
-    SetS("_type", "assetsound");
-    SetS("_tagname", "AssetSound");
+    props->SetType(TYPE_ASSETSOUND);
 }
 
 AssetSound::~AssetSound()
@@ -16,7 +15,7 @@ AssetSound::~AssetSound()
 
 void AssetSound::SetupOutput(MediaContext * ctx, const bool loop)
 {
-    media_player.SetupOutput(ctx, GetS("_src_url"), loop, true);
+    media_player.SetupOutput(ctx, props->GetSrcURL(), loop, true);
 }
 
 void AssetSound::ClearOutput(MediaContext * ctx)

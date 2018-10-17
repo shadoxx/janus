@@ -460,8 +460,8 @@ void TextGeom::DrawGL(QPointer <AssetShader> shader)
         return;
     }
 
-//    qDebug() << "TextGeom::DrawGL" << vbo_rebuild << texts.first().text << texts.first().vbo_id << texts.first().vbo_data.size();
     if (vbo_rebuild) {
+//        qDebug() << "TextGeom::DrawGL" << vbo_rebuild << texts.first().text;
         CreateVBO();
         vbo_rebuild = false;
     }

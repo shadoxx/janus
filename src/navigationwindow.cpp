@@ -73,13 +73,13 @@ void NavigationWindow::Update_Helper(QTreeWidgetItem * p, QPointer <Room> r)
         item = new QTreeWidgetItem(p);
     }
 
-    const QString u = r->GetS("url");
+    const QString u = r->GetProperties()->GetURL();
     item->setText(0, (r->GetStarted() ? QString("[X] ") : QString("[  ] ")) + u);
     item->setExpanded(true);
     if (game->GetEnvironment()->GetCurRoom() == r) {
         item->setSelected(true);
     }
-    if (r->GetParentObject() && r->GetParentObject()->GetB("mirror")) {
+    if (r->GetParentObject() && r->GetParentObject()->GetProperties()->GetMirror()) {
         item->setDisabled(true);
         item->setText(0, item->text(0) + QString(" (mirror)"));
     }

@@ -186,7 +186,7 @@ void RoomPhysics::AddRoomTemplate(const QPointer <RoomObject> o)
             && o->GetAssetObject()            
             && o->GetAssetObject()->GetFinished()) {
         added_room_template = true;
-        if (o->GetS("js_id") == "__room_plane") {
+        if (o->GetProperties()->GetJSID() == "__room_plane") {
             AddRoomPlaneTemplate(0.0f);
         }
         else {
@@ -254,7 +254,7 @@ void RoomPhysics::RemoveGroundPlane()
 void RoomPhysics::AddRigidBody(const QPointer <RoomObject> o, short group, short mask)
 {
 //    qDebug() << "RoomPhysics::AddRigidBody" << this;
-    const QString s = o->GetS("collision_id");
+    const QString s = o->GetProperties()->GetCollisionID();
     if (s == "sphere") {
         AddSphere(o, group, mask);
     }
@@ -320,8 +320,8 @@ float RoomPhysics::GetRigidBodyMass(const QString js_id)
 
 btRigidBody * RoomPhysics::GetRigidBody(const QPointer <RoomObject> o)
 {
-    if (o && rigidBodies.contains(o->GetS("js_id"))) {
-        return rigidBodies[o->GetS("js_id")];
+    if (o && rigidBodies.contains(o->GetProperties()->GetJSID())) {
+        return rigidBodies[o->GetProperties()->GetJSID()];
     }
     else {
         return NULL;
@@ -330,7 +330,7 @@ btRigidBody * RoomPhysics::GetRigidBody(const QPointer <RoomObject> o)
 
 QSet <QString> RoomPhysics::GetRigidBodyCollisions(const QPointer <RoomObject> o)
 {
-    return rigidBodyCollisions[o->GetS("js_id")];
+    return rigidBodyCollisions[o->GetProperties()->GetJSID()];
 }
 
 void RoomPhysics::UpdateToRigidBody(QPointer <Player> player)
@@ -340,8 +340,8 @@ void RoomPhysics::UpdateToRigidBody(QPointer <Player> player)
         AddPlayerShape(player);
     }
     else {       
-        const QVector3D p = player->GetV("pos");
-        const QVector3D v = player->GetV("vel");
+        const QVector3D p = player->GetProperties()->GetPos()->toQVector3D();
+        const QVector3D v = player->GetProperties()->GetVel()->toQVector3D();
         const btMatrix3x3 btBasis(1,0,0,
                                   0,1,0,
                                   0,0,1);
@@ -376,8 +376,8 @@ void RoomPhysics::UpdateFromRigidBody(QPointer <Player> player)
 
     const btVector3 p = worldTrans.getOrigin();
     const btVector3 lv = rb->getLinearVelocity();
-    const bool flying = player->GetB("flying");
-    const QVector3D iv = player->GetV("impulse_vel");
+    const bool flying = player->GetFlying();
+    const QVector3D iv = player->GetImpulseVel();
 
     //stop physics from glitching out plyaer, leading to nan position
     if (!std::isfinite(p.x()) || !std::isfinite(p.y()) || !std::isfinite(p.z())) {        
@@ -385,10 +385,10 @@ void RoomPhysics::UpdateFromRigidBody(QPointer <Player> player)
         return;
     }   
 
-    if (!flying && player_on_ground && player->GetB("jump")) {
+    if (!flying && player_on_ground && player->GetJump()) {
         rb->setLinearVelocity(btVector3(iv.x(), jump_vel, iv.z()));
     }
-    else if (!flying && !player->GetB("jump") && lv.y() > 0.0f) {
+    else if (!flying && !player->GetJump() && lv.y() > 0.0f) {
         rb->setLinearVelocity(btVector3(iv.x(), lv.y() * 0.25f, iv.z()));
     }
     else if (flying) {
@@ -399,19 +399,19 @@ void RoomPhysics::UpdateFromRigidBody(QPointer <Player> player)
     }
     const btVector3 lv2 = rb->getLinearVelocity();
 
-    player->SetV("pos", QVector3D(p.x(), p.y(), p.z()));
-    player->SetV("vel", QVector3D(lv2.x(), lv2.y(), lv2.z()));
+    player->GetProperties()->SetPos(QVector3D(p.x(), p.y(), p.z()));
+    player->GetProperties()->SetVel(QVector3D(lv2.x(), lv2.y(), lv2.z()));
     //    qDebug() << "RoomPhysics::UpdateFromRigidBody" << player_on_ground << iv << QVector3D(lv.x(), lv.y(), lv.z()) << QVector3D(lv2.x(), lv2.y(), lv2.z());
 }
 
 void RoomPhysics::UpdateFromRigidBody(const QPointer <RoomObject> o)
 {
 //    qDebug() << "RoomPhysics::UpdateFromRigidBody2";
-    if (o.isNull() || !rigidBodies.contains(o->GetS("js_id")) || rigidBodies[o->GetS("js_id")] == NULL) {
+    if (o.isNull() || !rigidBodies.contains(o->GetProperties()->GetJSID()) || rigidBodies[o->GetProperties()->GetJSID()] == NULL) {
         return;
     }
 
-    btRigidBody * rb = rigidBodies[o->GetS("js_id")];
+    btRigidBody * rb = rigidBodies[o->GetProperties()->GetJSID()];
 
     btTransform worldTrans;
     rb->getMotionState()->getWorldTransform(worldTrans);
@@ -422,17 +422,17 @@ void RoomPhysics::UpdateFromRigidBody(const QPointer <RoomObject> o)
     btVector3 z = worldTrans.getBasis().getColumn(2);
     btVector3 lv = rb->getLinearVelocity();
 
-    o->SetV("xdir", QVector3D(x.x(), x.y(), x.z()));
-    o->SetV("ydir", QVector3D(y.x(), y.y(), y.z()));
-    o->SetV("zdir", QVector3D(z.x(), z.y(), z.z()));
-    o->SetV("pos", QVector3D(p.x(), p.y(),p.z()));
-    o->SetV("vel", QVector3D(lv.x(), lv.y(), lv.z()));
+    o->GetProperties()->SetXDir(QVector3D(x.x(), x.y(), x.z()));
+    o->GetProperties()->SetYDir(QVector3D(y.x(), y.y(), y.z()));
+    o->GetProperties()->SetZDir(QVector3D(z.x(), z.y(), z.z()));
+    o->GetProperties()->SetPos(QVector3D(p.x(), p.y(),p.z()));
+    o->GetProperties()->SetVel(QVector3D(lv.x(), lv.y(), lv.z()));
 }
 
 void RoomPhysics::UpdateToRigidBody(const QPointer <RoomObject> o)
 {
 //    qDebug() << "RoomPhysics::UpdateToRigidBody2";
-    const QString js_id = o->GetS("js_id");
+    const QString js_id = o->GetProperties()->GetJSID();
     if (o.isNull() || !rigidBodies.contains(js_id) || rigidBodies[js_id] == NULL) {
         return;
     }
@@ -450,7 +450,7 @@ void RoomPhysics::UpdateToRigidBody(const QPointer <RoomObject> o)
 void RoomPhysics::RemoveRigidBody(const QPointer <RoomObject> o)
 {
 //    qDebug() << "RoomPhysics::RemoveRigidBody" << o->GetJSID() << o->GetID();
-    const QString jsid = o->GetS("js_id");
+    const QString jsid = o->GetProperties()->GetJSID();
     if (rigidBodies.contains(jsid) && rigidBodies[jsid] != NULL) {
 //        qDebug() << "Removing" << o->GetJSID() << o->GetID() << o->GetCollisionID();
         rigidBodyJSIDs.remove(rigidBodies[jsid]);
@@ -524,10 +524,10 @@ void RoomPhysics::RemoveRigidBody(const QPointer <RoomObject> o)
 void RoomPhysics::AddSphere(const QPointer <RoomObject> o, short group, short mask)
 {
 //    qDebug() << "RoomPhysics::AddSphere" << o->GetJSID() << o->GetID() << group << mask;
-    const QVector3D scale = o->GetV("scale");
-    const QVector3D cscale = o->GetV("collision_scale");
+    const QVector3D scale = o->GetProperties()->GetScale()->toQVector3D();
+    const QVector3D cscale = o->GetProperties()->GetCollisionScale()->toQVector3D();
     float btMass = 0.0f;
-    if (!o->GetB("collision_static") || o->GetB("collision_trigger")) {
+    if (!o->GetProperties()->GetCollisionStatic() || o->GetProperties()->GetCollisionTrigger()) {
         btMass = 4.0f / 3.0f * MathUtil::_PI * scale.x() * cscale.x() *
                 scale.y() * cscale.y() *
                 scale.z() * cscale.z(); //volume of sphere (assumes uniform density for mass)
@@ -538,7 +538,7 @@ void RoomPhysics::AddSphere(const QPointer <RoomObject> o, short group, short ma
     if (scale.x() == scale.y() && scale.x() == scale.z()) { //perfect sphere
         const float btRadius = scale.x() * 0.5f;
         shape = new btSphereShape(btRadius);
-        collisionShapes_sphere[o->GetS("js_id")] = (btSphereShape*)shape;
+        collisionShapes_sphere[o->GetProperties()->GetJSID()] = (btSphereShape*)shape;
 
     }
     else { //ellipsoidal
@@ -549,7 +549,7 @@ void RoomPhysics::AddSphere(const QPointer <RoomObject> o, short group, short ma
         radii[1] = scale.y() * cscale.y();
         radii[2] = scale.z() * cscale.z();
         shape = new btMultiSphereShape(positions, radii, 1);
-        collisionShapes_multiSphere[o->GetS("js_id")] = (btMultiSphereShape*)shape;
+        collisionShapes_multiSphere[o->GetProperties()->GetJSID()] = (btMultiSphereShape*)shape;
     }
 
     btVector3 btInertia;
@@ -569,12 +569,12 @@ void RoomPhysics::AddMesh(const QPointer <RoomObject> o, short group, short mask
         return;
     }
 
-    const QVector3D s = o->GetV("scale");
+    const QVector3D s = o->GetProperties()->GetScale()->toQVector3D();
     const QVector3D AABB_size = a->GetBBoxMax() - a->GetBBoxMin();
     const float AABB_volume = AABB_size.x() * AABB_size.y() * AABB_size.z();
     const float AABB_estimated_mass = AABB_volume * 1.0; // Mass of water.
-    const float btMass = o->GetB("collision_static") ? 0.0f : AABB_estimated_mass; // Infinite mass if static
-    const QString jsid = o->GetS("js_id");
+    const float btMass = o->GetProperties()->GetCollisionStatic() ? 0.0f : AABB_estimated_mass; // Infinite mass if static
+    const QString jsid = o->GetProperties()->GetJSID();
 
     collisionShapes_triangleMesh[jsid] = new btTriangleMesh();   
 
@@ -589,14 +589,14 @@ void RoomPhysics::AddMesh(const QPointer <RoomObject> o, short group, short mask
         {
             GeomVBOData & vbo_data = a->GetGeom()->GetData().GetVBOData(materials[i], mesh_index);
             // For each instance
-            const size_t instance_count = vbo_data.m_instance_transforms.size();
-            for (size_t instance_index = 0; instance_index < instance_count; ++instance_index)
+            const int instance_count = vbo_data.m_instance_transforms.size();
+            for (int instance_index = 0; instance_index < instance_count; ++instance_index)
             {
                 const QVector <GeomTriangle>& tris = a->GetGeom()->GetData().GetTriangles(materials[i], mesh_index);
                 QVector3D transformed_position0;
                 QVector3D transformed_position1;
                 QVector3D transformed_position2;
-                for (size_t j = 0; j < tris.size(); ++j)
+                for (int j = 0; j < tris.size(); ++j)
                 {
                     QVector3D p0 = QVector3D(tris[j].p[0][0],
                                              tris[j].p[0][1],
@@ -642,17 +642,16 @@ void RoomPhysics::AddMesh(const QPointer <RoomObject> o, short group, short mask
 
 void RoomPhysics::AddCube(const QPointer <RoomObject> o, short group, short mask)
 {
-    const QVector3D s = o->GetV("scale");
-    const QVector3D cs = o->GetV("collision_scale");
+    const QVector3D s = o->GetProperties()->GetScale()->toQVector3D();
+    const QVector3D cs = o->GetProperties()->GetCollisionScale()->toQVector3D();
     float btMass = 0.0f;
-    if (!o->GetB("collision_static") || o->GetB("collision_trigger")) {
+    if (!o->GetProperties()->GetCollisionStatic() || o->GetProperties()->GetCollisionTrigger()) {
         btMass = s.x() * cs.x() *
                 s.y() * cs.y() *
                 s.z() * cs.z();
     }
 
-    QString jsid = o->GetS("js_id");
-
+    QString jsid = o->GetProperties()->GetJSID();
     collisionShapes_box[jsid] = new btBoxShape(btVector3(s.x() * cs.x() * 0.5f,
                                                         s.y() * cs.y() * 0.5f,
                                                         s.z() * cs.z() * 0.5f));
@@ -665,16 +664,16 @@ void RoomPhysics::AddCube(const QPointer <RoomObject> o, short group, short mask
 
 void RoomPhysics::AddCylinder(const QPointer <RoomObject> o, short group, short mask)
 {
-    const QVector3D s = o->GetV("scale");
-    const QVector3D cs = o->GetV("collision_scale");
+    const QVector3D s = o->GetProperties()->GetScale()->toQVector3D();
+    const QVector3D cs = o->GetProperties()->GetCollisionScale()->toQVector3D();
     float btMass = 0.0f;
-    if (!o->GetB("collision_static") || o->GetB("collision_trigger")) {
-        btMass = o->GetB("collision_static") ? 0.0f : s.x() * cs.x() *
+    if (!o->GetProperties()->GetCollisionStatic() || o->GetProperties()->GetCollisionTrigger()) {
+        btMass = o->GetProperties()->GetCollisionStatic() ? 0.0f : s.x() * cs.x() *
                 s.y() * cs.y() *
                 s.z() * cs.z();
     }
 
-    QString jsid = o->GetS("js_id");
+    QString jsid = o->GetProperties()->GetJSID();
     collisionShapes_cylinder[jsid] = new btCylinderShape(btVector3(s.x() * cs.x() * 0.5f,
                                                              s.y() * cs.y() * 0.5f,
                                                              s.z() * cs.z() * 0.5f));
@@ -687,16 +686,16 @@ void RoomPhysics::AddCylinder(const QPointer <RoomObject> o, short group, short 
 
 void RoomPhysics::AddCapsule(const QPointer <RoomObject> o, short group, short mask)
 {
-    const QVector3D s = o->GetV("scale");
-    const QVector3D cs = o->GetV("collision_scale");
+    const QVector3D s = o->GetProperties()->GetScale()->toQVector3D();
+    const QVector3D cs = o->GetProperties()->GetCollisionScale()->toQVector3D();
     float btMass = 0.0f;
-    if (!o->GetB("collision_static") || o->GetB("collision_trigger")) {
-        btMass = o->GetB("collision_static") ? 0.0f : s.x() * cs.x() *
+    if (!o->GetProperties()->GetCollisionStatic() || o->GetProperties()->GetCollisionTrigger()) {
+        btMass = o->GetProperties()->GetCollisionStatic() ? 0.0f : s.x() * cs.x() *
                 s.y() * cs.y() *
                 s.z() * cs.z();
     }
 
-    QString jsid = o->GetS("js_id");
+    QString jsid = o->GetProperties()->GetJSID();
     collisionShapes_capsule[jsid] = new btCapsuleShape(s.x() * cs.x() * 0.5f,
                                                  s.y() * cs.y()); //radius, height
     btVector3 btInertia;
@@ -708,8 +707,8 @@ void RoomPhysics::AddCapsule(const QPointer <RoomObject> o, short group, short m
 void RoomPhysics::DoPlayerGroundTest(const QPointer <Player> player)
 {
 //    qDebug() << "RoomPhysics::DoPlayerGroundTest" << this;
-    const QVector3D p0 = player->GetV("pos") + QVector3D(0,0.1f,0);
-    const QVector3D p1 = player->GetV("pos") - QVector3D(0,0.2f,0);
+    const QVector3D p0 = player->GetProperties()->GetPos()->toQVector3D() + QVector3D(0,0.1f,0);
+    const QVector3D p1 = player->GetProperties()->GetPos()->toQVector3D() - QVector3D(0,0.2f,0);
 
     btCollisionWorld::ClosestRayResultCallback callback(btVector3(p0.x(), p0.y(), p0.z()), btVector3(p1.x(), p1.y(), p1.z()));
 
@@ -747,7 +746,7 @@ void RoomPhysics::AddPlayerShape(const QPointer <Player> player)
 //        qDebug() << "RoomPhysics::AddPlayerShape()" << this;
         added_player = true;
 
-        const QVector3D p = player->GetV("pos");
+        const QVector3D p = player->GetProperties()->GetPos()->toQVector3D();
 
         const btMatrix3x3 btBasis(1,0,0,
                                   0,1,0,
@@ -755,7 +754,7 @@ void RoomPhysics::AddPlayerShape(const QPointer <Player> player)
         const btVector3 btP(p.x(), p.y(), p.z());
         const float btMass = 1.0f;
 
-        const float r = player->GetF("player_collision_radius");
+        const float r = player->GetPlayerCollisionRadius();
 
         btVector3 positions[2];
         positions[0].setX(0.0f);
@@ -784,8 +783,9 @@ void RoomPhysics::AddPlayerShape(const QPointer <Player> player)
         rigidBodyConstructInfo.m_rollingFriction = 0.00f;
         rigidBodyConstructInfo.m_restitution = 0.55f;
 
+        const QVector3D v = player->GetProperties()->GetVel()->toQVector3D();
         rigidBodies["__player"] = new btRigidBody(rigidBodyConstructInfo);
-        rigidBodies["__player"]->setLinearVelocity(btVector3(player->GetV("vel").x(), player->GetV("vel").y(), player->GetV("vel").z()));
+        rigidBodies["__player"]->setLinearVelocity(btVector3(v.x(), v.y(), v.z()));
         rigidBodies["__player"]->setSleepingThresholds(0.0f, 0.0f); //never sleep the player collision capsule, so it's always hitting stuff
         rigidBodies["__player"]->setAngularFactor(0.0f); //no need for rotations
         //rigidBodies["__player"]->setRestitution(0.0f);
@@ -801,7 +801,7 @@ void RoomPhysics::AddPlayerShape(const QPointer <Player> player)
 
 void RoomPhysics::SetLinearVelocity(const QPointer <RoomObject> o, QVector3D v)
 {
-    const QString jsid = o->GetS("js_id");
+    const QString jsid = o->GetProperties()->GetJSID();
 //    qDebug() << "RoomPhysics::SetLinearVelocity" << jsid << rigidBodies.contains(jsid) << rigidBodies[jsid];
     if (rigidBodies.contains(jsid) && rigidBodies[jsid]) {
 //        qDebug() << "SETTING VEL to" << jsid << v;
@@ -811,7 +811,7 @@ void RoomPhysics::SetLinearVelocity(const QPointer <RoomObject> o, QVector3D v)
 
 void RoomPhysics::AddShape(const QPointer <RoomObject> o, btCollisionShape * shape, const btScalar btMass, const btVector3 btInertia, short group, short mask)
 {
-    const QString j = o->GetS("js_id");
+    const QString j = o->GetProperties()->GetJSID();
     const QVector3D p = o->GetPos();// + o->GetCollisionPos();
     const QVector3D x = o->GetXDir();
     const QVector3D y = o->GetYDir();
@@ -846,16 +846,16 @@ void RoomPhysics::AddShape(const QPointer <RoomObject> o, btCollisionShape * sha
 //    rigidBodies[j]->setCollisionFlags(rigidBodies[j]->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
 //    rigidBodies[j]->setCollisionFlags(rigidBodies[j]->getCollisionFlags() | btCollisionObject::CO_GHOST_OBJECT);
 
-    if (o->GetB("collision_trigger")) {
+    if (o->GetProperties()->GetCollisionTrigger()) {
         rigidBodies[j]->setCollisionFlags(rigidBodies[j]->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
     }
 
     rigidBodies[j]->setContactProcessingThreshold(0.0f);
-    rigidBodies[j]->setCcdMotionThreshold(o->GetF("collision_ccdmotionthreshold"));
-    rigidBodies[j]->setCcdSweptSphereRadius(o->GetF("collision_ccdsweptsphereradius"));
+    rigidBodies[j]->setCcdMotionThreshold(o->GetProperties()->GetCollisionCcdMotionThreshold());
+    rigidBodies[j]->setCcdSweptSphereRadius(o->GetProperties()->GetCollisionCcdSweptSphereRadius());
 
     rigidBodyJSIDs[rigidBodies[j]] = j;
-    rigidBodyScales[j] = o->GetV("scale");
+    rigidBodyScales[j] = o->GetProperties()->GetScale()->toQVector3D();
     rigidBodyMasses[j] = btMass;
 
 //    qDebug() << "Adding" << o->GetJSID() << o->GetID() << o->GetCollisionID() << group << mask;

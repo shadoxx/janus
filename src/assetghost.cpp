@@ -4,8 +4,7 @@ AssetGhost::AssetGhost() :
     secs_per_frame(0.2f)
 {
     mutex.lock();
-    SetS("_type", "assetghost");
-    SetS("_tagname", "AssetGhost");
+    props->SetType(TYPE_ASSETGHOST);
     mutex.unlock();
 }
 
@@ -18,7 +17,7 @@ AssetGhost::~AssetGhost()
 void AssetGhost::Load()
 {
     mutex.lock();
-    WebAsset::Load(QUrl(GetS("_src_url")));
+    WebAsset::Load(QUrl(props->GetSrcURL()));
     mutex.unlock();
 }
 

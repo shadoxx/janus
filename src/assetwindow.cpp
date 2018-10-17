@@ -77,9 +77,9 @@ void AssetWindow::Update()
             int item_count = 0;
             for (QPointer <Asset> & a : assets) {
                 if (a) {
-                    table_widget.setItem(item_count, 0, new QTableWidgetItem(a->GetS("id")));
-                    table_widget.setItem(item_count, 1, new QTableWidgetItem(a->GetS("_type")));
-                    table_widget.setItem(item_count, 2, new QTableWidgetItem(a->GetS("src")));
+                    table_widget.setItem(item_count, 0, new QTableWidgetItem(a->GetProperties()->GetID()));
+                    table_widget.setItem(item_count, 1, new QTableWidgetItem(a->GetProperties()->GetTypeAsString()));
+                    table_widget.setItem(item_count, 2, new QTableWidgetItem(a->GetProperties()->GetSrc()));
                 }
                 item_count++;
             }

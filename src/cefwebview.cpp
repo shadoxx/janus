@@ -415,7 +415,7 @@ void CEFWebView::mouseMoveEvent(QMouseEvent * e)
     {
         CefString script =
                 "var n = document.elementFromPoint(" + std::to_string(e->x()) + "," + std::to_string(e->y()) + ");"
-                "if (n != null) {"
+                "if (n != null && n.tagName.toLowerCase() != 'iframe') {"
                 "if (n.tagName.toLowerCase() == 'img' && n.parentNode.tagName.toLowerCase() == 'a') {alert('janus_hittest://' + n.parentNode.href);}"
                 "else if (n.tagName.toLowerCase() == 'a') {alert('janus_hittest://' + n.href);}"
                 "else {alert('janus_hittest://' + n.src);}"

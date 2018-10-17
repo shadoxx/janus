@@ -45,6 +45,8 @@
 #include <QtDebug>
 #include <memory>
 
+#include "scriptablevector.h"
+
 #define GLM_FORCE_INLINE
 #define GLM_FORCE_EXPLICIT_CTOR
 //#include <glm/mat4x4.hpp>
@@ -252,17 +254,23 @@ public:
     static QString GetVectorAsString(const QVector3D & v, const bool add_quotes = true);
     static QString GetVector4AsString(const QVector4D & v, const bool add_quotes = true);
     static QString GetColourAsString(const QColor & c, const bool add_quotes = true);
+    static QString GetRectangleAsString(const QRectF & r, const bool add_quotes = true);
     static QString GetEnumAsString(const GLenum e, const bool add_quotes = true);
     static QString GetRectAsString(const QRectF & r, const bool add_quotes = true);
     static QString GetAABBAsString(const QPair <QVector3D, QVector3D> & v, const bool add_quotes = true);
 
     static bool GetStringAsBool(const QString & s);
-	static QVector3D GetStringAsVector(const QString & s);
+	static QVector3D GetStringAsVector(const QString & s);    
 	static QVector4D GetStringAsVector4(const QString & s);
+    static QColor GetVector4AsColour(const QVector4D v);
+    static QVector4D GetColourAsVector4(const QColor c);
     static QColor GetStringAsColour(const QString & s);
     static QVector3D GetStringAsDoubleVector(const QString & s);
     static QRectF GetStringAsRect(const QString & s);
     static QPair <QVector3D, QVector3D> GetStringAsAABB(const QString & s);
+
+    static QVector3D GetVectorFromQVariant(const QVariant v);
+    static QVector4D GetVector4FromQVariant(const QVariant v);
 
     static QString GetTranslatorPath();
     static QString GetApplicationPath();

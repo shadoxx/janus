@@ -1091,6 +1091,22 @@ QString MathUtil::GetAABBAsString(const QPair <QVector3D, QVector3D> & v, const 
     }
 }
 
+QString MathUtil::GetRectangleAsString(const QRectF & r, const bool add_quotes)
+{
+    if (add_quotes) {
+        return "\"" + GetNumber(r.x()) + " " +
+                GetNumber(r.y()) + " " +
+                GetNumber(r.x() + r.width()) + " " +
+                GetNumber(r.y() + r.height()) + "\"";
+    }
+    else {
+        return GetNumber(r.x()) + " " +
+                GetNumber(r.y()) + " " +
+                GetNumber(r.x() + r.width()) + " " +
+                GetNumber(r.y() + r.height());
+    }
+}
+
 QString MathUtil::GetEnumAsString(const GLenum e, const bool add_quotes)
 {
     QString s;
@@ -1133,6 +1149,18 @@ QString MathUtil::GetRectAsString(const QRectF & r, const bool add_quotes)
     }
 }
 
+QVector3D MathUtil::GetVectorFromQVariant(const QVariant v)
+{
+    ScriptableVector * v0 = qvariant_cast<ScriptableVector *>(v);
+    return (v0 ? v0->toQVector3D() : GetStringAsVector(v.toString()));
+}
+
+QVector4D MathUtil::GetVector4FromQVariant(const QVariant v)
+{
+    ScriptableVector * v0 = qvariant_cast<ScriptableVector *>(v);
+    return (v0 ? v0->toQVector4D() : GetStringAsVector4(v.toString()));
+}
+
 QVector3D MathUtil::GetStringAsVector(const QString & s)
 {
     QString s2 = s.trimmed();
@@ -1157,6 +1185,19 @@ QVector4D MathUtil::GetStringAsVector4(const QString & s)
 	else {
 		return QVector4D(0, 0, 0, 0);
 	}
+}
+
+QColor MathUtil::GetVector4AsColour(const QVector4D v)
+{
+    return QColor(int(qMin(1.0f, qMax(0.0f, v.x())) * 255.0f),
+                  int(qMin(1.0f, qMax(0.0f, v.y())) * 255.0f),
+                  int(qMin(1.0f, qMax(0.0f, v.z())) * 255.0f),
+                  int(qMin(1.0f, qMax(0.0f, v.w())) * 255.0f));
+}
+
+QVector4D MathUtil::GetColourAsVector4(const QColor c)
+{
+    return QVector4D(qMin(1.0, qMax(0.0, c.redF())), qMin(1.0, qMax(0.0, c.greenF())), qMin(1.0, qMax(0.0, c.blueF())), qMin(1.0, qMax(0.0, c.alphaF())));
 }
 
 QColor MathUtil::GetStringAsColour(const QString & s)

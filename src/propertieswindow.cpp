@@ -377,12 +377,12 @@ void PropertiesWindow::UpdateLayout()
         return;
     }
 
-    const QString t = cur_object->GetType();
+    const ElementType t = cur_object->GetType();
 
-    light_groupbox->setVisible(t == "light");
-    sound_groupbox->setVisible(t == "sound");
-    particle_groupbox->setVisible(t == "particle");
-    collision_groupbox->setVisible(t == "object");
+    light_groupbox->setVisible(t == TYPE_LIGHT);
+    sound_groupbox->setVisible(t == TYPE_SOUND);
+    particle_groupbox->setVisible(t == TYPE_PARTICLE);
+    collision_groupbox->setVisible(t == TYPE_OBJECT);
 }
 
 void PropertiesWindow::UpdateProperties()
@@ -392,53 +392,53 @@ void PropertiesWindow::UpdateProperties()
     }
 
     if (!type_widget->hasFocus()) {
-        type_widget->setText(cur_object->GetType());
+        type_widget->setText(cur_object->GetProperties()->GetTypeAsString());
     }
     else {
         const QString t = type_widget->text();
         if (t != cur_object->GetType()) {
-            cur_object->SetType(t);
+            cur_object->SetType(DOMNode::StringToElementType(t));
             UpdateLayout();
         }
     }
 
     if (!id_widget->hasFocus()) {
-        id_widget->setText(cur_object->GetS("id"));
+        id_widget->setText(cur_object->GetProperties()->GetID());
     }
     else {
-        cur_object->SetS("id", id_widget->text());
+        cur_object->GetProperties()->SetID(id_widget->text());
     }
 
     if (!draw_layer->hasFocus()) {
-        draw_layer->SetValue(cur_object->GetI("draw_layer"));
+        draw_layer->SetValue(cur_object->GetProperties()->GetDrawLayer());
     }
     else {
-        cur_object->SetI("draw_layer", id_widget->text().toInt());
+        cur_object->GetProperties()->SetDrawLayer(id_widget->text().toInt());
     }
 
     if (!js_id_widget->hasFocus()) {
-        js_id_widget->setText(cur_object->GetS("js_id"));
+        js_id_widget->setText(cur_object->GetProperties()->GetJSID());
     }
     else {
         const QString s = js_id_widget->text();
 
         if (!s.isEmpty()) {
-            game->RenameJSID(cur_object->GetS("js_id"), s);
+            game->RenameJSID(cur_object->GetProperties()->GetJSID(), s);
         }
     }
 
     if (!visible_widget->hasFocus()) {
-        visible_widget->setChecked(cur_object->GetB("visible"));
+        visible_widget->setChecked(cur_object->GetProperties()->GetVisible());
     }
     else {
-        cur_object->SetB("visible", visible_widget->isChecked());
+        cur_object->GetProperties()->SetVisible(visible_widget->isChecked());
     }
 
     if (!pos_widget->HasFocus()) {
         pos_widget->SetValue(cur_object->GetPos());
     }
     else {
-        cur_object->SetV("pos", pos_widget->GetValue());
+        cur_object->GetProperties()->SetPos(pos_widget->GetValue());
     }
 
     UpdateRotation();
@@ -447,223 +447,223 @@ void PropertiesWindow::UpdateProperties()
         scale_widget->SetValue(cur_object->GetScale());
     }
     else {
-        cur_object->SetV("scale", scale_widget->GetValue());
+        cur_object->GetProperties()->SetScale(scale_widget->GetValue());
     }
 
     //color
     QPalette pal = col_button->palette();
-    pal.setColor(QPalette::Button, cur_object->GetC("col"));
+    pal.setColor(QPalette::Button, MathUtil::GetVector4AsColour(cur_object->GetProperties()->GetColour()->toQVector4D()));
     col_button->setAutoFillBackground(true);
     col_button->setPalette(pal);
     col_button->update();
 
     if (!lighting_checkbox->hasFocus()) {
-        lighting_checkbox->setChecked(cur_object->GetB("lighting"));
+        lighting_checkbox->setChecked(cur_object->GetProperties()->GetLighting());
     }
     else {
-        cur_object->SetB("lighting", lighting_checkbox->isChecked());
+        cur_object->GetProperties()->SetLighting(lighting_checkbox->isChecked());
     }
 
     if (!locked_checkbox->hasFocus()) {
-        locked_checkbox->setChecked(cur_object->GetB("locked"));
+        locked_checkbox->setChecked(cur_object->GetProperties()->GetLocked());
     }
     else {
-        cur_object->SetB("locked", locked_checkbox->isChecked());
+        cur_object->GetProperties()->SetLocked(locked_checkbox->isChecked());
     }
 
     for (int i=0; i<culling_combobox->count(); ++i) {
-        if (culling_combobox->itemText(i) == cur_object->GetS("cull_face")) {
+        if (culling_combobox->itemText(i) == cur_object->GetProperties()->GetCullFace()) {
             culling_combobox->setCurrentIndex(i);
         }
     }
 
     if (!imageid_widget->hasFocus()) {
-        imageid_widget->setText(cur_object->GetS("image_id"));
+        imageid_widget->setText(cur_object->GetProperties()->GetImageID());
     }
     else {
-        cur_object->SetS("image_id", imageid_widget->text());
+        cur_object->GetProperties()->SetImageID(imageid_widget->text());
     }
 
     if (!videoid_widget->hasFocus()) {
-        videoid_widget->setText(cur_object->GetS("video_id"));
+        videoid_widget->setText(cur_object->GetProperties()->GetVideoID());
     }
     else {
-        cur_object->SetS("video_id", videoid_widget->text());
+        cur_object->GetProperties()->SetVideoID(videoid_widget->text());
     }
 
     //lights
     if (light_groupbox->isVisible()) {
         if (!light_intensity->hasFocus()) {
-            light_intensity->SetValue(cur_object->GetF("light_intensity"));
+            light_intensity->SetValue(cur_object->GetProperties()->GetLightIntensity());
         }
         else {
-            cur_object->SetF("light_intensity", light_intensity->GetValue());
+            cur_object->GetProperties()->SetLightIntensity(light_intensity->GetValue());
         }
 
         if (!light_cone_angle->hasFocus()) {
-            light_cone_angle->SetValue(cur_object->GetF("light_cone_angle"));
+            light_cone_angle->SetValue(cur_object->GetProperties()->GetLightConeAngle());
         }
         else {
-            cur_object->SetF("light_cone_angle", light_cone_angle->GetValue());
+            cur_object->GetProperties()->SetLightConeAngle(light_cone_angle->GetValue());
         }
 
         if (!light_cone_exponent->hasFocus()) {
-            light_cone_exponent->SetValue(cur_object->GetF("light_cone_exponent"));
+            light_cone_exponent->SetValue(cur_object->GetProperties()->GetLightConeExponent());
         }
         else {
-            cur_object->SetF("light_cone_exponent", light_cone_exponent->GetValue());
+            cur_object->GetProperties()->SetLightConeExponent(light_cone_exponent->GetValue());
         }
 
         if (!light_range->hasFocus()) {
-            light_range->SetValue(cur_object->GetF("light_range"));
+            light_range->SetValue(cur_object->GetProperties()->GetLightRange());
         }
         else {
-            cur_object->SetF("light_range", light_range->GetValue());
+            cur_object->GetProperties()->SetLightRange(light_range->GetValue());
         }
     }
 
     if (sound_groupbox->isVisible()) {
         if (!sound_loop->hasFocus()) {
-            sound_loop->setChecked(cur_object->GetB("loop"));
+            sound_loop->setChecked(cur_object->GetProperties()->GetLoop());
         }
         else {
-            cur_object->SetB("loop", sound_loop->isChecked());
+            cur_object->GetProperties()->SetLoop(sound_loop->isChecked());
         }
 
         if (!sound_pitch->hasFocus()) {
-            sound_pitch->SetValue(cur_object->GetF("pitch"));
+            sound_pitch->SetValue(cur_object->GetProperties()->GetPitch());
         }
         else {
-            cur_object->SetF("pitch", sound_pitch->GetValue());
+            cur_object->GetProperties()->SetPitch(sound_pitch->GetValue());
         }
 
         if (!sound_gain->hasFocus()) {
-            sound_gain->SetValue(cur_object->GetF("gain"));
+            sound_gain->SetValue(cur_object->GetProperties()->GetGain());
         }
         else {
-            cur_object->SetF("gain", sound_gain->GetValue());
+            cur_object->GetProperties()->SetGain(sound_gain->GetValue());
         }
     }
 
     if (particle_groupbox->isVisible()) {
         if (!particle_loop->hasFocus()) {
-            particle_loop->setChecked(cur_object->GetB("loop"));
+            particle_loop->setChecked(cur_object->GetProperties()->GetLoop());
         }
         else {
-            cur_object->SetB("loop", particle_loop->isChecked());
+            cur_object->GetProperties()->SetLoop(particle_loop->isChecked());
         }
 
         if (!particle_imageid->hasFocus()) {
-            particle_imageid->setText(cur_object->GetS("image_id"));
+            particle_imageid->setText(cur_object->GetProperties()->GetImageID());
         }
         else {
-            cur_object->SetS("image_id", particle_imageid->text());
+            cur_object->GetProperties()->SetImageID(particle_imageid->text());
         }
 
         if (!particle_count->hasFocus()) {
-            particle_count->SetValue(cur_object->GetI("count"));
+            particle_count->SetValue(cur_object->GetProperties()->GetCount());
         }
         else {
-            cur_object->SetI("count", particle_count->GetValue());
+            cur_object->GetProperties()->SetCount(particle_count->GetValue());
         }
 
         if (!particle_duration->hasFocus()) {
-            particle_duration->SetValue(cur_object->GetI("duration"));
+            particle_duration->SetValue(cur_object->GetProperties()->GetDuration());
         }
         else {
-            cur_object->SetI("duration", particle_duration->GetValue());
+            cur_object->GetProperties()->SetDuration(particle_duration->GetValue());
         }
 
         if (!particle_fadein->hasFocus()) {
-            particle_fadein->SetValue(cur_object->GetF("fade_in"));
+            particle_fadein->SetValue(cur_object->GetProperties()->GetFadeIn());
         }
         else {
-            cur_object->SetF("fade_in", particle_fadein->GetValue());
+            cur_object->GetProperties()->SetFadeIn(particle_fadein->GetValue());
         }
 
         if (!particle_fadeout->hasFocus()) {
-            particle_fadeout->SetValue(cur_object->GetF("fade_out"));
+            particle_fadeout->SetValue(cur_object->GetProperties()->GetFadeOut());
         }
         else {
-            cur_object->SetF("fade_out", particle_fadeout->GetValue());
+            cur_object->GetProperties()->SetFadeOut(particle_fadeout->GetValue());
         }
 
         if (!particle_rate->hasFocus()) {
-            particle_rate->SetValue(cur_object->GetI("rate"));
+            particle_rate->SetValue(cur_object->GetProperties()->GetRate());
         }
         else {
-            cur_object->SetI("rate", particle_rate->GetValue());
+            cur_object->GetProperties()->SetRate(particle_rate->GetValue());
         }
 
         if (!particle_randpos->HasFocus()) {
-            particle_randpos->SetValue(cur_object->GetV("rand_pos"));
+            particle_randpos->SetValue(cur_object->GetProperties()->GetRandPos()->toQVector3D());
         }
         else {
-            cur_object->SetV("rand_pos", particle_randpos->GetValue());
+            cur_object->GetProperties()->SetRandPos(particle_randpos->GetValue());
         }
 
         if (!particle_vel->HasFocus()) {
-            particle_vel->SetValue(cur_object->GetV("vel"));
+            particle_vel->SetValue(cur_object->GetProperties()->GetVel()->toQVector3D());
         }
         else {
-            cur_object->SetV("vel", particle_vel->GetValue());
+            cur_object->GetProperties()->SetVel(particle_vel->GetValue());
         }
 
         if (!particle_randvel->HasFocus()) {
-            particle_randvel->SetValue(cur_object->GetV("rand_vel"));
+            particle_randvel->SetValue(cur_object->GetProperties()->GetRandVel()->toQVector3D());
         }
         else {
-            cur_object->SetV("rand_vel", particle_randvel->GetValue());
+            cur_object->GetProperties()->SetRandVel(particle_randvel->GetValue());
         }
 
         if (!particle_accel->HasFocus()) {
-            particle_accel->SetValue(cur_object->GetV("accel"));
+            particle_accel->SetValue(cur_object->GetProperties()->GetAccel()->toQVector3D());
         }
         else {
-            cur_object->SetV("accel", particle_accel->GetValue());
+            cur_object->GetProperties()->SetAccel(particle_accel->GetValue());
         }
 
         if (!particle_randaccel->HasFocus()) {
-            particle_randaccel->SetValue(cur_object->GetV("rand_accel"));
+            particle_randaccel->SetValue(cur_object->GetProperties()->GetRandAccel()->toQVector3D());
         }
         else {
-            cur_object->SetV("rand_accel", particle_randaccel->GetValue());
+            cur_object->GetProperties()->SetRandAccel(particle_randaccel->GetValue());
         }
 
         if (!particle_randcol->HasFocus()) {
-            particle_randcol->SetValue(cur_object->GetV("rand_col"));
+            particle_randcol->SetValue(cur_object->GetProperties()->GetRandColour()->toQVector3D());
         }
         else {
-            cur_object->SetV("rand_col", particle_randcol->GetValue());
+            cur_object->GetProperties()->SetRandColour(particle_randcol->GetValue());
         }
 
         if (!particle_randscale->HasFocus()) {
-            particle_randscale->SetValue(cur_object->GetV("rand_scale"));
+            particle_randscale->SetValue(cur_object->GetProperties()->GetRandScale()->toQVector3D());
         }
         else {
-            cur_object->SetV("rand_scale", particle_randscale->GetValue());
+            cur_object->GetProperties()->SetRandScale(particle_randscale->GetValue());
         }
     }
 
     if (collision_groupbox->isVisible()) {
         for (int i=0; i<collision_type->count(); ++i) {
-            if (collision_type->itemText(i) == cur_object->GetS("collision_id")) {
+            if (collision_type->itemText(i) == cur_object->GetProperties()->GetCollisionID()) {
                 collision_type->setCurrentIndex(i);
             }
         }
 
         if (!collision_pos->HasFocus()) {
-            collision_pos->SetValue(cur_object->GetV("collision_pos"));
+            collision_pos->SetValue(cur_object->GetProperties()->GetCollisionPos()->toQVector3D());
         }
         else {
-            cur_object->SetV("collision_pos", collision_pos->GetValue());
+            cur_object->GetProperties()->SetCollisionPos(collision_pos->GetValue());
         }
 
         if (!collision_scale->HasFocus()) {
-            collision_scale->SetValue(cur_object->GetV("collision_scale"));
+            collision_scale->SetValue(cur_object->GetProperties()->GetCollisionScale()->toQVector3D());
         }
         else {
-            cur_object->SetV("collision_scale", collision_scale->GetValue());
+            cur_object->GetProperties()->SetCollisionScale(collision_scale->GetValue());
         }
     }
 }
@@ -687,7 +687,7 @@ void PropertiesWindow::UpdateRotation()
 void PropertiesWindow::ShowColourDialog(const bool)
 {
     if (cur_object) {
-        col_dialog->setCurrentColor(cur_object->GetC("col"));
+        col_dialog->setCurrentColor(MathUtil::GetVector4AsColour(cur_object->GetProperties()->GetColour()->toQVector4D()));
         col_dialog->open();
     }
 }
@@ -695,8 +695,8 @@ void PropertiesWindow::ShowColourDialog(const bool)
 void PropertiesWindow::SelectColour(const QColor c)
 {
     if (cur_object && c.isValid()) {
-        cur_object->SetC("col", c);
-        cur_object->SetB("sync", true);
+        cur_object->GetProperties()->SetColour(MathUtil::GetColourAsVector4(c));
+        cur_object->GetProperties()->SetSync(true);
     }
     col_dialog->close();
 }
@@ -704,23 +704,23 @@ void PropertiesWindow::SelectColour(const QColor c)
 void PropertiesWindow::SetCulling(const QString s)
 {
     if (cur_object) {
-        cur_object->SetS("cull_face", s);
-        cur_object->SetB("sync", true);
+        cur_object->GetProperties()->SetCullFace(s);
+        cur_object->GetProperties()->SetSync(true);
     }
 }
 
 void PropertiesWindow::SetCollisionType(const QString s)
 {
     if (cur_object) {
-        cur_object->SetS("collision_id", s);
-        cur_object->SetB("sync", true);
+        cur_object->GetProperties()->SetCollisionID(s);
+        cur_object->GetProperties()->SetSync(true);
 
         //Do some snapping stuff
         const QVector3D bmin = cur_object->GetBBoxMin();
         const QVector3D bmax = cur_object->GetBBoxMax();
 
-        cur_object->SetV("collision_pos", (bmin + bmax) * 0.5f);
-        cur_object->SetV("collision_scale", QVector3D(fabsf(bmax.x() - bmin.x()),
+        cur_object->GetProperties()->SetCollisionPos((bmin + bmax) * 0.5f);
+        cur_object->GetProperties()->SetCollisionScale(QVector3D(fabsf(bmax.x() - bmin.x()),
                                      fabsf(bmax.y() - bmin.y()),
                                      fabsf(bmax.z() - bmin.z())));
     }
@@ -732,7 +732,7 @@ void PropertiesWindow::AddChildObject(const QString child_type)
     if (cur_object) {
         QPointer <RoomObject> o = new RoomObject();
         o->SetParentObject(cur_object);
-        o->SetType(child_type);
+        o->SetType(DOMNode::StringToElementType(child_type));
 
         const QString js_id = cur_room->AddRoomObject(o);        
         cur_object->GetProperties()->AppendChild(o->GetProperties());
@@ -745,7 +745,7 @@ void PropertiesWindow::AddChildObject(const QString child_type)
 void PropertiesWindow::SetSyncOnObject()
 {
     if (cur_object) {
-        cur_object->SetB("sync", true);
+        cur_object->GetProperties()->SetSync(true);
     }
 }
 

@@ -40,11 +40,11 @@ void RoomTemplate::Load(const QString & name)
     asset_collision_obj->Load();
 
     env_obj = new RoomObject();
-    env_obj->SetType("object");
+    env_obj->SetType(TYPE_OBJECT);
     env_obj->SetAssetObject(asset_obj);
     env_obj->SetCollisionAssetObject(asset_collision_obj);
-    env_obj->SetV("zdir", QVector3D(0,0,1));
-    env_obj->SetS("js_id", "__" + name);
+    env_obj->GetProperties()->SetZDir(QVector3D(0,0,1));
+    env_obj->GetProperties()->SetJSID("__" + name);
 
     LoadData(MathUtil::GetApplicationPath() + dat_name);
 }

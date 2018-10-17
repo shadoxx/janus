@@ -98,7 +98,7 @@ void MultiPlayerManager::DoSocketConnect()
                 logon_packet = GetLogonPacket(s.user, s.password, cur_url_id);
             }
             else {
-                logon_packet = GetLogonPacket(user_ghost->GetS("id"), s.password, cur_url_id);
+                logon_packet = GetLogonPacket(user_ghost->GetProperties()->GetID(), s.password, cur_url_id);
             }
             s.logging_in = true;
             s.tcpsocket->write(logon_packet.toUtf8());
@@ -290,18 +290,18 @@ bool MultiPlayerManager::GetEnabled()
 void MultiPlayerManager::Update(QPointer <Player> player, const QString & url, const QList <QString> adjacent_urls, const QString & name, const bool room_allows_party_mode, const float delta_time)
 {    
     if (user_ghost) {
-        user_ghost->SetS("anim_id", player->GetS("anim_id"));
-        if (user_ghost->GetGhostAssetObjects().contains(user_ghost->GetS("body_id"))) {
-            QPointer <AssetObject> body_assetobj = user_ghost->GetGhostAssetObjects()[user_ghost->GetS("body_id")];
-            if (body_assetobj && body_assetobj->GetGeom() && user_ghost->GetGhostAssetObjects().contains(user_ghost->GetS("anim_id"))) {
+        user_ghost->GetProperties()->SetAnimID(player->GetProperties()->GetAnimID());
+        if (user_ghost->GetGhostAssetObjects().contains(user_ghost->GetProperties()->GetBodyID())) {
+            QPointer <AssetObject> body_assetobj = user_ghost->GetGhostAssetObjects()[user_ghost->GetProperties()->GetBodyID()];
+            if (body_assetobj && body_assetobj->GetGeom() && user_ghost->GetGhostAssetObjects().contains(user_ghost->GetProperties()->GetAnimID())) {
 //                qDebug() << "MultiPlayerManager::Update" << player->GetAnimID();
-                body_assetobj->GetGeom()->SetLinkAnimation(user_ghost->GetGhostAssetObjects()[user_ghost->GetS("anim_id")]->GetGeom());
+                body_assetobj->GetGeom()->SetLinkAnimation(user_ghost->GetGhostAssetObjects()[user_ghost->GetProperties()->GetAnimID()]->GetGeom());
                 body_assetobj->GetGeom()->SetLoop(true);
             }
         }
 
-        player->SetV("eye_pos", user_ghost->GetV("eye_pos"));
-        player->SetS("userid", user_ghost->GetS("id"));
+        player->GetProperties()->SetEyePos(user_ghost->GetProperties()->GetEyePos()->toQVector3D());
+        player->GetProperties()->SetUserID(user_ghost->GetProperties()->GetID());
     }
 
     cur_url = url;
@@ -334,7 +334,7 @@ void MultiPlayerManager::Update(QPointer <Player> player, const QString & url, c
 
         ServerConnection s;
         QList <AssetRecordingPacket> l = a->GetPackets();
-        unsigned int sample_rate = a->GetI("sample_rate");
+        unsigned int sample_rate = a->GetProperties()->GetSampleRate();
 
 //        qDebug() << "MultiPlayerManager::Update() recordingpackets" << l.size();
         for (int j=0; j<l.size(); ++j) {
@@ -489,9 +489,9 @@ void MultiPlayerManager::Update(QPointer <Player> player, const QString & url, c
     }
 
     //did we change rooms?
-    if (players.contains(user_ghost->GetS("id"))) {
+    if (players.contains(user_ghost->GetProperties()->GetID())) {
         //qDebug() << "user_ghost" << user_ghost->GetID() << players[user_ghost->GetID()];
-        const QString last_room = players[user_ghost->GetS("id")]->GetURL();
+        const QString last_room = players[user_ghost->GetProperties()->GetID()]->GetURL();
 
         if (enabled && QString::compare(last_room, cur_url_id) != 0) {
             for (int connectionListIndex=0; connectionListIndex<connection_list.size(); ++connectionListIndex) {
@@ -503,7 +503,7 @@ void MultiPlayerManager::Update(QPointer <Player> player, const QString & url, c
             }
         }
 
-        players[user_ghost->GetS("id")]->SetURL(cur_url_id);
+        players[user_ghost->GetProperties()->GetID()]->SetURL(cur_url_id);
     }
 
     //update players (and remove those who timed out)
@@ -646,14 +646,14 @@ void MultiPlayerManager::SetAvatarFromGhost(QPointer <RoomObject> new_ghost)
         user_ghost->SetGhostAssetObjects(new_ghost->GetGhostAssetObjects());
         user_ghost->SetChildObjects(new_ghost->GetChildObjects());
 
-        user_ghost->SetS("head_id", new_ghost->GetS("head_id"));
-        user_ghost->SetS("body_id", new_ghost->GetS("body_id"));
+        user_ghost->GetProperties()->SetHeadID(new_ghost->GetProperties()->GetHeadID());
+        user_ghost->GetProperties()->SetBodyID(new_ghost->GetProperties()->GetBodyID());
         user_ghost->SetHeadAvatarPos(new_ghost->GetHeadAvatarPos());
-        user_ghost->SetS("cull_face", new_ghost->GetS("cull_face"));
-        user_ghost->SetC("col", new_ghost->GetC("col"));
-        user_ghost->SetV("scale", new_ghost->GetV("scale"));
-        user_ghost->SetB("lighting", new_ghost->GetB("lighting"));
-        user_ghost->SetV("eye_pos", new_ghost->GetV("eye_pos"));
+        user_ghost->GetProperties()->SetCullFace(new_ghost->GetProperties()->GetCullFace());
+        user_ghost->GetProperties()->SetColour(new_ghost->GetProperties()->GetColour()->toQVector4D());
+        user_ghost->GetProperties()->SetScale(new_ghost->GetProperties()->GetScale()->toQVector3D());
+        user_ghost->GetProperties()->SetLighting(new_ghost->GetProperties()->GetLighting());
+        user_ghost->GetProperties()->SetEyePos(new_ghost->GetProperties()->GetEyePos()->toQVector3D());
 
         DoUpdateAvatar();
     }
@@ -706,7 +706,7 @@ void MultiPlayerManager::SetNewUserID(const QString id, const bool append_random
         userid += QString("_") + QString::number(qrand() % 10000); //create a new final _XXXX number
     }
 
-    user_ghost->SetS("id", userid);
+    user_ghost->GetProperties()->SetID(userid);
     UpdateAvatarData();
     SaveAvatarData();
 
@@ -724,7 +724,7 @@ void MultiPlayerManager::SetCustomPortalShader(const QString shader_src)
     else {
         QPointer <AssetShader> s = new AssetShader();
         s->SetSrc(MathUtil::GetApplicationURL(), shader_src, "");
-        s->SetS("id", "CustomPortalShader");
+        s->GetProperties()->SetID("CustomPortalShader");
         ghost_assetshaders["CustomPortalShader"] = s;
     }
 
@@ -737,7 +737,7 @@ QString MultiPlayerManager::GetCustomPortalShader() const
 {
     QHash <QString, QPointer <AssetShader> > ghost_assetshaders = user_ghost->GetGhostAssetShaders();
     if (ghost_assetshaders.contains("CustomPortalShader") && ghost_assetshaders["CustomPortalShader"]) {
-        return ghost_assetshaders["CustomPortalShader"]->GetS("_src_url");
+        return ghost_assetshaders["CustomPortalShader"]->GetProperties()->GetSrcURL();
     }
 
     return QString();
@@ -800,18 +800,18 @@ bool MultiPlayerManager::SetChatMessage(QPointer <Player> player, const QString 
         }      
         else if (s2 == "#col" || s2 == "#color" || s2 == "#colour") {
             if (message_list.size() == 4) {
-                user_ghost->SetC("col", MathUtil::GetStringAsColour(message_list[1] + " " + message_list[2] + " " + message_list[3]));
+                user_ghost->GetProperties()->SetColour(MathUtil::GetColourAsVector4(MathUtil::GetStringAsColour(message_list[1] + " " + message_list[2] + " " + message_list[3])));
                 UpdateAvatarData();
                 SaveAvatarData();
             }
             else if (message_list.size() == 2) {
-                user_ghost->SetC("col", MathUtil::GetStringAsColour(message_list[1]));
+                user_ghost->GetProperties()->SetColour(MathUtil::GetColourAsVector4(MathUtil::GetStringAsColour(message_list[1])));
                 UpdateAvatarData();
                 SaveAvatarData();
             }
         }       
         else if (s2 == "#pos" && message_list.size() >= 4) {
-            player->SetV("pos", QVector3D(message_list[1].toFloat(), message_list[2].toFloat(), message_list[3].toFloat()));
+            player->GetProperties()->SetPos(QVector3D(message_list[1].toFloat(), message_list[2].toFloat(), message_list[3].toFloat()));
         }
         else if (s2 == "#head_pos" && message_list.size() >= 4) {
             const QVector3D head_pos(message_list[1].toFloat(), message_list[2].toFloat(), message_list[3].toFloat());
@@ -821,17 +821,17 @@ bool MultiPlayerManager::SetChatMessage(QPointer <Player> player, const QString 
             SaveAvatarData();
         }    
         else if (s2 == "#scale" && message_list.size() >= 4) {
-            user_ghost->SetV("scale", QVector3D(message_list[1].toFloat(), message_list[2].toFloat(), message_list[3].toFloat()));
+            user_ghost->GetProperties()->SetScale(QVector3D(message_list[1].toFloat(), message_list[2].toFloat(), message_list[3].toFloat()));
             UpdateAvatarData();
             SaveAvatarData();
         }
         else if (s2 == "#lighting" && message_list.size() >= 2) {
-            user_ghost->SetB("lighting", message_list[1].toLower() == "true");
+            user_ghost->GetProperties()->SetLighting(message_list[1].toLower() == "true");
             UpdateAvatarData();
             SaveAvatarData();
         }       
         else if (s2 == "#cull_face" && message_list.size() >= 2) {
-            user_ghost->SetS("cull_face", message_list[1]);
+            user_ghost->GetProperties()->SetCullFace(message_list[1]);
             UpdateAvatarData();
             SaveAvatarData();
         }       
@@ -858,7 +858,7 @@ bool MultiPlayerManager::SetChatMessage(QPointer <Player> player, const QString 
         //qDebug() << "MultiPlayerManager::SetTextMessage() " << s;
 //        Analytics::PostEvent("player", "chat");
         chat_message = s.toHtmlEscaped(); //60.0 adds escape characters for double quotes, etc., so they send properly
-        AddChatMessage(user_ghost->GetS("id") + QString(" ") + s, QColor(64,192,64));
+        AddChatMessage(user_ghost->GetProperties()->GetID() + QString(" ") + s, QColor(64,192,64));
         return true;
     }
 }
@@ -894,7 +894,7 @@ void MultiPlayerManager::SetRoomDeleteCode(const QString & s)
 
 QString MultiPlayerManager::GetUserID() const
 {
-    return user_ghost->GetS("id");
+    return user_ghost->GetProperties()->GetID();
 }
 
 QList <QPointer <RoomObject> > MultiPlayerManager::GetPlayersInRoom(const QString & url)
@@ -964,17 +964,17 @@ QString MultiPlayerManager::GetMovePacket(QPointer <Player> player)
 QString MultiPlayerManager::GetMovePacket_Helper(QPointer <Player> player)
 {
     QString packet;
-    packet += "\"pos\":" + MathUtil::GetVectorAsString(player->GetV("pos"));
-    packet += ",\"dir\":" + MathUtil::GetVectorAsString(player->GetV("dir"));
-    packet += ",\"view_dir\":" + MathUtil::GetVectorAsString(player->GetV("view_dir"));
-    packet += ",\"up_dir\":" + MathUtil::GetVectorAsString(player->GetV("up_dir"));
+    packet += "\"pos\":" + MathUtil::GetVectorAsString(player->GetProperties()->GetPos()->toQVector3D());
+    packet += ",\"dir\":" + MathUtil::GetVectorAsString(player->GetProperties()->GetDir()->toQVector3D());
+    packet += ",\"view_dir\":" + MathUtil::GetVectorAsString(player->GetProperties()->GetViewDir()->toQVector3D());
+    packet += ",\"up_dir\":" + MathUtil::GetVectorAsString(player->GetProperties()->GetUpDir()->toQVector3D());
 
-    if (player->GetS("hmd_type").length() > 0) {
-        packet += ",\"hmd_type\":\"" + player->GetS("hmd_type") + "\"";
+    if (player->GetHMDType().length() > 0) {
+        packet += ",\"hmd_type\":\"" + player->GetHMDType() + "\"";
     }
 
-    packet += ",\"head_pos\":" + MathUtil::GetVectorAsString(player->GetV("local_head_pos"));
-    packet += ",\"anim_id\":\"" + player->GetS("anim_id") + "\"";
+    packet += ",\"head_pos\":" + MathUtil::GetVectorAsString(player->GetProperties()->GetLocalHeadPos()->toQVector3D());
+    packet += ",\"anim_id\":\"" + player->GetProperties()->GetAnimID() + "\"";
 
     if (pending_pos == true) {
         packet += ",\"cpos\":" + MathUtil::GetVectorAsString(cpos_list);
@@ -984,7 +984,7 @@ QString MultiPlayerManager::GetMovePacket_Helper(QPointer <Player> player)
         packet += ",\"cscale\":" + MathUtil::GetFloatAsString(cscale_list);
     }
 
-    if (player->GetB("speaking")) {
+    if (player->GetSpeaking()) {
         packet += ",\"speaking\":\"true\"";
     }
 
@@ -1014,7 +1014,7 @@ QString MultiPlayerManager::GetMovePacket_Helper(QPointer <Player> player)
     }
 
     //56.0 - for security reasons, do not send hand-tracking data when player is in typing/text entry states
-    if (player->GetB("typing") || player->GetB("entering_text")) {
+    if (player->GetTyping() || player->GetEnteringText()) {
         packet += ",\"typing\":\"true\"";
     }
     else {
@@ -1099,7 +1099,7 @@ QString MultiPlayerManager::GetUserChatPacket(const QString & chat_message)
     QString packet = "{\"method\":\"user_chat\",\"data\":{\"roomId\":\"";
     packet += cur_url_id;
     packet += "\",\"userId\":\"";
-    packet += user_ghost->GetS("id");
+    packet += user_ghost->GetProperties()->GetID();
     packet += "\",\"message\":{\"data\":\"";
     packet += chat_message;
 //    packet += "\",\"_userList\":[]}}}\n";
@@ -1115,13 +1115,15 @@ QString MultiPlayerManager::GetUserPortalPacket(QPointer <Player> player)
     //"url":"http://google.com",
     //"pos":"0.17338 0 1.21804",
     //"fwd":"-0.561532 0 0.72741"}}
-    const QVector3D d = -QVector3D(player->GetV("dir").x(), 0.0f, player->GetV("dir").z());
-    const QVector3D p = player->GetV("pos") - d * 1.5f;
+    const QVector3D d = -QVector3D(player->GetProperties()->GetDir()->toQVector3D().x(),
+                                   0.0f,
+                                   player->GetProperties()->GetDir()->toQVector3D().z());
+    const QVector3D p = player->GetProperties()->GetPos()->toQVector3D()- d * 1.5f;
 
     QString packet = "{\"method\":\"user_portal\",\"data\":{\"roomId\":\"";
     packet += cur_url_id;
     packet += "\",\"userId\":\"";
-    packet += user_ghost->GetS("id");
+    packet += user_ghost->GetProperties()->GetID();
     packet += "\",\"url\":\"";
     packet += send_portal;
     packet += "\",\"pos\":" + MathUtil::GetVectorAsString(p);
@@ -1137,7 +1139,7 @@ QString MultiPlayerManager::GetUserMovePacket(QPointer <Player> player)
     QString packet = "{\"method\":\"user_moved\",\"data\":{\"roomId\":\"";
     packet += cur_url_id;
     packet += "\",\"userId\":\"";
-    packet += user_ghost->GetS("id");
+    packet += user_ghost->GetProperties()->GetID();
     packet += "\",\"position\":{";
     packet += GetMovePacket_Helper(player);
     packet += "}}}\n";
@@ -1171,12 +1173,14 @@ QString MultiPlayerManager::GetChatPacket(const QString & chat_message)
 QString MultiPlayerManager::GetPortalPacket(QPointer <Player> player)
 {
     if (user_ghost) {
-        user_ghost->SetS("anim_id", "portal");
+        user_ghost->GetProperties()->SetAnimID("portal");
     }
 
     //{"method":"portal", "data":{"url":"http://...", "pos":[1,2,4], "fwd":[0,1,0]}}
-    const QVector3D d = -QVector3D(player->GetV("dir").x(), 0.0f, player->GetV("dir").z());
-    const QVector3D p = player->GetV("pos") - d * 1.5f;
+    const QVector3D d = -QVector3D(player->GetProperties()->GetDir()->toQVector3D().x(),
+                                   0.0f,
+                                   player->GetProperties()->GetDir()->toQVector3D().z());
+    const QVector3D p = player->GetProperties()->GetPos()->toQVector3D() - d * 1.5f;
 
     QString packet = "{\"method\":\"portal\", \"data\":{\"url\":\"" + send_portal + "\", \"pos\":";
     packet += MathUtil::GetVectorAsString(p);
@@ -1218,12 +1222,12 @@ void MultiPlayerManager::DoUserMoved(const QVariantMap & m)
     else {
         cur_player = new RoomObject();
 //        qDebug() << "MULTI NEW PLAYER!" << cur_player << userid << roomid;
-        cur_player->SetType("ghost");
-        cur_player->SetS("id", userid);
-        cur_player->SetB("loop", false);
+        cur_player->SetType(TYPE_GHOST);
+        cur_player->GetProperties()->SetID(userid);
+        cur_player->GetProperties()->SetLoop(false);
         cur_player->SetDoMultiplayerTimeout(true);
-        cur_player->SetB("visible", true);
-        cur_player->SetV("scale", QVector3D(1.5f, 1.5f, 1.5f)); //this sets the "size"
+        cur_player->GetProperties()->SetVisible(true);
+        cur_player->GetProperties()->SetScale(QVector3D(1.5f, 1.5f, 1.5f)); //this sets the "size"
         AddChatMessage(userid + " is nearby.", QColor(32, 32, 32)); //add message to chat log
         players[userid] = cur_player;
     }
@@ -1285,10 +1289,10 @@ void MultiPlayerManager::DoUserChat(const QVariantMap & m)
 
     if (players.contains(userid) && !players[userid].isNull()) {
         if (touserid.length() > 0) { //private message (includes toUserId Property)
-            AddChatMessage(players[userid]->GetS("id") + QString(" ") + msg, QColor(64,64,192));
+            AddChatMessage(players[userid]->GetProperties()->GetID() + QString(" ") + msg, QColor(64,64,192));
         }
         else { //public message (does not include "toUserId" Property)
-            AddChatMessage(players[userid]->GetS("id") + QString(" ") + msg, QColor(128,128,128));
+            AddChatMessage(players[userid]->GetProperties()->GetID() + QString(" ") + msg, QColor(128,128,128));
         }
 
         players[userid]->SetChatMessage(msg);
@@ -1302,7 +1306,7 @@ void MultiPlayerManager::LoadAvatarData(const bool load_userid)
 //        delete user_ghost;
 //    }
 
-    user_ghost->SetType("ghost");
+    user_ghost->SetType(TYPE_GHOST);
 
     QPointer <AssetGhost> user_ghost_asset = new AssetGhost();    
     user_ghost->SetAssetGhost(user_ghost_asset);
@@ -1337,7 +1341,7 @@ void MultiPlayerManager::LoadAvatarData(const bool load_userid)
         const QString base_url = "http://www.janusvr.com/avatars/animated/";
 
         QPointer <AssetObject> body_obj = new AssetObject();
-        body_obj->SetS("id", "body");
+        body_obj->GetProperties()->SetID("body");
         body_obj->SetSrc(base_url, base_url + avatar_names[character] + "/Beta.fbx.gz");       
 //        body_obj->Load();
 
@@ -1348,7 +1352,7 @@ void MultiPlayerManager::LoadAvatarData(const bool load_userid)
         //set the animations
         for (int i=0; i<anim_names.size(); ++i) {
             QPointer <AssetObject> anim_obj(new AssetObject());
-            anim_obj->SetS("id", anim_names[i]);
+            anim_obj->GetProperties()->SetID(anim_names[i]);
             anim_obj->SetSrc(base_url, base_url + avatar_names[character] + "/" + anim_names[i] + ".fbx.gz");
 //            anim_obj->Load();
             asset_obj_list[anim_names[i]] = anim_obj;
@@ -1356,15 +1360,15 @@ void MultiPlayerManager::LoadAvatarData(const bool load_userid)
 
         //set the initial avatar properties
         QString new_id = GenerateUserID();
-        user_ghost->SetType("ghost");
-        user_ghost->SetS("id", new_id);
-        user_ghost->SetV("scale", QVector3D(0.0095f, 0.0095f, 0.0095f));
-        user_ghost->SetC("col", GenerateColour());
-        user_ghost->SetS("body_id", "body");
+        user_ghost->SetType(TYPE_GHOST);
+        user_ghost->GetProperties()->SetID(new_id);
+        user_ghost->GetProperties()->SetScale(QVector3D(0.0095f, 0.0095f, 0.0095f));
+        user_ghost->GetProperties()->SetColour(MathUtil::GetColourAsVector4(GenerateColour()));
+        user_ghost->GetProperties()->SetBodyID("body");
         user_ghost->SetHeadAvatarPos(QVector3D(0, 0, 0));  
         user_ghost->SetGhostAssetObjects(asset_obj_list);        
         user_ghost->GetChildObjects().clear();
-        user_ghost->SetB("lighting", true);
+        user_ghost->GetProperties()->SetLighting(true);
 
         UpdateAvatarData();
         SaveAvatarData();
@@ -1389,20 +1393,20 @@ void MultiPlayerManager::SetHeadSrc(const QString & s)
     if (s.length() > 0) {
         QPointer <AssetObject> new_asset_obj(new AssetObject());
         new_asset_obj->SetSrc("", s);
-        new_asset_obj->SetS("id", "head_id");
+        new_asset_obj->GetProperties()->SetID("head_id");
 
         user_ghost->GetGhostAssetObjects()["head_id"] = new_asset_obj;
-        user_ghost->SetS("head_id", "head_id");
+        user_ghost->GetProperties()->SetHeadID("head_id");
     }
     else {
         user_ghost->GetGhostAssetObjects()["head_id"] = 0;
-        user_ghost->SetS("head_id", "head_id");
+        user_ghost->GetProperties()->SetHeadID("head_id");
     }
 }
 
 void MultiPlayerManager::SetHeadMtl(const QString & s)
 {
-    QPointer <AssetObject> a = user_ghost->GetGhostAssetObjects()[user_ghost->GetS("head_id")];
+    QPointer <AssetObject> a = user_ghost->GetGhostAssetObjects()[user_ghost->GetProperties()->GetHeadID()];
     if (a) {
         a->SetMTLFile(s);
     }
@@ -1413,20 +1417,20 @@ void MultiPlayerManager::SetBodySrc(const QString & s)
     if (s.length() > 0) {
         QPointer <AssetObject> new_asset_obj(new AssetObject());
         new_asset_obj->SetSrc("", s);
-        new_asset_obj->SetS("id", "body_id");
+        new_asset_obj->GetProperties()->SetID("body_id");
 
         user_ghost->GetGhostAssetObjects()["body_id"] = new_asset_obj;
-        user_ghost->SetS("body_id", "body_id");
+        user_ghost->GetProperties()->SetBodyID("body_id");
     }
     else {
         user_ghost->GetGhostAssetObjects()["body_id"].clear();
-        user_ghost->SetS("body_id", "body_id");
+        user_ghost->GetProperties()->SetBodyID("body_id");
     }
 }
 
 void MultiPlayerManager::SetBodyMtl(const QString & s)
 {    
-    const QPointer <AssetObject> a = user_ghost->GetGhostAssetObjects()[user_ghost->GetS("body_id")];
+    const QPointer <AssetObject> a = user_ghost->GetGhostAssetObjects()[user_ghost->GetProperties()->GetBodyID()];
     if (a) {
         a->SetMTLFile(s);
     }

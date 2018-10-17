@@ -67,37 +67,37 @@ VirtualKeyboard::VirtualKeyboard() :
 
     //load textures for keys
     key_img = new AssetImage();
-    key_img->SetS("id", "keys");
+    key_img->GetProperties()->SetID("keys");
     key_img->SetSrc(MathUtil::GetApplicationURL(), "assets/keyboard/keys.png");
     key_img->Load();
 
     keypress_img = new AssetImage();
-    keypress_img->SetS("id", "keyspressed");
+    keypress_img->GetProperties()->SetID("keyspressed");
     keypress_img->SetSrc(MathUtil::GetApplicationURL(), "assets/keyboard/keyspressed.png");
     keypress_img->Load();
 
     keyhover_img  = new AssetImage();
-    keyhover_img->SetS("id", "keyshovered");
+    keyhover_img->GetProperties()->SetID("keyshovered");
     keyhover_img->SetSrc(MathUtil::GetApplicationURL(), "assets/keyboard/keyshovered.png");
     keyhover_img->Load();
 
     //load geometries for keys, and set up objects        
     for (QHash <Qt::Key, QString>::const_iterator cit=keynames.begin(); cit!= keynames.end(); ++cit) {
         QPointer <AssetObject> a = new AssetObject();
-        a->SetS("id", cit.value());
+        a->GetProperties()->SetID(cit.value());
         a->SetSrc(MathUtil::GetApplicationURL(), "assets/keyboard/" + cit.value() + ".obj");
         a->Load();
         assetobjs[cit.key()] = a;
 
         const QString jsid = "__menu_" + cit.value();
         QPointer <RoomObject> o = new RoomObject();
-        o->SetType("object");
-        o->SetS("js_id", jsid);
-        o->SetS("id", jsid);
+        o->SetType(TYPE_OBJECT);
+        o->GetProperties()->SetJSID(jsid);
+        o->GetProperties()->SetID(jsid);
         o->SetAssetObject(a);
         o->SetCollisionAssetObject(a);
         o->SetAssetImage(key_img);
-        o->SetB("lighting", false);
+        o->GetProperties()->SetLighting(false);
 
         envobjects[jsid] = o;
         jstokeys[jsid] = cit.key();
@@ -142,16 +142,17 @@ void VirtualKeyboard::Update()
     QHash <QString, QPointer <RoomObject> >::iterator cit;
     for (cit=envobjects.begin(); cit!= envobjects.end(); ++cit) {
         if (cit.value()) {
-            if (shift_modifier && cit.value()->GetS("js_id") == "__menu_shift") {
+            const QString js_id = cit.value()->GetProperties()->GetJSID();
+            if (shift_modifier && js_id == "__menu_shift") {
                 cit.value()->SetAssetImage(keypress_img);
             }
-            else if (control_modifier && cit.value()->GetS("js_id") == "__menu_control") {
+            else if (control_modifier && js_id == "__menu_control") {
                 cit.value()->SetAssetImage(keypress_img);
             }
-            else if (alt_modifier && cit.value()->GetS("js_id") == "__menu_alt") {
+            else if (alt_modifier && js_id == "__menu_alt") {
                 cit.value()->SetAssetImage(keypress_img);
             }
-            else if (capslock && cit.value()->GetS("js_id") == "__menu_capslock") {
+            else if (capslock && js_id == "__menu_capslock") {
                 cit.value()->SetAssetImage(keypress_img);
             }
             else if (cur_selected[0] == cit.value() && mouse_pressed[0]) {
@@ -213,7 +214,7 @@ void VirtualKeyboard::mousePressEvent(const int index)
         capslock = !capslock;
     }
     else if (cur_selected[index]) {
-        const Qt::Key key = GetKeySelected(cur_selected[index]->GetS("js_id"));
+        const Qt::Key key = GetKeySelected(cur_selected[index]->GetProperties()->GetJSID());
         int key_code = (int)key;
 
         if (websurface) {

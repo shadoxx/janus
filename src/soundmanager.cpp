@@ -303,11 +303,11 @@ void SoundManager::Play(const SOUND_EFFECT index, const bool loop, const QVector
     }
 
     QPointer <RoomObject> new_sound_object = new RoomObject();
-    new_sound_object->SetType("sound");
+    new_sound_object->SetType(TYPE_SOUND);
     new_sound_object->SetAssetSound(sounds[index]);
-    new_sound_object->SetB("loop", loop);
-    new_sound_object->SetV("pos", p);
-    new_sound_object->SetV("scale", QVector3D(dist, dist, dist));
+    new_sound_object->GetProperties()->SetLoop(loop);
+    new_sound_object->GetProperties()->SetPos(p);
+    new_sound_object->GetProperties()->SetScale(QVector3D(dist, dist, dist));
 
     sounds[index]->SetupOutput(new_sound_object->GetMediaContext(), false);
 
@@ -389,16 +389,17 @@ bool SoundManager::GetCaptureDeviceEnabled()
 
 void SoundManager::Update(QPointer <Player> player)
 {            
-    const QVector3D pos = player->GetV("pos") + player->GetV("local_head_pos"); //+ player->GetEyePoint(); //+ player->GetHeadPos();
+    const QVector3D pos = player->GetProperties()->GetPos()->toQVector3D()
+            + player->GetProperties()->GetLocalHeadPos()->toQVector3D(); //+ player->GetEyePoint(); //+ player->GetHeadPos();
     alListener3f(AL_POSITION, pos.x(), pos.y(), pos.z());
 
-    const QVector3D vel = player->GetV("vel");
+    const QVector3D vel = player->GetProperties()->GetVel()->toQVector3D();
     alListener3f(AL_VELOCITY, vel.x(), vel.y(), vel.z());
 
     //0,1,2 - forward
     //3,4,5 - up
-    const QVector3D forward = player->GetV("view_dir");
-    const QVector3D up = player->GetV("up_dir");
+    const QVector3D forward = player->GetProperties()->GetViewDir()->toQVector3D();
+    const QVector3D up = player->GetProperties()->GetUpDir()->toQVector3D();
 
     float directionvect[6];
     directionvect[0] = forward.x();
@@ -409,10 +410,10 @@ void SoundManager::Update(QPointer <Player> player)
     directionvect[5] = up.z();
     alListenerfv(AL_ORIENTATION, directionvect);
 
-    if (player->GetB("recording")){
+    if (player->GetRecording()){
         recording = true;
     }
-    else if (recording && !player->GetB("recording")){
+    else if (recording && !player->GetRecording()){
         QFile file(MathUtil::GetRecordingPath() + "recording-" + MathUtil::GetCurrentDateTimeAsString() + ".wav");
         if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             file.write(WavHeader(input_frequency, 16, 1, bufferdata.size()).getByteArray());
@@ -465,7 +466,7 @@ void SoundManager::Update(QPointer <Player> player)
 
             max = std::max(max, abs(sample));
 
-            if (player->GetB("recording")) {
+            if (player->GetRecording()) {
                 bufferdata.push_back(char(sample));
                 bufferdata.push_back(char(sample>>8));
             }
@@ -488,7 +489,7 @@ void SoundManager::Update(QPointer <Player> player)
         }
         //}
             //hopefully solves the buffer queueing issue where sound falls behind
-        if (player->GetB("speaking")) {
+        if (player->GetSpeaking()) {
             input_mic_level = MathUtil::GetSoundLevel(bufferdata_input);
             input_mic_buffers.push_back(AudioUtil::encode(bufferdata_input).toBase64());
             //                qDebug() << "inputmicbuffers size" << input_mic_buffers.size();

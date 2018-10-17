@@ -4,8 +4,7 @@ AssetScript::AssetScript(QPointer <Room> r) :
     on_load_invoked(false),
     room(r)
 {
-    SetS("_type", "assetscript");
-    SetS("_tagname", "AssetScript");
+    props->SetType(TYPE_ASSETSCRIPT);
     script_engine = r->GetScriptEngine();
     global_scope = script_engine->globalObject();
     roomObject = global_scope.property("room");
@@ -62,8 +61,6 @@ QPointer <QScriptEngine> AssetScript::GetNewScriptEngine(QPointer <Room> r)
     roomObject.setProperty("cookies", se->newObject());
     roomObject.setProperty("getObjectById", se->newFunction(GetObjectById));
     roomObject.setProperty("loadNewAsset", se->newFunction(LoadNewAsset));
-    roomObject.setProperty("registerElement", se->newFunction(RegisterElement));
-    roomObject.setProperty("extendElement", se->newFunction(ExtendElement));
 
     global_scope.setProperty("room", roomObject);
 
@@ -93,12 +90,12 @@ void AssetScript::Load()
 {    
     //53.12 - Setup cookies here, as by now the proper base_url which defines the right domain is set
 //    qDebug() << "AssetScript::Load()" << src_url;
-    QUrl cookieDomain = QUrl(GetS("_base_url"));
+    QUrl cookieDomain = QUrl(props->GetBaseURL());
     foreach (QNetworkCookie cookie, CookieJar::cookie_jar->cookiesForUrl(cookieDomain)) {
         roomObject.property("cookies").setProperty(QString(cookie.name()), QScriptValue(script_engine, QString(cookie.value())));
     }
 
-    WebAsset::Load(QUrl(GetS("_src_url")));
+    WebAsset::Load(QUrl(props->GetSrcURL()));
 }
 
 void AssetScript::Destroy()
@@ -164,7 +161,7 @@ QScriptValue AssetScript::RunScriptCode(const QString & code)
 {
 //    qDebug() << "AssetScript::RunScriptCode() " << code;
     last_code = code;
-    return script_engine->evaluate(code, GetS("src"));
+    return script_engine->evaluate(code, props->GetSrc());
 }
 
 QScriptValue AssetScript::RunFunction(const QString & name, const QScriptValueList & args)
@@ -258,7 +255,7 @@ void AssetScript::HandleCookieChanges()
             continue;
         }
 
-        QString cookieDomain = QUrl(GetS("_base_url")).host();
+        QString cookieDomain = QUrl(props->GetBaseURL()).host();
 
         QNetworkCookie newCookie(itr.name().toLatin1(), itr.value().toString().toLatin1());
         newCookie.setDomain(cookieDomain);
@@ -271,7 +268,7 @@ void AssetScript::HandleCookieChanges()
     if (!newCookies.isEmpty()) {
         //Note: do not change from base_url (doesn't work using base_url.host())
 //        qDebug() << "AssetScript::HandleCookieChanges()" << newCookies.first().domain() << newCookies << base_url;
-        CookieJar::cookie_jar->setCookiesFromUrl(newCookies, QUrl(GetS("_base_url")));
+        CookieJar::cookie_jar->setCookiesFromUrl(newCookies, QUrl(props->GetBaseURL()));
         CookieJar::cookie_jar->SaveToDisk();
     }
 
@@ -355,7 +352,7 @@ QList<QPointer <RoomObject> > AssetScript::FlushNewObjects()
         //dom.insert(newId, newDOMNode);
 
         QPointer <RoomObject> newObject = RoomObject::CreateFromProperties(newDOMNode);
-        newObject->SetType(newDOMNode->GetS("_type"));
+        newObject->SetType(newDOMNode->GetType());
 
 //        qDebug() << "AssetScript::FlushNewObjects()" << newObject << newObject->GetS("_type") << newId << newObject->GetS("js_id");
         room->GetRoomObjects()[newId] = newObject;
@@ -422,18 +419,18 @@ QList<QPointer <RoomObject> > AssetScript::UpdateAsynchronousCreatedObjects(QHas
 void AssetScript::UpdateInternalDataStructures(QPointer <Player> player)
 {
     //56.0 - ensure DOM/roomobjects always get updated (including object properties pointers for portals)
-    //60.0 - INSANELY IMPORTANT - make sure do not overwrite the dom map and remove objects created by JS via CreateObject!
+    //60.0 - INSANELY IMPORTANT - make sure do not overwrite the dom map and remove objects created by JS via CreateObject!    
     QMap <QString, DOMNode* > dom_map;
     DOMNodeMapFromScriptValue(global_scope.property("__dom"), dom_map);
 
     QHash <QString, QPointer <DOMNode> >::iterator iter;
     for (QPointer <RoomObject> & o : room->GetRoomObjects()) {
         if (o) {
-//            qDebug() << node << node->GetS("js_id") << node->GetS("id");
-            dom_map[o->GetS("js_id")] = o->GetProperties().data();
+            //            qDebug() << node << node->GetS("js_id") << node->GetS("id");
+            dom_map[o->GetProperties()->GetJSID()] = o->GetProperties().data();
         }
     }
-//    qDebug() << "AssetScript::UpdateInternalDataStructures" << dom_map;
+    //    qDebug() << "AssetScript::UpdateInternalDataStructures" << dom_map;
 
     if (!global_scope.property("player").isValid()) {
         global_scope.setProperty("player", script_engine->toScriptValue(player->GetProperties().data()));
@@ -579,11 +576,6 @@ bool AssetScript::GetFinished()
 QString AssetScript::GetJSCode()
 {
     return GetData();
-}
-
-QVariant AssetScript::GetRegisteredElements(QPointer <Room> r)
-{
-    return r->GetScriptEngine()->property("__custom_elements");
 }
 
 QList <QPointer <RoomObject> > AssetScript::DoRoomLoad(QHash <QString, QPointer <RoomObject> > & envobjects, QPointer <Player> player)

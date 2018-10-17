@@ -15,9 +15,9 @@ void TextureManager::CreateTexture(QPointer<AssetImageData> data, QPointer <DOMN
 		return;
 	}
 
-    const bool tex_linear = props->GetB("tex_linear");
-    const bool tex_mipmap = props->GetB("tex_mipmap");
-    const bool tex_clamp = props->GetB("tex_clamp");
+    const bool tex_linear = props->GetTexLinear();
+    const bool tex_mipmap = props->GetTexMipmap();
+    const bool tex_clamp = props->GetTexClamp();
 
     TextureHandle::ALPHA_TYPE tex_alpha = TextureHandle::ALPHA_TYPE::UNDEFINED;
 
@@ -28,7 +28,7 @@ void TextureManager::CreateTexture(QPointer<AssetImageData> data, QPointer <DOMN
         tex_alpha = TextureHandle::ALPHA_TYPE::CUTOUT;
     }
     else {
-        QString const tex_alpha_string = props->GetS("tex_alpha");
+        QString const tex_alpha_string = props->GetTexAlpha();
 
         if (tex_alpha_string.contains("none")) {
             tex_alpha = TextureHandle::ALPHA_TYPE::NONE;
@@ -45,7 +45,7 @@ void TextureManager::CreateTexture(QPointer<AssetImageData> data, QPointer <DOMN
     }
 
     TextureHandle::COLOR_SPACE tex_colorspace = TextureHandle::COLOR_SPACE::SRGB;
-    QString const tex_colorspace_string = props->GetS("tex_colorspace");
+    QString const tex_colorspace_string = props->GetTexColorspace();
 
     if (tex_colorspace_string.contains("sRGB")) {
         tex_colorspace = TextureHandle::COLOR_SPACE::SRGB;

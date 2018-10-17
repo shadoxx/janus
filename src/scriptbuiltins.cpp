@@ -32,7 +32,7 @@ QScriptValue CreateObject(QScriptContext * context, QScriptEngine * engine)
     if (!propsHash.isValid()) {
         propsHash = engine->newObject();
     }
-    propsHash.setProperty("_type", typeName);
+    propsHash.setProperty("type", typeName);
 //    qDebug() << "CreateObject" << typeName << propsHash.toString() << propsHash.property("js_id").toString() << propsHash.property("url").toString();
 
     // if the user didn't specify a javascript id for the object, generate one
@@ -60,7 +60,7 @@ QScriptValue CreateObject(QScriptContext * context, QScriptEngine * engine)
 //    qDebug() << "CreateObject pushing" << newId.toString();
 
     QPointer <DOMNode> newNode = new DOMNode();
-    newNode->SetS("_type", typeName);
+    newNode->SetType(DOMNode::StringToElementType(typeName));
     DOMNodeFromScriptValue(propsHash, newNode);    
     QScriptValue newDOMNodeScriptValue = engine->newQObject(newNode, QScriptEngine::QtOwnership, QScriptEngine::AutoCreateDynamicProperties);    
 
@@ -126,41 +126,6 @@ QScriptValue AddCookie(QScriptContext * context, QScriptEngine * engine)
 
     newCookieHash.setProperty(cookieName, cookieValue);
 
-    return engine->undefinedValue();
-}
-
-QScriptValue RegisterElement(QScriptContext * context, QScriptEngine * engine)
-{    
-    QScriptValue globalObject = engine->globalObject();
-
-    // object type is mandatory, other properties are optional
-    QString elementName = context->argument(0).toString();
-
-    QScriptValue propsHash = context->argument(1);
-    if (!propsHash.isValid()) {
-        propsHash = engine->newObject();
-    }
-    propsHash.setProperty("_type", elementName);
-
-    // we need to cue up the ids of added objects in an intermediary array
-    // so we can flush them later into the room's EnvObject list
-    QScriptValue newElements = globalObject.property("__custom_elements");
-    if (!newElements.isValid()) {
-        newElements = engine->newArray(0);
-    }
-    newElements.property("push").call(newElements, QScriptValueList() << propsHash);
-    globalObject.setProperty("__custom_elements", newElements);
-
-//    qDebug() << "room.registerElement" << elementName << newElements.toObject().toString() << globalObject.property("__custom_elements").toString();
-//    qDebug() << "CreateObject" << newNode->GetJSID();
-//    return propsHash;
-    return engine->undefinedValue();
-}
-
-QScriptValue ExtendElement(QScriptContext * context, QScriptEngine * engine)
-{
-    QString elementName = context->argument(0).toString();
-    qDebug() << "room.extendElement" << elementName;
     return engine->undefinedValue();
 }
 

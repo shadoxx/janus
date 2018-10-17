@@ -194,7 +194,7 @@ public:
 
     //used for MainWindow UI interop
     void CreateNewWorkspace(const QString name);
-    QPointer <RoomObject> CreatePortal(const QString url, const bool send_multi);
+    QPointer <RoomObject> CreatePortal(const QUrl url, const bool send_multi);
     void SaveRoom(const QString out_filename);
 
     void SendChatMessage(const QString s);    
@@ -318,8 +318,6 @@ private:
 
     TextGeom info_text_geom;
     TextGeom info2_text_geom;
-    TextGeom speaking_text_geom;
-	TextGeom recording_text_geom;    
 
     unsigned int global_uuid;
 

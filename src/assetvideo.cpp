@@ -5,13 +5,12 @@ AssetVideo::AssetVideo() :
     volume(70),
     default_volume(70)
 {
-    SetS("_type", "assetvideo");
-    SetS("_tagname", "AssetVideo");
-    SetB("sbs3d", false);
-    SetB("ou3d", false);
-    SetB("reverse3d", false);
-    SetB("loop", false);
-    SetB("auto_play", false);
+    props->SetType(TYPE_ASSETVIDEO);
+    props->SetSBS3D(false);
+    props->SetOU3D(false);
+    props->SetReverse3D(false);
+    props->SetLoop(false);
+    props->SetAutoPlay(false);
 }
 
 AssetVideo::~AssetVideo()
@@ -20,8 +19,8 @@ AssetVideo::~AssetVideo()
 
 void AssetVideo::SetupOutput(MediaContext * ctx)
 {
-    media_player.Set3D(GetB("sbs3d"), GetB("ou3d"), GetB("reverse3d"));
-    media_player.SetupOutput(ctx, GetS("_src_url"), GetB("loop"));
+    media_player.Set3D(props->GetSBS3D(), props->GetOU3D(), props->GetReverse3D());
+    media_player.SetupOutput(ctx, props->GetSrcURL(), props->GetLoop());
 }
 
 void AssetVideo::ClearOutput(MediaContext * ctx)
@@ -174,8 +173,8 @@ void AssetVideo::DrawSelectedGL(QPointer <AssetShader> shader)
 
 TextureHandle* AssetVideo::GetTextureHandle(MediaContext * ctx, const bool left_eye)
 {
-    const bool sbs3d = GetB("sbs3d");
-    const bool ou3d = GetB("ou3d");
+    const bool sbs3d = props->GetSBS3D();
+    const bool ou3d = props->GetOU3D();
 
     if (sbs3d || ou3d) {
         return (left_eye ?

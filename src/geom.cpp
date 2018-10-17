@@ -860,16 +860,16 @@ void Geom::Update()
                     memcpy(mat.textures[j].ba.data(), t->pcData, size_data);
 
                     QPointer <AssetImage> new_img = new AssetImage();
-                    new_img->SetB("tex_clamp", tex_clamp);
-                    new_img->SetB("tex_linear", tex_linear);
-                    new_img->SetB("tex_compress", tex_compress);
-                    new_img->SetB("tex_mipmap", tex_mipmap);
-                    new_img->SetB("tex_premultiply", (j == 0) ? tex_premultiply : false);
-                    new_img->SetS("tex_alpha", (j == 0) ? tex_alpha : "none");
+                    new_img->GetProperties()->SetTexClamp(tex_clamp);
+                    new_img->GetProperties()->SetTexLinear(tex_linear);
+                    new_img->GetProperties()->SetTexCompress(tex_compress);
+                    new_img->GetProperties()->SetTexMipmap(tex_mipmap);
+                    new_img->GetProperties()->SetTexPremultiply((j == 0) ? tex_premultiply : false);
+                    new_img->GetProperties()->SetTexAlpha((j == 0) ? tex_alpha : "none");
                     // We use linear colorspace for data textures like roughness, normals, heightmaps etc.
                     // We set texture 2-Specular/3-Normal/4-Height/7-DetailMask to linear as they are data-textures which should have
                     // linear data stored in them (i.e. 8-bit 128 grey is half-smoothness)
-                    new_img->SetS("tex_colorspace", (j == 0 || j == 1 || j == 5 || j == 6 || j == 8) ? tex_colorspace : "linear");
+                    new_img->GetProperties()->SetTexColorspace((j == 0 || j == 1 || j == 5 || j == 6 || j == 8) ? tex_colorspace : "linear");
                     new_img->SetSrc(path, s+"."+QString(scene->mTextures[tex_index]->achFormatHint));
                     new_img->CreateFromData(mat.textures[j].ba);
 //                    qDebug() << "TEXTURE1!" << path << s+"."+QString(scene->mTextures[tex_index]->achFormatHint);
@@ -878,13 +878,13 @@ void Geom::Update()
                 }
                 else if (!s.isEmpty()) {
                     QPointer <AssetImage> new_img = new AssetImage();
-                    new_img->SetB("tex_clamp", tex_clamp);
-                    new_img->SetB("tex_linear", tex_linear);
-                    new_img->SetB("tex_compress", tex_compress);
-                    new_img->SetB("tex_mipmap", tex_mipmap);
-                    new_img->SetB("tex_premultiply", (j == 0) ? tex_premultiply : false);
-                    new_img->SetS("tex_alpha", (j == 0) ? tex_alpha : "none");
-                    new_img->SetS("tex_colorspace", (j == 0 || j == 1 || j == 5 || j == 6 || j == 8) ? tex_colorspace : "linear");
+                    new_img->GetProperties()->SetTexClamp(tex_clamp);
+                    new_img->GetProperties()->SetTexLinear(tex_linear);
+                    new_img->GetProperties()->SetTexCompress(tex_compress);
+                    new_img->GetProperties()->SetTexMipmap(tex_mipmap);
+                    new_img->GetProperties()->SetTexPremultiply((j == 0) ? tex_premultiply : false);
+                    new_img->GetProperties()->SetTexAlpha((j == 0) ? tex_alpha : "none");
+                    new_img->GetProperties()->SetTexColorspace((j == 0 || j == 1 || j == 5 || j == 6 || j == 8) ? tex_colorspace : "linear");
                     new_img->SetSrc(s, s);
                     new_img->Load();
 //                    qDebug() << "TEXTURE2!" << s;

@@ -11,12 +11,13 @@ MediaPlayer::MediaPlayer() :
     if (!vlcInstance) {
         // VLC pointers
         const char * const vlc_args[] = {
-              "--intf=dummy", // Don't use any interface
-              "--quiet",
-              //"--ignore-config",        // Don't use VLC's config
-              //"--extraintf=logger", // Don't use any interface
-              "--verbose=0", // Be verbose
-               };
+            "--intf=dummy", // Don't use any interface
+            "--quiet",
+            //"--ignore-config",        // Don't use VLC's config
+            //"--extraintf=logger", // Don't use any interface
+            "--verbose=0",  // Be verbose
+            "--no-ts-trust-pcr" // Fixes playback for some .m3u8 files
+        };
 
         // We launch VLC
         vlcInstance = libvlc_new(sizeof(vlc_args) / sizeof(vlc_args[0]), vlc_args);

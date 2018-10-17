@@ -23,9 +23,6 @@ QScriptValue Children(QScriptContext * context, QScriptEngine * engine);
 
 QScriptValue AddCookie(QScriptContext * context, QScriptEngine * engine);
 
-QScriptValue RegisterElement(QScriptContext * context, QScriptEngine * engine);
-QScriptValue ExtendElement(QScriptContext * context, QScriptEngine * engine);
-
 QScriptValue XmlHttpRequestConstructor(QScriptContext * context, QScriptEngine * engine);
 
 QScriptValue VectorConstructor(QScriptContext * context, QScriptEngine * engine);

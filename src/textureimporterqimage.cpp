@@ -117,7 +117,7 @@ void TextureImporterQImage::LoadImageDataThread_Helper(QImageReader& img_reader,
     QImage::Format format = each_img.format();
     if (each_img.hasAlphaChannel())
     {
-        if (props->GetB("tex_premultiply")) {
+        if (props->GetTexPreMultiply()) {
             if (   format != QImage::Format_RGBA8888_Premultiplied
                 && format != QImage::Format_ARGB32_Premultiplied) {
 #ifdef __ANDROID__
@@ -161,8 +161,8 @@ void TextureImporterQImage::LoadImageDataThread_Helper(QImageReader& img_reader,
 	const float w = each_img.width();
 	const float h = each_img.height();
 
-    if (props->GetB("sbs3d")) {
-        if (props->GetB("reverse3d")) {
+    if (props->GetSBS3D()) {
+        if (props->GetReverse3D()) {
 			left_img = each_img.copy(w / 2, 0, w / 2, h);
 			right_img = each_img.copy(0, 0, w / 2, h);
 		}
@@ -171,8 +171,8 @@ void TextureImporterQImage::LoadImageDataThread_Helper(QImageReader& img_reader,
 			right_img = each_img.copy(w / 2, 0, w / 2, h);
 		}
 	}
-    else if (props->GetB("ou3d")) {
-        if (props->GetB("reverse3d")) {
+    else if (props->GetOU3D()) {
+        if (props->GetReverse3D()) {
 			left_img = each_img.copy(0, h / 2, w, h / 2);
 			right_img = each_img.copy(0, 0, w, h / 2);
 		}
@@ -191,10 +191,10 @@ QPointer<BaseAssetData> TextureImporterQImage::Import(const QByteArray& bytes, Q
     QPointer<BaseAssetData> bdata = QPointer<BaseAssetData>(new AssetImageData());
 	AssetImageData* data = (AssetImageData*)bdata.data();
 
-    if (!props->GetS("src").isEmpty()) {
+    if (!props->GetSrc().isEmpty()) {
 		// right now this is used only for debugging/knowing
 		// where the texture came from
-        data->SetSource(props->GetS("src"));
+        data->SetSource(props->GetSrc());
 	}
 
     //59.6 - Linux compile fix

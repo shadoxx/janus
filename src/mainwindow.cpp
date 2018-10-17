@@ -14,7 +14,7 @@ MainWindow::MainWindow()
     : cur_screen(0),
       fullscreened(false)
 {
-    SettingsManager::LoadSettings();
+    SettingsManager::LoadSettings();   
 
     //set application-wide font
     const QString font_path = MathUtil::GetApplicationPath() + "assets/fonts/OpenSans-Regular.ttf";
@@ -642,12 +642,12 @@ void MainWindow::Update()
             JNIUtil::SetControlsVisible(true, SettingsManager::GetShowViewJoystick());
     }
 #endif
-    if (!urlbar->hasFocus() && glwidget->GetGrab() && urlbar->text() != game->GetPlayer()->GetS("url")) {
-        urlbar->setText(game->GetPlayer()->GetS("url"));
+    if (!urlbar->hasFocus() && glwidget->GetGrab() && urlbar->text() != game->GetPlayer()->GetProperties()->GetURL()) {
+        urlbar->setText(game->GetPlayer()->GetProperties()->GetURL());
     }
 #else
-    if (!urlbar->hasFocus() && urlbar->text() != game->GetPlayer()->GetS("url")) {
-        urlbar->setText(game->GetPlayer()->GetS("url"));
+    if (!urlbar->hasFocus() && urlbar->text() != game->GetPlayer()->GetProperties()->GetURL()) {
+        urlbar->setText(game->GetPlayer()->GetProperties()->GetURL());
     }
 #endif
 
@@ -684,7 +684,7 @@ void MainWindow::Update()
     const QString bookmarked_path = MathUtil::GetApplicationPath() + "assets/icons/bookmarked.png";
     const QString bookmark_path = MathUtil::GetApplicationPath() + "assets/icons/bookmark.png";
 
-    if (game->GetBookmarkManager()->GetBookmarked(game->GetPlayer()->GetS("url"))) {
+    if (game->GetBookmarkManager()->GetBookmarked(game->GetPlayer()->GetProperties()->GetURL())) {
         if (button_bookmark_state != 1) {
             button_bookmark_state = 1;
             button_bookmark->setIcon(QIcon(bookmarked_path));
@@ -717,7 +717,7 @@ void MainWindow::Update()
 
     //player text entry (URL bar or chat text entry)
     if (social_window && urlbar) {
-        game->GetPlayer()->SetB("typing", social_window->GetFocusOnChatEntry() || urlbar->hasFocus());
+        game->GetPlayer()->SetTyping(social_window->GetFocusOnChatEntry() || urlbar->hasFocus());
     }
 
     //Should quit? or not entitled?
@@ -958,49 +958,49 @@ void MainWindow::Initialize()
 
     switch (disp_mode) {    
     case MODE_VIVE:
-        game->GetPlayer()->SetS("hmd_type", hmd_manager->GetHMDString());
-        game->GetPlayer()->SetB("hmd_enabled", true);
+        game->GetPlayer()->SetHMDType(hmd_manager->GetHMDString());
+        game->GetPlayer()->SetHMDEnabled(true);
         menu_ops.hmd = true;
         break;
     case MODE_RIFT:
-        game->GetPlayer()->SetS("hmd_type", "rift");
-        game->GetPlayer()->SetB("hmd_enabled", true);
+        game->GetPlayer()->SetHMDType("rift");
+        game->GetPlayer()->SetHMDEnabled(true);
         menu_ops.hmd = true;
         break;
     case MODE_GVR:
-        game->GetPlayer()->SetS("hmd_type", hmd_manager->GetHMDType());
-        game->GetPlayer()->SetB("hmd_enabled", true);
+        game->GetPlayer()->SetHMDType(hmd_manager->GetHMDType());
+        game->GetPlayer()->SetHMDEnabled(true);
         menu_ops.hmd = true;
         break;
     case MODE_GEAR:
-        game->GetPlayer()->SetS("hmd_type", hmd_manager->GetHMDType());
-        game->GetPlayer()->SetB("hmd_enabled", true);
+        game->GetPlayer()->SetHMDType(hmd_manager->GetHMDType());
+        game->GetPlayer()->SetHMDEnabled(true);
         menu_ops.hmd = true;
         break;
     case MODE_SBS:
-        game->GetPlayer()->SetS("hmd_type", "sbs");
+        game->GetPlayer()->SetHMDType("sbs");
         break;
     case MODE_SBS_REVERSE:
-        game->GetPlayer()->SetS("hmd_type", "sbs_reverse");
+        game->GetPlayer()->SetHMDType("sbs_reverse");
         break;
     case MODE_OU3D:
-        game->GetPlayer()->SetS("hmd_type", "ou3d");
+        game->GetPlayer()->SetHMDType("ou3d");
         break;
     case MODE_CUBE:
-        game->GetPlayer()->SetS("hmd_type", "cube");
+        game->GetPlayer()->SetHMDType("cube");
         break;
     default:
-        game->GetPlayer()->SetS("hmd_type", "2d");
+        game->GetPlayer()->SetHMDType("2d");
         break;
     }
 
 #ifdef __ANDROID__
-    game->GetPlayer()->SetS("device_type", "android");
+    game->GetPlayer()->SetDeviceType("android");
 #else
-    game->GetPlayer()->SetS("device_type", "desktop");
+    game->GetPlayer()->SetDeviceType("desktop");
 #endif
 
-    qDebug() << "MainWindow::InitializeGame() - HMD/render type:" << game->GetPlayer()->GetS("hmd_type");
+    qDebug() << "MainWindow::InitializeGame() - HMD/render type:" << game->GetPlayer()->GetHMDType();
 
     //game->SetPlayerHeight(rift_render.GetPlayerEyeHeight());
     qDebug() << "MainWindow::InitializeGame() - Initializing sound manager...";
@@ -1595,7 +1595,7 @@ void MainWindow::ActionHome()
 
 void MainWindow::ActionBookmark()
 {
-    const QString url = game->GetPlayer()->GetS("url");
+    const QString url = game->GetPlayer()->GetProperties()->GetURL();
     const bool url_bookmarked = game->GetBookmarkManager()->GetBookmarked(url);
     url_bookmarked ? ActionRemoveBookmark() : ActionAddBookmark();
 }
@@ -1729,7 +1729,7 @@ void MainWindow::ActionRemoveBookmark()
 
 void MainWindow::ActionOpenBookmarks()
 {
-    const QString url = game->GetPlayer()->GetS("url");
+    const QString url = game->GetPlayer()->GetProperties()->GetURL();
     const bool url_bookmarked = game->GetBookmarkManager()->GetBookmarked(url);
     if (url_bookmarked) {
         addBookmarkAct->setShortcut(QKeySequence());
@@ -1859,7 +1859,7 @@ void MainWindow::EnterVR()
         {
             GLWidget::SetDisplayMode(MODE_GEAR);
         }
-        game->GetPlayer()->SetS("hmd_type", hmd_manager->GetHMDType());
+        game->GetPlayer()->SetHMDType(hmd_manager->GetHMDType());
 
         game->SetMouseDoPitch(false);
         game->GetMenuOperations().hmd = true;
@@ -1880,7 +1880,7 @@ void MainWindow::ExitVR()
         GLWidget::SetDisplayMode(MODE_2D);
 
         game->SetMouseDoPitch(true);
-        game->GetPlayer()->SetS("hmd_type", "2d");
+        game->GetPlayer()->SetHMDType("2d");
         game->GetMenuOperations().hmd = false;
 
         glwidget->SetupFramebuffer();
@@ -1913,7 +1913,7 @@ void MainWindow::Resume()
 
     QPointer <RoomPhysics> phys = game->GetEnvironment()->GetCurRoom()->GetPhysics();
     if (phys) {
-        phys->SetPlayerGravity(game->GetEnvironment()->GetCurRoom()->GetF("gravity"));
+        phys->SetPlayerGravity(game->GetEnvironment()->GetCurRoom()->GetProperties()->GetGravity());
     }
 
     //game->GetEnvironment()->ReloadRoom();

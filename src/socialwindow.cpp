@@ -78,12 +78,12 @@ SocialWindow::SocialWindow(Game * g) :
 void SocialWindow::Update()
 {
     //update userid
-    if (label_userid && game->GetPlayer()->GetS("userid") != label_userid->text()) {
-        label_userid->setText(game->GetPlayer()->GetS("userid"));
+    if (label_userid && game->GetPlayer()->GetProperties()->GetUserID() != label_userid->text()) {
+        label_userid->setText(game->GetPlayer()->GetProperties()->GetUserID());
     }
 
     //update current URL playerlist
-    QList <QPointer <RoomObject> > players = game->GetMultiPlayerManager()->GetPlayersInRoom(game->GetPlayer()->GetS("url"));
+    QList <QPointer <RoomObject> > players = game->GetMultiPlayerManager()->GetPlayersInRoom(game->GetPlayer()->GetProperties()->GetURL());
     if (players_list != players) {
         players_list = players;
 
@@ -95,7 +95,7 @@ void SocialWindow::Update()
         table_roomusers->setEditTriggers(QAbstractItemView::NoEditTriggers);
         for (int i=0; i<players_list.size(); ++i) {
             if (players_list[i]) {
-                table_roomusers->setItem(i, 0, new QTableWidgetItem(players_list[i]->GetS("id")));
+                table_roomusers->setItem(i, 0, new QTableWidgetItem(players_list[i]->GetProperties()->GetID()));
             }
         }
         table_roomusers->setSortingEnabled(true);
@@ -134,7 +134,7 @@ void SocialWindow::Shutdown()
 void SocialWindow::UpdatePartyModeList()
 {
     //if not visible and we're not following
-    if (!isVisible() && game->GetPlayer() && !game->GetPlayer()->GetB("follow_mode")) {
+    if (!isVisible() && game->GetPlayer() && !game->GetPlayer()->GetFollowMode()) {
         return;
     }
 
@@ -158,15 +158,15 @@ void SocialWindow::PartyModeListSelection()
         else {
             QPointer <Player> player = game->GetPlayer();
 
-            if (player->GetB("follow_mode") && player->GetS("follow_mode_userid") == id) {
-                player->SetS("follow_mode_userid", "");
-                player->SetB("follow_mode", false);
+            if (player->GetFollowMode() && player->GetFollowModeUserID() == id) {
+                player->SetFollowModeUserID("");
+                player->SetFollowMode(false);
             }
             else {
                 //if unfollowing, follow
                 if (!url.isEmpty()) {
-                    player->SetB("follow_mode", true);
-                    player->SetS("follow_mode_userid", id);
+                    player->SetFollowMode(true);
+                    player->SetFollowModeUserID(id);
                 }
             }
 //            qDebug() << "  " << player->GetS("follow_mode_userid");
@@ -235,8 +235,8 @@ QString SocialWindow::ProcessChatMessage(const QString s)
 void SocialWindow::UpdatePartyModeTable()
 {
     QVariantList & partymode_data = MathUtil::GetPartyModeData();
-    const bool follow_mode = game->GetPlayer()->GetB("follow_mode");
-    const QString follow_mode_userid = game->GetPlayer()->GetS("follow_mode_userid");
+    const bool follow_mode = game->GetPlayer()->GetFollowMode();
+    const QString follow_mode_userid = game->GetPlayer()->GetFollowModeUserID();
 
     table_partymode->setSortingEnabled(false);
     table_partymode->clearContents();

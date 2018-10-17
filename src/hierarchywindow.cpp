@@ -128,9 +128,9 @@ void HierarchyWindow::Update_Helper(QTreeWidgetItem * p, DOMNode * d)
         else {
             item = new QTreeWidgetItem(p);
         }
-        item->setText(0, c[i]->GetS("js_id"));
-        item->setText(1, c[i]->GetS("_type"));
-        item->setText(2, c[i]->GetS("id"));
+        item->setText(0, c[i]->GetJSID());
+        item->setText(1, c[i]->GetTypeAsString());
+        item->setText(2, c[i]->GetID());
 
         Update_Helper(item, c[i]);
     }
@@ -138,14 +138,15 @@ void HierarchyWindow::Update_Helper(QTreeWidgetItem * p, DOMNode * d)
 
 void HierarchyWindow::CreateObject()
 {
-    QVector3D p = game->GetPlayer()->GetV("pos") + game->GetPlayer()->GetV("dir") * 2.0f;
-    p.setY(game->GetPlayer()->GetV("pos").y());
+    QVector3D p = game->GetPlayer()->GetProperties()->GetPos()->toQVector3D()
+            + game->GetPlayer()->GetProperties()->GetDir()->toQVector3D() * 2.0f;
+    p.setY(game->GetPlayer()->GetProperties()->GetPos()->toQVector3D().y());
 
     QPointer <RoomObject> o = new RoomObject();
-    o->SetType("object");
-    o->SetS("id", "cube");
-    o->SetS("collision_id", "cube");
-    o->SetV("pos", p);
+    o->SetType(TYPE_OBJECT);
+    o->GetProperties()->SetID("cube");
+    o->GetProperties()->SetCollisionID("cube");
+    o->GetProperties()->SetPos(p);
 
     const QString new_jsid = game->GetEnvironment()->GetCurRoom()->AddRoomObject(o);
     game->SetSelected(game->GetEnvironment()->GetCurRoom(), new_jsid, true);
