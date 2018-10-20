@@ -73,7 +73,7 @@ void Player::UpdateDir()
 void Player::UpdateEyePoint()
 {
     QVector3D eye_point = props->GetPos()->toQVector3D() + props->GetLocalHeadPos()->toQVector3D();
-    if (hmd_type != "vive" && hmd_type != "wmxr" ) {
+    if (props->GetHMDType() != "vive" && props->GetHMDType() != "wmxr" ) {
         eye_point += props->GetEyePos()->toQVector3D();
     }
     props->SetEyePoint(eye_point);
@@ -751,7 +751,12 @@ void Player::SetHMDCalibrated(bool value)
 
 void Player::SetHMDType(const QString s)
 {
-    hmd_type = s;
+    props->SetHMDType(s);
+}
+
+QString Player::GetHMDType()
+{
+    return props->GetHMDType();
 }
 
 void Player::SetDeltaTime(const float f)
@@ -824,14 +829,14 @@ void Player::SetEnteringText(bool value)
     entering_text = value;
 }
 
-QString Player::GetDeviceType() const
+QString Player::GetDeviceType()
 {
-    return device_type;
+    return props->GetDeviceType();
 }
 
 void Player::SetDeviceType(const QString &value)
 {
-    device_type = value;
+    props->SetDeviceType(value);
 }
 
 float Player::GetPlayerCollisionRadius() const

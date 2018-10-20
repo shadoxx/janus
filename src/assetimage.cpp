@@ -27,21 +27,17 @@ AssetImage::AssetImage() :
     max_img_resolution(1024),    
     next_frame_time(-1)
 {
-    mutex.lock();
     props->SetType(TYPE_ASSETIMAGE);
 
     InitializeImporters();
     Unload();   
 
     time.start();
-    mutex.unlock();
 }
 
 AssetImage::~AssetImage()
 {
-    mutex.lock();
     Unload();
-    mutex.unlock();
 }
 
 QPointer<BaseAssetData> AssetImage::LoadAssetImage(const QByteArray& buffer, QString extension, QPointer <DOMNode> props, bool& is_gli)
@@ -257,7 +253,6 @@ void AssetImage::CreateFromText(const QString & s, const float font_size, const 
 
 void AssetImage::Load()
 {    
-    mutex.lock();
 //    qDebug() << "AssetImage::Load()" << src_url;
     if (props->GetSrc().left(5) == "data:") {
         WebAsset::Load(QUrl(props->GetSrc()));
@@ -274,7 +269,6 @@ void AssetImage::Load()
             WebAsset::Load(QUrl(props->GetSrcURL()));
         }
     }
-    mutex.unlock();
 }
 
 void AssetImage::UnloadTextures()
@@ -547,13 +541,7 @@ bool AssetImage::GetIsHDR()
 
 void AssetImage::LoadImageDataThread()
 {
-    if (!mutex.tryLock()) {
-        SetProcessing(false);
-        return;
-    }
-
-    if (GetProcessed()) {
-        mutex.unlock();
+    if (GetProcessed()) {        
         return;
     }
 
@@ -566,15 +554,12 @@ void AssetImage::LoadImageDataThread()
     SetProcessed(true);
 
     if (textureData.isNull())
-    {
-        mutex.unlock();
+    {        
         return; //56.0 - we will load with gli instead (don't clear the webasset data)
     }
     ClearData();
     aspect = float(textureData->GetHeight()) / float(textureData->GetWidth());
 //    qDebug() << "AssetImage::LoadImageDataThread() completed" << src_url;
-
-    mutex.unlock();
 }
 
 void AssetImage::LoadTextures()

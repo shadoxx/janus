@@ -354,7 +354,7 @@ QList<QPointer <RoomObject> > AssetScript::FlushNewObjects()
         QPointer <RoomObject> newObject = RoomObject::CreateFromProperties(newDOMNode);
         newObject->SetType(newDOMNode->GetType());
 
-//        qDebug() << "AssetScript::FlushNewObjects()" << newObject << newObject->GetS("_type") << newId << newObject->GetS("js_id");
+//        qDebug() << "AssetScript::FlushNewObjects()" << newObject << newObject->GetProperties()->GetTypeAsString() << newId << newObject->GetProperties()->GetJSID();
         room->GetRoomObjects()[newId] = newObject;
         objectsAdded << newObject;
     }

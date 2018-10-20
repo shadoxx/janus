@@ -26,7 +26,6 @@ public:
     Q_PROPERTY(QVariantList playerlist MEMBER playerlist)
     Q_PROPERTY(QString userid READ getuserid WRITE setuserid)
     Q_PROPERTY(bool avatarlighting READ getavatarlighting WRITE setavatarlighting)    
-    Q_PROPERTY(QVariantMap selected_asset READ getselectedasset)
     Q_PROPERTY(QVariantList partymodedata READ getpartymodedata)
     Q_PROPERTY(QVariantList populardata READ getpopulardata)
     Q_PROPERTY(bool hmd MEMBER hmd)
@@ -271,28 +270,6 @@ public:
                 }
             }
         }
-    }
-
-    Q_INVOKABLE QVariantMap getselectedasset() {
-        QPointer <RoomObject> o = player_curroom->GetRoomObject(selected);        
-
-        if (o.isNull()) {
-            return QVariantMap();
-        }
-
-        if (o->GetAssetImage()) {
-            return o->GetAssetImage()->GetJSONCode();
-        }
-
-        if (o->GetAssetSound()) {
-            return o->GetAssetSound()->GetJSONCode();
-        }
-
-        if (o->GetAssetObject()) {
-            return o->GetAssetObject()->GetJSONCode();
-        }
-
-        return QVariantMap();
     }
 
     Q_INVOKABLE void saveworkspace(const QString workspace_dir) {

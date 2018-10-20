@@ -26,7 +26,7 @@ QScriptValue CreateObject(QScriptContext * context, QScriptEngine * engine)
     QScriptValue roomObject = engine->globalObject().property("room");
 
     // object type is mandatory, other properties are optional
-    QString typeName = context->argument(0).toString().trimmed().toLower();    
+    const QString typeName = context->argument(0).toString().trimmed().toLower();
 
     QScriptValue propsHash = context->argument(1);    
     if (!propsHash.isValid()) {
@@ -60,6 +60,7 @@ QScriptValue CreateObject(QScriptContext * context, QScriptEngine * engine)
 //    qDebug() << "CreateObject pushing" << newId.toString();
 
     QPointer <DOMNode> newNode = new DOMNode();
+//    newNode->setProperty("type", typeName); //60.1 - needed so DOMNodeFromScriptValue sets the correct type via SetType()
     newNode->SetType(DOMNode::StringToElementType(typeName));
     DOMNodeFromScriptValue(propsHash, newNode);    
     QScriptValue newDOMNodeScriptValue = engine->newQObject(newNode, QScriptEngine::QtOwnership, QScriptEngine::AutoCreateDynamicProperties);    
@@ -77,7 +78,7 @@ QScriptValue CreateObject(QScriptContext * context, QScriptEngine * engine)
 //        roomObject.property("objects").setProperty(newId.toString(), newDOMNodeScriptValue);
     }
 
-//    qDebug() << "CreateObject" << newNode->GetS("js_id");
+//    qDebug() << "CreateObject" << newNode->GetJSID();
     return newDOMNodeScriptValue;
 }
 

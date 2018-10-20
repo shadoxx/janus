@@ -132,8 +132,6 @@ public:
     bool GetPlaySounds() const;
 
     void ReadXMLCode(const QString & str);
-
-    QVariantMap GetJSONCode(const bool show_defaults = false) const;
     QString GetXMLCode(const bool show_defaults = false) const;
 
     void Update(const double dt_sec);
@@ -308,6 +306,9 @@ public:
     void SetGrabbed(const bool b);
     bool GetGrabbed() const;
 
+    bool GetDrawBack() const;
+    void SetDrawBack(bool value);
+
     static void SetDrawAssetObjectTeleport(const bool b);
     static bool GetDrawAssetObjectTeleport();   
 
@@ -481,6 +482,7 @@ protected:
     bool save_to_markup;
 
     bool grabbed;
+    bool draw_back;
 
 private:
 

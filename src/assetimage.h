@@ -103,8 +103,6 @@ private:
     QTime time;
 
     static int anisotropic_max;    
-
-    QMutex mutex;
 };
 
 #endif // ASSETIMAGE_H

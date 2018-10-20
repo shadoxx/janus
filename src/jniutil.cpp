@@ -320,7 +320,6 @@ void JNIUtil::UpdateCookies()
         if (s != "") {
             //qDebug() << "updating janus-cookie" << s;
             QByteArray ba = s.toLatin1();
-            jniEnv->DeleteLocalRef(cookie_jstring);
             QList<QNetworkCookie> cookies = QNetworkCookie::parseCookies(ba);
 
             for (QList<QNetworkCookie>::iterator it=cookies.begin(); it!=cookies.end(); ++it) {
@@ -336,6 +335,7 @@ void JNIUtil::UpdateCookies()
             }
             CookieJar::cookie_jar->SaveToDisk();
         }
+        jniEnv->DeleteLocalRef(cookie_jstring);
     }
 }
 

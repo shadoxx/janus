@@ -193,7 +193,6 @@ private:
 
     QTimer timer;
     QTimer timer2;    
-    QMutex cef_mutex;
 
     QPointer <Game> game;
     QPointer <AbstractHMDManager> hmd_manager;

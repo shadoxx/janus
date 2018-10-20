@@ -667,7 +667,7 @@ public:
 	void Clear() { m_UUID = Texture_UUID(); }
 
 	Texture_UUID m_UUID;
-    size_t m_last_known_index;
+    int m_last_known_index;
 };
 
 // This class always has a shared_ptr stored in the renderer, at a set tick-rate the renderer walks the vector of shared_ptr and looks for any

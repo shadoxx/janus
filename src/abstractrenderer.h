@@ -323,17 +323,21 @@ public:
     inline QPair<TextureHandle*, GLuint> & GetTextureFromHandle(QVector<QPair<TextureHandle *, GLuint> > * const p_map, TextureHandle* p_texture_handle)
     {
         TextureHandle * ref_handle = p_texture_handle;
-        auto const tex_count = p_map->size();
+        const int tex_count = p_map->size();
 
         // Faster path for Tex Handle lookup when they haven't moved locations
-        if ((*p_map)[ref_handle->m_last_known_index].first->m_UUID.m_UUID == ref_handle->m_UUID.m_UUID)
+        if (ref_handle &&
+                (*p_map)[ref_handle->m_last_known_index].first &&
+                (*p_map)[ref_handle->m_last_known_index].first->m_UUID.m_UUID == ref_handle->m_UUID.m_UUID)
         {
             return (*p_map)[ref_handle->m_last_known_index];
         }
 
-        for (size_t itr = 0; itr < tex_count; ++itr)
+        for (int itr = 0; itr < tex_count; ++itr)
         {
-            if ((*p_map)[itr].first->m_UUID.m_UUID == ref_handle->m_UUID.m_UUID)
+            if ((*p_map)[itr].first &&
+                    ref_handle &&
+                    (*p_map)[itr].first->m_UUID.m_UUID == ref_handle->m_UUID.m_UUID)
             {
                 ref_handle->m_last_known_index = itr;
                 return (*p_map)[itr];
@@ -385,11 +389,13 @@ public:
 
             QPair<TextureHandle*, GLuint> & texture_id = GetTextureFromHandle(p_map, p_texture_handle_ref);
 
-            auto texture_type = texture_id.first->GetTextureType();
-            GLenum texture_target = (texture_type == TextureHandle::TEXTURE_2D) ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP;
+            if (texture_id.first) {
+                auto texture_type = texture_id.first->GetTextureType();
+                GLenum texture_target = (texture_type == TextureHandle::TEXTURE_2D) ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP;
 
-            MathUtil::glFuncs->glBindTexture(texture_target, texture_id.second);
-            m_bound_texture_handles_render[p_slot_index] = p_texture_handle_ref;
+                MathUtil::glFuncs->glBindTexture(texture_target, texture_id.second);
+                m_bound_texture_handles_render[p_slot_index] = p_texture_handle_ref;
+            }
         }
     }
 

@@ -761,11 +761,10 @@ void MainWindow::Update()
 void MainWindow::CEFTimeOut()
 {    
 #ifndef __ANDROID__  
-    if (game && !game->GetDoExit() && SettingsManager::GetUpdateWebsurfaces()) { // && cef_mutex.tryLock()) {
+    if (game && !game->GetDoExit() && SettingsManager::GetUpdateWebsurfaces()) {
 //        qDebug() << "MainWindow::CEFTimeOut() enter";
         CefDoMessageLoopWork();
 //        qDebug() << "MainWindow::CEFTimeOut() exit";
-//        cef_mutex.unlock();
     }
 #endif
 }

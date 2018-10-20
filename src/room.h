@@ -165,8 +165,6 @@ public:
 
     bool SaveXML(const QString & filename);
     void SaveXML(QTextStream & ofs);
-    bool SaveJSON(const QString & filename);
-    QVariantMap GetJSONCode(const bool show_defaults = true) const;  
 
     void OnCollisionEnter(QPointer <RoomObject> envobject, QPointer <RoomObject> other_envobject, QPointer <Player> player);
     void OnCollisionExit(QPointer <RoomObject> envobject, QPointer <RoomObject> other_envobject, QPointer <Player> player);
@@ -202,6 +200,9 @@ public:
     bool GetProcessed() const;
 
     QPointer <HTMLPage> GetPage() const;   
+
+    bool GetTranslatorBusy() const;
+    void SetTranslatorBusy(bool value);
 
     void Create();
     void Create_Default_Workspace();
@@ -291,7 +292,7 @@ private:
 
     void SetAllObjectsLocked(const bool b);
 
-    void LogErrorOnException();   
+    void LogErrorOnException(QPointer <AssetScript> script);
 
     //private room-specific properties
     QVector3D player_pos_trans;
@@ -349,6 +350,7 @@ private:
     QPointer <Room> last_child; //last visited child node
 
     bool scripts_ready;    
+    bool translator_busy;
 
     //statics    
     static QList <QPointer <AssetSkybox> > skyboxes;    

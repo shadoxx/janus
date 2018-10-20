@@ -83,18 +83,6 @@ QString Asset::GetXMLCode() const
     return s;
 }
 
-QVariantMap Asset::GetJSONCode() const
-{
-    QVariantMap m;
-    QList <QByteArray> p = props->dynamicPropertyNames();
-    for (int i=0; i<p.size(); ++i) {
-        if (props->GetSaveAttribute(p[i].data(), false)) {
-            m[p[i]] = props->property(p[i]);
-        }
-    }
-    return m;
-}
-
 QPointer <DOMNode> Asset::GetProperties()
 {
     return props;

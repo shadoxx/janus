@@ -237,13 +237,11 @@ void GeomIOSystem::SetBasePath(QUrl u)
 
 void GeomIOSystem::Clear()
 {
-    mutex.lock();
     for (int i=0; i<streams.size(); ++i) {
         delete streams[i];
         streams[i] = NULL;
     }
     streams.clear();
-    mutex.unlock();
     data_cache.clear();
 }
 
@@ -263,7 +261,6 @@ float GeomIOSystem::UpdateRequests()
     int num_streams = 0;
     float progress = 0.0f;
 
-    mutex.lock();
     for (int i=0; i<streams.size(); ++i) {
 //        qDebug() << "  i" << i << streams[i] << streams[i]->GetUrl() << streams[i]->GetWebAsset();
         if (streams[i] && streams[i]->GetWebAsset().isNull()) {
@@ -277,7 +274,6 @@ float GeomIOSystem::UpdateRequests()
             progress += streams[i]->GetWebAsset()->GetProgress();
         }
     }
-    mutex.unlock();
 
     return (num_streams == 0)?0.0f:progress / float(num_streams);
 }
@@ -340,10 +336,8 @@ Assimp::IOStream * GeomIOSystem::Open(const char *pFile)
         return s;
     }
 
-    mutex.lock();
     streams.push_back(s);
 //    qDebug() << " pushed back stream" << streams.size();
-    mutex.unlock();
 
     // Wait if webasset is null, hasn't started, or has started and is running and not loaded or with error
 //    qDebug() << "GeomIOSystem::Open started" << this;
@@ -389,10 +383,8 @@ Assimp::IOStream * GeomIOSystem::Open(const char *pFile)
             data_cache[u_str] = QByteArray();
         }
 
-        mutex.lock();
         streams.removeOne(s); // Remove the stream if it failed so we don't try to update it later.
         delete s;
-        mutex.unlock();
     }
     return NULL;
 }
@@ -400,7 +392,6 @@ Assimp::IOStream * GeomIOSystem::Open(const char *pFile)
 void GeomIOSystem::Close(Assimp::IOStream *pFile)
 {
 //    qDebug() << "GeomIOSystem::Close" << this << streams.size();
-    mutex.lock();
     for (int i=0; i<streams.size(); ++i) {
         if (streams[i].data() == pFile) {
 //            qDebug() << "GeomIOSystem::Close" << this << streams.size();
@@ -412,7 +403,6 @@ void GeomIOSystem::Close(Assimp::IOStream *pFile)
 //    if (dynamic_cast<GeomIOStream *>(pFile)) {
 //        dynamic_cast<GeomIOStream *>(pFile)->Close();
 //    }
-    mutex.unlock();
 }
 
 bool GeomIOSystem::ComparePaths(const char *one, const char *second) const
@@ -477,21 +467,17 @@ Geom::Geom() :
     loop(false),
     started(false)
 {
-    mutex.lock();
 //    qDebug() << "Geom::Geom()" << this;
     time.start();
     skin_joints.resize(ASSETSHADER_MAX_JOINTS);
     final_poses.resize(ASSETSHADER_MAX_JOINTS);
     iosystem = new GeomIOSystem();
-    mutex.unlock();
 }
 
 Geom::~Geom()
 {
 //    qDebug() << "Geom::~Geom()" << this;
 //    delete iosystem; //59.9 - should we delete this iosystem?  memleak if we don't
-    mutex.lock();
-    mutex.unlock();
 }
 
 void Geom::SetPath(const QString & p)
@@ -697,12 +683,7 @@ bool Geom::GetHasMeshData() const
 void Geom::Load()
 {
 //    qDebug() << "Geom::Load()" << this << path;
-    if (!mutex.tryLock()) {
-        return;
-    }
-
-    if (ready){
-        mutex.unlock();
+    if (started || ready) {
         return;
     }
 
@@ -716,9 +697,11 @@ void Geom::Load()
         gzipped = true;
     }
 
-    iosystem->SetGZipped(gzipped);
-    iosystem->SetBasePath(QUrl(p));
-    importer.SetIOHandler(iosystem);
+    if (iosystem) {
+        iosystem->SetGZipped(gzipped);
+        iosystem->SetBasePath(QUrl(p));
+        importer.SetIOHandler(iosystem);
+    }
     //scene = importer.ReadFile(base_path.toLocal8Bit().data(), aiProcessPreset_TargetRealtime_Fast);
     auto post_process_flags =
         aiProcess_LimitBoneWeights
@@ -772,13 +755,10 @@ void Geom::Load()
     }
 
 //    qDebug() << "Geom::Load completed" << path;
-    mutex.unlock();
 }
 
 void Geom::Unload()
 {
-    mutex.lock();
-
     //iosystem.Clear();
 //    importer.FreeScene(); //called automatically by destructor
 //    scene = NULL;
@@ -801,8 +781,6 @@ void Geom::Unload()
     skin_joints.clear();
     final_poses.clear();
     bone_offset_matrix.clear();
-
-    mutex.unlock();
 }
 
 void Geom::Update()
@@ -953,7 +931,9 @@ void Geom::Update()
     }
     else if (!ready || !textures_ready) {
 //        qDebug() << "Geom::Update() update iorequests" << path;
-        progress = iosystem->UpdateRequests();
+        if (iosystem) {
+            progress = iosystem->UpdateRequests();
+        }
     }
 
     if (ready) {
@@ -984,7 +964,9 @@ bool Geom::UpdateGL()
 void Geom::SetMTLFile(const QString & s)
 {
     mtl_file_path = s;
-    iosystem->SetMTLFilePath(s);
+    if (iosystem) {
+        iosystem->SetMTLFilePath(s);
+    }
 }
 
 void Geom::SetMaterialTexture(const QString & tex_url, const int channel)

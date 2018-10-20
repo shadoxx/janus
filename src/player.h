@@ -120,7 +120,7 @@ public:
     void SetFollowModeUserID(const QString &value);
 
     void SetHMDType(const QString s);
-    QString GetHMDType() const { return hmd_type; }
+    QString GetHMDType();
 
     void SetDeltaTime(const float f);
     inline float GetDeltaTime() const { return delta_time; }
@@ -149,7 +149,7 @@ public:
     bool GetEnteringText() const;
     void SetEnteringText(bool value);
 
-    QString GetDeviceType() const;
+    QString GetDeviceType();
     void SetDeviceType(const QString &value);
 
     float GetPlayerCollisionRadius() const;
@@ -195,7 +195,6 @@ private:
     bool jump;
     bool speaking_no_mic;
 
-    QString hmd_type;
     float delta_time;
     bool speaking;
     bool typing;
@@ -206,7 +205,6 @@ private:
     bool walking;
     bool hmd_enabled;
     QVector3D impulse_vel;
-    QString device_type;
     float player_collision_radius;
 
     QPair <LeapHand, LeapHand> hands;  

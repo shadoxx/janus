@@ -129,37 +129,39 @@ public class WebViewManager
                 } catch ( Exception e ) {
                 }
 
-                CookieManager cm = CookieManager.getInstance();
-                String c = cm.getCookie(this.getUrl());
+                if (this.getUrl() != null) {
+                    CookieManager cm = CookieManager.getInstance();
+                    String c = cm.getCookie(this.getUrl());
 
-                if (c != null && !c.equals("") && !c.equals(old_cookies))
-                {
-                    try {
-                        old_cookies = c;
+                    if (c != null && !c.equals("") && !c.equals(old_cookies))
+                    {
+                        try {
+                            old_cookies = c;
 
-                        URI uri = new URI(this.getUrl());
-                        String host = uri.getHost();
-                        String domain = host.startsWith("www.") ? host.substring(4) : host;
+                            URI uri = new URI(this.getUrl());
+                            String host = uri.getHost();
+                            String domain = host.startsWith("www.") ? host.substring(4) : host;
 
-                        //Log.i("new janus-cookies", c);
+                            //Log.i("new janus-cookies", c);
 
-                        /*Date expdate= new Date();
-                        expdate.setTime (expdate.getTime() + (1000 * 60 * 60 * 24));
-                        DateFormat df = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss zzz");
-                        df.setTimeZone(TimeZone.getTimeZone("GMT"));
-                        String expiry = df.format(expdate);*/
+                            /*Date expdate= new Date();
+                            expdate.setTime (expdate.getTime() + (1000 * 60 * 60 * 24));
+                            DateFormat df = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss zzz");
+                            df.setTimeZone(TimeZone.getTimeZone("GMT"));
+                            String expiry = df.format(expdate);*/
 
-                        StringTokenizer cookielist = new StringTokenizer(c, ";");
+                            StringTokenizer cookielist = new StringTokenizer(c, ";");
 
-                        while (cookielist.hasMoreTokens()) {
-                            String cookie = cookielist.nextToken().trim() + ";Path=/;Domain=." + domain + ";HttpOnly"; //";Expires=" + expiry +
-                            //Log.d("janus-cookie on draw", cookie);
-                            if (!cookies.contains(cookie)) {
-                                cookies.push(cookie);
+                            while (cookielist.hasMoreTokens()) {
+                                String cookie = cookielist.nextToken().trim() + ";Path=/;Domain=." + domain + ";HttpOnly"; //";Expires=" + expiry +
+                                //Log.d("janus-cookie on draw", cookie);
+                                if (!cookies.contains(cookie)) {
+                                    cookies.push(cookie);
+                                }
                             }
                         }
-                    }
-                    catch (Exception e){
+                        catch (Exception e){
+                        }
                     }
                 }
             }

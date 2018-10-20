@@ -194,7 +194,6 @@ private:
     RENDERER::RENDER_SCOPE m_current_scope;
     std::unique_ptr<AbstractRenderer> m_abstractRenderer;
     QString m_requested_version_string;
-    QMutex m_index_mutex;
     // This notation causes the char to act like a bitfield with 6/8 used.
     // Reading these values will create new unsigned chars with the value
     // shifted to the correct place so this a nice reduction in size of the class

@@ -206,7 +206,6 @@ private:
     bool gzipped;
     QUrl base_path;
     QList <QPointer <GeomIOStream> > streams;
-    QMutex mutex;
 
     QHash <QString, QByteArray> data_cache;
     QString mtl_file_path;
@@ -386,8 +385,6 @@ private:
     QHash <uint32_t, QMatrix4x4> extra_relative_transforms; //bone indexes to xform
     QVector <aiNode *> nodes_to_process;
     QVector <QMatrix4x4> nodes_parent_xforms;
-
-    QMutex mutex;
 };
 
 #endif // GEOM_H

@@ -140,6 +140,9 @@ class DOMNode : public QObject, protected QScriptable
     Q_PROPERTY(QString anim_id READ GetAnimID WRITE SetAnimID)
     Q_PROPERTY(float anim_speed READ GetAnimSpeed WRITE SetAnimSpeed)
 
+    Q_PROPERTY(float current_time READ GetCurTime WRITE SetCurTime)
+    Q_PROPERTY(float total_time READ GetTotalTime WRITE SetTotalTime)
+
     //portal related
     Q_PROPERTY(QString title READ GetTitle WRITE SetTitle)
     Q_PROPERTY(bool open READ GetOpen WRITE SetOpen)
@@ -190,7 +193,6 @@ class DOMNode : public QObject, protected QScriptable
     Q_PROPERTY(QString oncollision READ GetOnCollision WRITE SetOnCollision)
     Q_PROPERTY(QString userid READ GetUserID)
     Q_PROPERTY(QString url READ GetURL)
-//    Q_PROPERTY(QString hmd_type READ GetHMDType)
 //    Q_PROPERTY(bool hmd_enabled READ GetHMDEnabled)
     Q_PROPERTY(ScriptableVector * local_head_pos READ GetLocalHeadPos)
     Q_PROPERTY(ScriptableVector * head_pos READ GetGlobalHeadPos)
@@ -209,6 +211,9 @@ class DOMNode : public QObject, protected QScriptable
     Q_PROPERTY(ScriptableVector * hand1_xdir READ GetHand1XDir)
     Q_PROPERTY(ScriptableVector * hand1_ydir READ GetHand1YDir)
     Q_PROPERTY(ScriptableVector * hand1_zdir READ GetHand1ZDir)
+    Q_PROPERTY(QString hmd_type READ GetHMDType)
+    Q_PROPERTY(QString device_type READ GetDeviceType)
+    Q_PROPERTY(ScriptableVector * emitter_pos READ GetEmitterPos WRITE SetEmitterPos)
 //    Q_PROPERTY(bool running READ GetRunning)
 //    Q_PROPERTY(bool flying READ GetFlying)
 //    Q_PROPERTY(bool walking READ GetWalking)
@@ -245,11 +250,6 @@ public:
     void RemoveChild (QPointer <DOMNode>);
     void RemoveChildAt (int pos);
     QPointer <DOMNode> RemoveChildByJSID(QString);
-
-    bool IsRoom() const;
-    bool IsObject() const;
-
-    bool GetSaveAttribute(const char * name, const bool even_if_default) const;
 
     void SetType(QString & t);
     void SetType(const ElementType &t);
@@ -465,6 +465,10 @@ public:
     void SetLightmapScale(const QVector4D & c);
     inline ScriptableVector * GetLightmapScale() { return lightmap_scale; }
 
+    void SetEmitterPos(ScriptableVector * & v);
+    void SetEmitterPos(const QVector4D & c);
+    inline ScriptableVector * GetEmitterPos() { return emitter_pos; }
+
     void SetAnimID(const QString & s);
     inline QString GetAnimID() const { return anim_id; }
 
@@ -486,9 +490,6 @@ public:
     void SetSrcURL(const QString & s);
     inline QString GetSrcURL() const { return src_url; }
 
-    void SetURLChanged(const bool b);
-    inline bool GetURLChanged() const { return url_changed; }
-
     void SetOriginalURL(const QString & s);
     inline QString GetOriginalURL() const { return url_orig; }
 
@@ -500,9 +501,6 @@ public:
 
     void SetDrawText(const bool b);
     inline bool GetDrawText() const { return draw_text; }
-
-    void SetDrawGlow(const bool b);
-    inline bool GetDrawGlow() const { return draw_glow; }
 
     void SetOpen(const bool b);
     inline bool GetOpen() const { return open; }
@@ -792,6 +790,12 @@ public:
     void SetHand1ZDir(ScriptableVector *&p);
     ScriptableVector * GetHand1ZDir();
 
+    QString GetHMDType();
+    void SetHMDType(const QString &s);
+
+    QString GetDeviceType();
+    void SetDeviceType(const QString &s);
+
     static QString ElementTypeToString(const ElementType t);
     static QString ElementTypeToTagName(const ElementType t);
     static ElementType StringToElementType(const QString name);
@@ -839,10 +843,7 @@ public:
     void SetTexCompress(bool value);
 
     bool GetTriggered() const;
-    void SetTriggered(bool value);
-
-    bool GetDrawBack() const;
-    void SetDrawBack(bool value);
+    void SetTriggered(bool value);   
 
     bool GetHighlighted() const;
     void SetHighlighted(bool value);
@@ -883,10 +884,7 @@ public:
     void SetProgress(float value);
 
     bool GetReadyForScreenshot() const;
-    void SetReadyForScreenshot(bool value);
-
-    bool GetTranslatorBusy() const;
-    void SetTranslatorBusy(bool value);
+    void SetReadyForScreenshot(bool value);   
 
     bool GetStartedAutoPlay() const;
     void SetStartedAutoPlay(bool value);
@@ -989,6 +987,8 @@ protected:
     ScriptableVector * hand1_xdir;
     ScriptableVector * hand1_ydir;
     ScriptableVector * hand1_zdir;    
+    QString hmd_type;
+    QString device_type;
 
     //objects
     bool interpolate;
@@ -1071,9 +1071,7 @@ protected:
 
     ElementType type;
 
-    // object
-
-    bool draw_back;
+    // object   
     bool circular;
     bool highlighted;
     bool auto_load_triggered;
@@ -1101,13 +1099,11 @@ protected:
     QString anim_id;
     float anim_speed;
 
-    bool url_changed;
     QString url;
     QString url_orig;
     QString title;
     bool auto_load;
     bool draw_text;
-    bool draw_glow;
     bool open;
     bool mirror;
     bool active;
@@ -1135,6 +1131,8 @@ protected:
 
     // Draw Priority
     int m_draw_layer;
+
+    ScriptableVector * emitter_pos;
 
 public slots:
 

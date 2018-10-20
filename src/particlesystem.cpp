@@ -61,8 +61,7 @@ void ParticleSystem::Update(QPointer <DOMNode> props, const double dt_sec)
 
     const float fadein = props->GetFadeIn();
     const float fadeout = props->GetFadeOut();
-
-    const bool emit_local = (props->property("emit_local").toString().toLower() == "true");
+    const bool emit_local = props->GetEmitLocal();
 
 	for (uint32_t particle_index = 0; particle_index < particle_count; ++particle_index)
     {
