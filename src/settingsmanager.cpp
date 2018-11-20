@@ -23,6 +23,7 @@ void SettingsManager::LoadSettings()
     settings["enhanceddepthprecision"] = false;
 #endif
     settings["assetshaders"] = true;
+    settings["assetimages"] = true;
     settings["sounds"] = true;
 #ifndef __ANDROID__
     settings["volumevoip"] = 50.0f;
@@ -255,6 +256,11 @@ bool SettingsManager::GetMicAlwaysOn()
 bool SettingsManager::GetShadersEnabled()
 {
     return settings["assetshaders"].toString().toLower() == "true";
+}
+
+bool SettingsManager::GetAssetImagesEnabled()
+{
+    return settings["assetimages"].toString().toLower() == "true";
 }
 
 void SettingsManager::SetMousePitchEnabled(const bool b)

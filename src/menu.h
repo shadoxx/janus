@@ -37,7 +37,7 @@ public:
 
     Q_INVOKABLE QString currenturl() {
         if (player_curroom) {
-            return player_curroom->property("url").toString();
+            return player_curroom->GetProperties()->GetURL();
         }
         return "";
     }
@@ -51,14 +51,14 @@ public:
 
     Q_INVOKABLE int locked() {
         if (player_curroom) {
-            return (player_curroom->property("locked").toString().toLower() == "true") ? 1 : 0;
+            return (player_curroom->GetProperties()->GetLocked() ? 1 : 0);
         }
         return false;
     }
 
     Q_INVOKABLE bool roompartymode() {
         if (player_curroom) {
-            return (player_curroom->property("party_mode").toString().toLower() == "true");
+            return (player_curroom->GetProperties()->GetPartyMode());
         }
         return false;
     }

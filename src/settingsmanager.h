@@ -36,6 +36,7 @@ public:
     static bool GetPositionalEnvEnabled();
     static bool GetPositionalVOIPEnabled();
     static bool GetShadersEnabled();
+    static bool GetAssetImagesEnabled();
     static bool GetInvertYEnabled();
     static bool GetLeapOnHMDEnabled();
     static bool GetEditModeEnabled();

@@ -182,8 +182,8 @@ public:
 
     void SetGamepadButtonPress(const bool b);
 
-    void StartEscapeToPocketspace();
-    void EscapeToPocketspace();
+    void StartEscapeToHome();
+    void EscapeToHome();
 
     void SaveScreenThumb(const QString out_filename);
 
@@ -234,8 +234,7 @@ private:
     void UpdateCursorAndTeleportTransforms();
     void UpdateFollowMode();
     void UpdateImportList();
-    void UpdateControllers();
-    void UpdateMenuObject();
+    void UpdateControllers();    
     void UpdateAssetRecordings();
     void UpdateAudio();
     void UpdateAssets();    

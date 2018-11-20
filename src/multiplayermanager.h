@@ -131,6 +131,7 @@ public:
     QString GetUserID() const;    
     QPointer <RoomObject> GetPlayer();
     QList <QPointer <RoomObject> > GetPlayersInRoom(const QString & url);
+    QMap <QString, DOMNode *> GetPlayersInRoomDOMNodeMap(const QString & url);
 
     QList <QPair <QString, QColor> > GetNewChatMessages();
 
@@ -168,6 +169,9 @@ public:
 
     void SetCustomPortalShader(const QString shader_src);
     QString GetCustomPortalShader() const;
+
+    QList <QPointer <RoomObject> > & GetOnPlayerEnterEvents();
+    QList <QPointer <RoomObject> > & GetOnPlayerExitEvents();
 
 public slots:
 
@@ -276,6 +280,9 @@ private:
 
     //assetrecordings (emulate server activity)
     QList <QPointer <AssetRecording> > assetrecording_list;
+
+    QList <QPointer <RoomObject> > on_player_enter_events; //for room.onPlayerEnter room.onPlayerExit events
+    QList <QPointer <RoomObject> > on_player_exit_events; //for room.onPlayerEnter room.onPlayerExit events
 
     static unsigned int max_connect_retries;
 };

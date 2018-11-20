@@ -215,7 +215,7 @@ void AssetImage::CreateFromText(const QString & s, const float font_size, const 
     //painter.setFont(font);
     //painter.drawText(dim_rect, int(Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap), text, &text_bounding_rect);
     if (error_background) {
-        QImage error_img(QDir::currentPath() + "/assets/error.png");
+        QImage error_img(MathUtil::GetApplicationPath() + "/assets/error.png");
         painter.drawImage(QRect(0, 0, tex_width, tex_height), error_img);
     }
     text_doc.drawContents(&painter, QRectF(0, 0, tex_width, tex_width));
@@ -229,6 +229,7 @@ void AssetImage::CreateFromText(const QString & s, const float font_size, const 
     toRender = toRender.convertToFormat(QImage::Format_RGBA8888_Premultiplied);
 #endif
 
+    SetStarted(true);
     SetLoaded(true);
     SetProcessing(true);
     SetFinished(false);
@@ -451,6 +452,10 @@ void AssetImage::DrawImageGL(QPointer <AssetShader> shader, const bool left_eye)
 
 bool AssetImage::UpdateGL()
 {    
+    if (!SettingsManager::GetAssetImagesEnabled()) {
+        return false;
+    }
+
     if (GetLoaded() && !GetProcessing()) {
 //        qDebug() << "AssetImage::UpdateGL() starting thread" << src_url;
         SetProcessing(true);

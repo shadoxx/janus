@@ -235,8 +235,7 @@ public:
 class AbstractRenderer
 {
 public:
-    AbstractRenderer(AbstractRenderer * p_main_thread_renderer = nullptr);
-
+    AbstractRenderer();
     virtual ~AbstractRenderer();
 
 // Interface
@@ -518,13 +517,12 @@ public:
     ColorMask GetColorMask() const;
 
     void RenderObjectsNaive(RENDERER::RENDER_SCOPE const p_scope, QVector<AbstractRenderCommand> const & p_object_render_commands, QHash<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
-    void RenderObjectsNaiveDecoupled(AbstractRenderer * p_main_thread_renderer, RENDERER::RENDER_SCOPE const p_scope, QVector<AbstractRenderCommand> const & p_object_render_commands, QHash<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
-    void RenderObjectsStereoViewportInstanced(AbstractRenderer *p_main_thread_renderer, RENDERER::RENDER_SCOPE const p_scope, QVector<AbstractRenderCommand> const & p_object_render_commands, QHash<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
+    void RenderObjectsNaiveDecoupled(RENDERER::RENDER_SCOPE const p_scope, QVector<AbstractRenderCommand> const & p_object_render_commands, QHash<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
+    void RenderObjectsStereoViewportInstanced(RENDERER::RENDER_SCOPE const p_scope, QVector<AbstractRenderCommand> const & p_object_render_commands, QHash<StencilReferenceValue, LightContainer> const & p_scoped_light_containers);
 
     void InitializeLightUBOs();
     void PushNewLightData(LightContainer const * p_lightContainer);
     virtual void InitializeGLObjects();
-    virtual void InitializeGLObjects2();
 
     virtual GLuint GetProgramHandleID(ProgramHandle *p_handle);
 
@@ -672,8 +670,7 @@ public:
     QVector<GLuint> m_textures;
     QVector<std::shared_ptr<TextureHandle>> m_texture_handles;
 	std::shared_ptr<TextureHandle> m_default_font_glyph_atlas;
-    QSemaphore m_frame_rate_limiter;
-    QMutex m_reallocation_guard;
+    QSemaphore m_frame_rate_limiter;    
     uint8_t m_current_submission_index;
     std::atomic<uint8_t> m_completed_submission_index;
     uint8_t m_rendering_index;
@@ -698,7 +695,7 @@ public:
     bool m_enhanced_depth_precision_supported;
 
     void PostConstructorInitialize();
-    AbstractRenderer * m_main_thread_renderer;
+
 protected:
 
     void CacheUniformLocations(GLuint p_program, QVector<QVector<GLint>> * const p_map);

@@ -316,6 +316,7 @@ int main(int argc, char *argv[])
     } else {
         qDebug() << "CefInitialize(): CefEngine Initialization successful! Starting the message pump...";
         CefDoMessageLoopWork();
+//        CefRunMessageLoop();
     }
 #endif
 

@@ -24,6 +24,7 @@ public slots:
     void SlotSetUpdateCMFT();
     void SlotSetUpdateVOIP();
     void SlotSetUpdateCustomAvatars();
+    void SlotSetUpdateAssetImages();
     void SlotSetCrosshair();
     void SlotSetFOV();
     void SlotSetSelfAvatar();
@@ -82,6 +83,7 @@ private:
     QCheckBox * checkbox_updatevoip;
     QCheckBox * checkbox_updatecmft;
     QCheckBox * checkbox_updatecustomavatars;
+    QCheckBox * checkbox_updateassetimages;
     QCheckBox * checkbox_crosshair;
     QSlider * slider_fov;
     QCheckBox * checkbox_gamepad;

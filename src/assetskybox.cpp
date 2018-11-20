@@ -42,7 +42,7 @@ TextureHandle* AssetSkybox::GetTextureHandle()
     bool imagesReady = true;
 
 	if (m_has_generated_texture == false)
-	{
+    {
 		for (int imageIndex = 0; imageIndex < imageCount; ++imageIndex)
 		{
             if (m_asset_images[imageIndex] == 0)
@@ -51,9 +51,9 @@ TextureHandle* AssetSkybox::GetTextureHandle()
             }
             QPointer <AssetImage> a =  m_asset_images[imageIndex];
             if ((!a || !a->GetFinished()))
-			{
-				imagesReady = false;
-			}
+            {
+                imagesReady = false;
+            }
 		}
 
         if (imageCount == 1 && imagesReady && !m_has_generated_texture && m_asset_images[0])
@@ -63,7 +63,7 @@ TextureHandle* AssetSkybox::GetTextureHandle()
 		}
 
 		if (imageCount > 1 && imagesReady && !m_has_generated_texture)
-		{
+        {
 			QVector <QPointer<AssetImageData>> asset_image_datas;
 			asset_image_datas.resize(6);
             QVector<TextureHandle*> asset_image_handles;

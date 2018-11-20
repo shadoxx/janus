@@ -185,7 +185,7 @@ void Game::AddPrivateWebsurface()
     const QString u = SettingsManager::GetWebsurfaceURL();
 
     p.asset = (AbstractWebSurface*)new AssetWebSurface();
-    p.asset->GetProperties()->SetID("__menu_web_id");
+    p.asset->GetProperties()->SetID("__web_id");
     p.asset->GetProperties()->SetWidth(1366);
     p.asset->GetProperties()->SetHeight(768);
     p.asset->GetProperties()->SetSaveToMarkup(false);
@@ -197,10 +197,11 @@ void Game::AddPrivateWebsurface()
 
     p.obj = new RoomObject();
     p.obj->SetType(TYPE_OBJECT);
+    p.obj->SetInterfaceObject(true);
     p.obj->GetProperties()->SetID("plane");
-    p.obj->GetProperties()->SetJSID("__menu_plane" + QString::number(index));
+    p.obj->GetProperties()->SetJSID("__plane" + QString::number(index));
     p.obj->GetProperties()->SetLighting(false);
-    p.obj->GetProperties()->SetWebsurfaceID("__menu_web_id" + QString::number(index));
+    p.obj->GetProperties()->SetWebsurfaceID("__web_id" + QString::number(index));
     p.obj->GetProperties()->SetCullFace("none");
     p.obj->GetProperties()->SetVisible("false");
     p.obj->SetAssetObject(p.plane_obj);
@@ -322,10 +323,7 @@ void Game::Update()
     UpdateImportList();
 
     //Controllers (gamepad, Touch, Vive)
-    UpdateControllers();
-
-    //Menu stuff
-    UpdateMenuObject();
+    UpdateControllers();   
 
     //Update private websurfaces
     UpdatePrivateWebsurfaces();
@@ -385,6 +383,8 @@ void Game::Update()
     //update follow mode
     UpdateFollowMode();
 
+    WebAsset::SetUseCache(SettingsManager::GetCacheEnabled());
+
     //update VOIP
     UpdateAudio();
 
@@ -396,7 +396,7 @@ void Game::Update()
 
     //do environment::update1 and process portal crossings
     QPointer <Room> r0 = env->GetCurRoom();
-    env->Update1(player);
+    env->Update1(player, multi_players);
     QPointer <Room> r1 = env->GetCurRoom();
 
     //clear selection if player moved
@@ -460,8 +460,8 @@ float Game::UpdateCursorRaycast(const QMatrix4x4 transform, const int cursor_ind
             continue;
         }
 
-        //56.0 - even invisible walls should keep player in (e.g. in pocketspace)
-        if (o->GetProperties()->GetJSID().left(6) == "__menu" && !o->GetProperties()->GetVisible()) {
+        //56.0 - even invisible walls should keep player in
+        if (o->GetInterfaceObject() && !o->GetProperties()->GetVisible()) {
             continue;
         }
 
@@ -775,7 +775,7 @@ void Game::DrawFadingGL()
             case FADE_POCKET1:
                 fade_time.start();
                 fadestate = FADE_POCKET2;
-                EscapeToPocketspace();
+                EscapeToHome();
                 break;
             case FADE_POCKET2:
                 fadestate = FADE_NONE;
@@ -1052,9 +1052,9 @@ void Game::mouseMoveEvent(QMouseEvent * e, const float x, const float y, const i
         }
 #endif
 
-        r->CallJSFunction("room.onMouseMove", player);
+        r->CallJSFunction("room.onMouseMove", player, multi_players);
         if (left_btn) {
-            r->CallJSFunction("room.onMouseDrag", player);
+            r->CallJSFunction("room.onMouseDrag", player, multi_players);
         }
 
 //        qDebug() << "Game::mouseMoveEvent" << selected[cursor_index] << envobjects.contains(selected[cursor_index]);
@@ -1248,7 +1248,7 @@ void Game::mousePressEvent(QMouseEvent * e, const int cursor_index, const QSize 
     switch (state) {
     case JVR_STATE_DEFAULT:
         if (e->button() == Qt::LeftButton) {
-            r->CallJSFunction("room.onMouseDown", player);
+            r->CallJSFunction("room.onMouseDown", player, multi_players);
 
             if (r->GetProperties()->GetCursorVisible()) {
                 SoundManager::Play(SOUND_CLICK1, false, player->GetCursorPos(cursor_index), 1.0f);
@@ -1412,8 +1412,8 @@ void Game::mouseReleaseEvent(QMouseEvent * e, const int cursor_index, const QSiz
     {
         if (e->button() == Qt::LeftButton) {
 
-            r->CallJSFunction("room.onMouseUp", player);
-            r->CallJSFunction("room.onClick", player);
+            r->CallJSFunction("room.onMouseUp", player, multi_players);
+            r->CallJSFunction("room.onClick", player, multi_players);
 
 #ifdef __ANDROID__
 
@@ -1751,7 +1751,7 @@ void Game::keyPressEvent(QKeyEvent * e)
                 player->SetRunning(true);
             }
 
-            bool defaultPrevented = r->RunKeyPressEvent(e, player);
+            bool defaultPrevented = r->RunKeyPressEvent(e, player, multi_players);
             if (defaultPrevented) {
                 keys[e->key()] = false;
                 break;
@@ -2566,7 +2566,7 @@ void Game::keyReleaseEvent(QKeyEvent * e)
         return;
     }
 
-    bool defaultPrevented = r->RunKeyReleaseEvent(e, player);
+    bool defaultPrevented = r->RunKeyReleaseEvent(e, player, multi_players);
     if (defaultPrevented) {
         return;
     }
@@ -2703,7 +2703,15 @@ void Game::SaveRoom(const QString out_filename)
     }
 
     QPointer <Room> r = env->GetCurRoom();
-    const bool success = r->SaveXML(out_filename);
+
+    bool success;
+    if (out_filename.right(4).toLower() == "json") {
+        success = r->SaveJSON(out_filename);
+    }
+    else {
+        success = r->SaveXML(out_filename);
+    }
+
     if (success) {
         SoundManager::Play(SOUND_SAVED, false, player->GetProperties()->GetPos()->toQVector3D(), 1.0f);
     }
@@ -2991,13 +2999,12 @@ void Game::UpdateOverlays()
         if (obj) {
             info_text_geom.Clear();
 
-
-            const QString t = obj->GetProperties()->GetTypeAsString();
-            QString type_str = t + " js_id=\"" + obj->GetProperties()->GetJSID();
-            if (t == "link") {
+            const ElementType t = obj->GetType();
+            QString type_str = DOMNode::ElementTypeToTagName(t) + " js_id=\"" + obj->GetProperties()->GetJSID();
+            if (t == TYPE_LINK) {
                 type_str += " url=\"" + obj->GetProperties()->GetURL().left(15)+ "...";
             }
-            else if (t != "text" && t != "paragraph"){
+            else if (t != TYPE_TEXT && t != TYPE_PARAGRAPH){
                 type_str += " id=\"" + obj->GetProperties()->GetID() + "\"";
             }
 
@@ -3038,7 +3045,7 @@ void Game::UpdateOverlays()
                 info_text_geom.AddText(QString(" mirror=") + MathUtil::GetBoolAsString(obj->GetProperties()->GetMirror()), QColor(0,255,0));
             }
 
-            if (obj->GetType() == TYPE_TEXT) {
+            if (t == TYPE_TEXT) {
                 info_text_geom.AddText("  ...</text>");
             }
             else {
@@ -3652,13 +3659,13 @@ QPointer <AbstractWebSurface> Game::GetWebSurfaceSelected()
     return QPointer <AbstractWebSurface> ();
 }
 
-void Game::StartEscapeToPocketspace()
+void Game::StartEscapeToHome()
 {
     fade_time.start();
     fadestate = FADE_POCKET1;
 }
 
-void Game::EscapeToPocketspace()
+void Game::EscapeToHome()
 {
     QMatrix4x4 player_xform = player->GetTransform();
     player_xform.rotate(180.0f, 0, 1, 0);
@@ -3953,8 +3960,7 @@ void Game::UpdateControllers()
         for (int i=0; i<2; ++i) {
             ControllerButtonState & b_click = s[i].GetClick();
             ControllerButtonState & b_teleport = s[i].GetTeleport();
-            ControllerButtonState & b_pocketspace = s[i].GetPocketspace();
-//            qDebug() << "GAME::UPDATECONTROLLERS B_POCKETSPACE" << b_pocketspace.hover << b_pocketspace.pressed << b_pocketspace.proc_press << b_pocketspace.proc_release;
+            ControllerButtonState & b_home = s[i].GetHome();
             ControllerButtonState & b_grab = s[i].GetGrab();
 
 #if defined(__ANDROID__)
@@ -4061,7 +4067,7 @@ void Game::UpdateControllers()
                     }
 #endif
 
-                    r->CallJSFunction("room.onMouseDown", player);
+                    r->CallJSFunction("room.onMouseDown", player, multi_players);
 
                     if (!room_has_fn_onmousedown) {
                         StartOpInteractionDefault(i);
@@ -4088,8 +4094,8 @@ void Game::UpdateControllers()
 #endif
 
                     //room onclick
-                    r->CallJSFunction("room.onMouseUp", player);
-                    r->CallJSFunction("room.onClick", player);
+                    r->CallJSFunction("room.onMouseUp", player, multi_players);
+                    r->CallJSFunction("room.onClick", player, multi_players);
 
                     //object onclick
                     QPointer <RoomObject> o = r->GetRoomObject(player->GetCursorObject(i));
@@ -4097,7 +4103,7 @@ void Game::UpdateControllers()
                         //55.2 - onclick is on mouse release, and should only happen once per mouse click
                         QString click_code = o->GetProperties()->GetOnClick();
                         if (click_code.length() > 0) { //special javascript onclick code to run
-                            r->CallJSFunction(click_code, player);
+                            r->CallJSFunction(click_code, player, multi_players);
                         }
                     }
 
@@ -4113,11 +4119,11 @@ void Game::UpdateControllers()
                     }
                 }
 
-                if (b_pocketspace.proc_press) {
-                    b_pocketspace.proc_press = false;
+                if (b_home.proc_press) {
+                    b_home.proc_press = false;
                 }
-                if (b_pocketspace.proc_release) {
-                    b_pocketspace.proc_release = false;
+                if (b_home.proc_release) {
+                    b_home.proc_release = false;
                     if (controller_manager->GetHMDManager() && (controller_manager->GetHMDManager()->GetHMDType() == "go" || controller_manager->GetHMDManager()->GetHMDType() == "gear")){
                         if (env->GetCurRoom() == env->GetRootRoom()){
 #if defined(__ANDROID__) && defined(OCULUS_SUBMISSION_BUILD)
@@ -4129,7 +4135,7 @@ void Game::UpdateControllers()
                         }
                     }
                     else{
-                        StartEscapeToPocketspace();
+                        StartEscapeToHome();
                     }
                 }
 
@@ -4172,7 +4178,7 @@ void Game::UpdateControllers()
         //LMB
         if (s[1].t[0].proc_press) {
             s[1].t[0].proc_press = false;
-            r->CallJSFunction("room.onMouseDown", player);
+            r->CallJSFunction("room.onMouseDown", player, multi_players);
 
             if (!room_has_fn_onmousedown) {
                 StartOpInteractionDefault(0);
@@ -4182,8 +4188,8 @@ void Game::UpdateControllers()
             s[1].t[0].proc_release = false;
 
             //room onclick
-            r->CallJSFunction("room.onMouseUp", player);
-            r->CallJSFunction("room.onClick", player);
+            r->CallJSFunction("room.onMouseUp", player, multi_players);
+            r->CallJSFunction("room.onClick", player, multi_players);
 
             //object onclick
             QPointer <RoomObject> o = r->GetRoomObject(player->GetCursorObject(0));
@@ -4191,7 +4197,7 @@ void Game::UpdateControllers()
                 //55.2 - onclick is on mouse release, and should only happen once per mouse click
                 QString click_code = o->GetProperties()->GetOnClick();
                 if (click_code.length() > 0) { //special javascript onclick code to run
-                    r->CallJSFunction(click_code, player);
+                    r->CallJSFunction(click_code, player, multi_players);
                 }
             }
 
@@ -4243,10 +4249,10 @@ void Game::UpdateControllers()
             player->SetRunning(false);
         }
 
-        //pocketspace
+        //home button
         if (s[0].b[0].proc_release) {
             s[0].b[0].proc_release = false;
-            StartEscapeToPocketspace();
+            StartEscapeToHome();
         }
 
         //reset hmd
@@ -4792,7 +4798,6 @@ QPointer <RoomObject> Game::CreatePortal(const QUrl url, const bool send_multi)
         new_portal->GetProperties()->SetScale(QVector3D(1.8f, 2.5f, 1.0f));
         new_portal->GetProperties()->SetCircular(true);
         new_portal->GetProperties()->SetJSID(portal_jsid);
-        new_portal->SetSaveToMarkup(false);
         new_portal->GetProperties()->SetOpen(true);
         r->AddRoomObject(new_portal);
         env->AddRoom(new_portal);
@@ -4876,7 +4881,7 @@ void Game::EndOpInteractionDefault(const int i)
         //55.2 - onclick is on mouse release, and should only happen once per mouse click
         QString click_code = o->GetProperties()->GetOnClick();
         if (click_code.length() > 0) { //special javascript onclick code to run
-            r->CallJSFunction(click_code, player);
+            r->CallJSFunction(click_code, player, multi_players);
         }
 
         //default stuff
@@ -5088,35 +5093,35 @@ QPointer <Asset> Game::CreateAssetFromURL(const QString url_str)
 {
     //infer asset type from filename extension
     //60.0 - be sure to use just the filename only, as this filters out blah.txt?v=2311283 and so on
-    const QString t = MathUtil::AssetTypeFromFilename(QUrl(url_str).fileName());
+    const ElementType t = MathUtil::AssetTypeFromFilename(QUrl(url_str).fileName());
 //    qDebug() << "Game::CreateAssetFromURL" << url_str << AssetTypeToString(t);
 
     QPointer <Asset> new_asset;
-    if (t == "assetghost") {
+    if (t == TYPE_ASSETGHOST) {
         new_asset = new AssetGhost();
     }
-    else if (t == "assetimage") {
+    else if (t == TYPE_ASSETIMAGE) {
         new_asset = new AssetImage();
     }
-    else if (t == "assetobject") {
+    else if (t == TYPE_ASSETOBJECT) {
         new_asset = new AssetObject();
     }
-    else if (t == "assetrecording") {
+    else if (t == TYPE_ASSETRECORDING) {
         new_asset = new AssetRecording();
     }
-    else if (t == "assetscript") {
+    else if (t == TYPE_ASSETSCRIPT) {
         new_asset = new AssetScript(env->GetCurRoom());
     }
-    else if (t == "assetshader") {
+    else if (t == TYPE_ASSETSHADER) {
         new_asset = new AssetShader();
     }
-    else if (t == "assetsound") {
+    else if (t == TYPE_ASSETSOUND) {
         new_asset = new AssetSound();
     }
-    else if (t == "assetvideo") {
+    else if (t == TYPE_ASSETVIDEO) {
         new_asset = new AssetVideo();
     }
-    else if (t == "assetwebsurface") {
+    else if (t == TYPE_ASSETWEBSURFACE) {
         new_asset = (AbstractWebSurface*)new AssetWebSurface();
     }
 
@@ -5454,205 +5459,7 @@ void Game::SetPinching(const bool b)
 {
     pinching = b;
 }
-#endif
-
-void Game::UpdateMenuObject()
-{
-    QPointer <Room> r = env->GetCurRoom();
-
-    //update playerlist for menu
-    menu_ops.playerlist.clear();
-
-    //first add the user
-    QJsonObject my_pos;
-    my_pos["x"] = player->GetProperties()->GetPos()->toQVector3D().x();
-    my_pos["y"] = player->GetProperties()->GetPos()->toQVector3D().y();
-    my_pos["z"] = player->GetProperties()->GetPos()->toQVector3D().z();
-    QJsonObject my_x;
-    my_x["x"] = player->GetRightDir().x();
-    my_x["y"] = player->GetRightDir().y();
-    my_x["z"] = player->GetRightDir().z();
-    QJsonObject my_y;
-    my_y["x"] = player->GetProperties()->GetUpDir()->toQVector3D().x();
-    my_y["y"] = player->GetProperties()->GetUpDir()->toQVector3D().y();
-    my_y["z"] = player->GetProperties()->GetUpDir()->toQVector3D().z();
-    QJsonObject my_z;
-    my_z["x"] = player->GetProperties()->GetViewDir()->toQVector3D().x();
-    my_z["y"] = player->GetProperties()->GetViewDir()->toQVector3D().y();
-    my_z["z"] = player->GetProperties()->GetViewDir()->toQVector3D().z();
-    QJsonObject my_o;
-    my_o["userid"] = player->GetProperties()->GetUserID();
-    my_o["pos"] = my_pos;
-    my_o["xdir"] = my_x;
-    my_o["ydir"] = my_y;
-    my_o["zdir"] = my_z;
-    menu_ops.playerlist.push_back(QJsonDocument(my_o).toVariant());
-
-    //then add multiplayers
-    QList <QPointer <RoomObject> > players = multi_players->GetPlayersInRoom(r->GetProperties()->GetURL());
-    for (int i=0; i<players.size(); ++i) {
-        QJsonObject pos;
-        pos["x"] = players[i]->GetPos().x();
-        pos["y"] = players[i]->GetPos().y();
-        pos["z"] = players[i]->GetPos().z();
-
-        QJsonObject xdir;
-        xdir["x"] = players[i]->GetXDir().x();
-        xdir["y"] = players[i]->GetXDir().y();
-        xdir["z"] = players[i]->GetXDir().z();
-
-        QJsonObject ydir;
-        ydir["x"] = players[i]->GetYDir().x();
-        ydir["y"] = players[i]->GetYDir().y();
-        ydir["z"] = players[i]->GetYDir().z();
-
-        QJsonObject zdir;
-        zdir["x"] = players[i]->GetZDir().x();
-        zdir["y"] = players[i]->GetZDir().y();
-        zdir["z"] = players[i]->GetZDir().z();
-
-        QJsonObject o;
-        o["userid"] = players[i]->GetProperties()->GetID();
-        o["pos"] = pos;
-        o["xdir"] = xdir;
-        o["ydir"] = ydir;
-        o["zdir"] = zdir;
-
-        menu_ops.playerlist.push_back(QJsonDocument(o).toVariant());
-    }
-    menu_ops.near_dist = r->GetProperties()->GetNearDist();
-
-    menu_ops.bookmarks = bookmarks->GetBookmarks();
-    menu_ops.workspaces = bookmarks->GetWorkspaces();
-    menu_ops.playbackdevices = SoundManager::GetDevices(ALC_DEVICE_SPECIFIER);
-    menu_ops.capturedevices = SoundManager::GetDevices(ALC_CAPTURE_DEVICE_SPECIFIER);
-    menu_ops.playercount = multi_players->GetNumberUsersURL(player->GetProperties()->GetURL());
-
-    int netstat = 0;
-    if (multi_players->GetEnabled()) {
-        QList <ServerConnection> & conn_list = multi_players->GetConnectionList();
-        for (int i=0; i<conn_list.size(); ++i) {
-            ServerConnection & s = conn_list[i];
-            for (int j=0; j<s.rooms.size(); ++j) {
-                if (QString::compare(s.rooms[j].url, player->GetProperties()->GetURL()) == 0) {
-                    if (s.logged_in) {
-                        netstat = 2;
-                        menu_ops.networkerror = "";
-                    }
-                    else if (s.last_error_msg.length() > 0) {
-                        netstat = -1;
-                        menu_ops.networkerror = s.last_error_msg;
-                    }
-                    else if (s.logging_in) {
-                        netstat = 1;
-                        menu_ops.networkerror = "";
-                    }
-                    else {
-                        netstat = 0;
-                    }
-                    menu_ops.roomserver = s.tcpserver;
-                    break;
-                }
-            }
-        }
-    }
-//    menu.UpdateChatMessages();
-    menu_ops.networkstatus = netstat;
-    menu_ops.player_curroom = r;
-    if (!selected[0].isEmpty()) {
-        menu_ops.selected = selected[0];
-    }
-    else {
-        menu_ops.selected = selected[1];
-    }
-    menu_ops.env = env;
-    menu_ops.player = player;
-    menu_ops.multi_players = multi_players;
-
-    if (menu_ops.do_navback) {
-        StartResetPlayer();
-        menu_ops.do_navback = false;
-    }
-    if (menu_ops.do_navforward) {
-        StartResetPlayerForward();
-        menu_ops.do_navforward = false;
-    }
-    if (menu_ops.do_navhome) {
-        StartEscapeToPocketspace();
-        menu_ops.do_navhome = false;
-    }
-    if (menu_ops.do_launchurl) {
-        menu_ops.do_launchurl = false;
-        QString url_str = menu_ops.do_launchurl_url.trimmed();
-
-        if (url_str == "home") {
-            url_str = SettingsManager::GetLaunchURL();
-        }
-
-        if (QString::compare(url_str.mid(1,2), ":\\") == 0) { //convert Windows absolute paths
-            url_str = "file:///" + url_str;
-            url_str.replace("\\", "/"); //replace backslashes with forward slashes
-        }
-        else {
-            QDir d(url_str);
-            QFile f(url_str);
-            if (f.exists() || d.exists()) {
-                url_str = QUrl::fromLocalFile(url_str).toString();
-            }
-        }
-
-        //we always load the portal locally
-        if (menu_ops.do_launchurl_useportal) {
-            CreatePortal(url_str, false);
-        }
-        else {
-            QPointer <RoomObject> p = CreatePortal(url_str, false);
-            if (p) {
-                p->GetProperties()->SetVisible(false);
-                p->GetProperties()->SetOpen(true);
-                teleport_portal = p;
-                StartTeleportPlayer();
-            }
-        }
-    }
-    if (menu_ops.do_chatsend) {
-        menu_ops.do_chatsend = false;
-        SendChatMessage(menu_ops.do_chatsend_msg);
-    }
-    if (menu_ops.do_sync) {
-        menu_ops.do_sync = false;
-        r->SyncAll();
-    }
-    if (menu_ops.do_quit) {
-        menu_ops.do_quit = false;
-        SetDoExit(true);
-    }
-    if (menu_ops.do_saveroom) {
-        menu_ops.do_saveroom = false;
-        SaveRoom(r->GetSaveFilename());
-    }
-    if (menu_ops.do_saveworkspace) {
-        menu_ops.do_saveworkspace = false;
-        CreateNewWorkspace(MathUtil::GetWorkspacePath() + "/" + menu_ops.do_saveworkspacename);
-    }
-
-    //update the pocketspace so surfaces have the window.janus object
-    QPointer <Room> pocketspace_room = env->GetRootRoom();
-    if (pocketspace_room && (r == pocketspace_room || r->GetProperties()->GetURL() == pocketspace_room->GetProperties()->GetURL())) {
-        QHash <QString, QPointer <RoomObject> > & envobjects = r->GetRoomObjects();
-        for (QPointer <RoomObject> & o : envobjects) {
-            if (o && o->GetAssetWebSurface() && o->GetAssetWebSurface()->GetProperties()->GetSaveToMarkup()) {
-                menu_ops.UpdatePageWithJanusObject(o->GetAssetWebSurface());
-            }
-        }
-    }
-
-    multi_players->SetEnabled(SettingsManager::GetMultiplayerEnabled() && !do_exit);
-    multi_players->SetSessionTrackingEnabled(SettingsManager::GetSessionTrackingEnabled());
-    multi_players->SetPartyMode(SettingsManager::GetPartyModeEnabled());
-
-    WebAsset::SetUseCache(SettingsManager::GetCacheEnabled());
-}
+#endif  
 
 void Game::UpdateAudio()
 {
@@ -5683,6 +5490,10 @@ void Game::UpdateAudio()
 
 void Game::UpdateMultiplayer()
 {
+    multi_players->SetEnabled(SettingsManager::GetMultiplayerEnabled() && !do_exit);
+    multi_players->SetSessionTrackingEnabled(SettingsManager::GetSessionTrackingEnabled());
+    multi_players->SetPartyMode(SettingsManager::GetPartyModeEnabled());
+
     QPointer <Room> r = env->GetCurRoom();
     if (r && multi_players) {
         //determine URL adjacency
@@ -5720,7 +5531,7 @@ void Game::UpdateMultiplayer()
                 multi_players->SetResetPlayer(false);
             }
         }
-    }
+    }   
 }
 
 void Game::UpdateAssets()

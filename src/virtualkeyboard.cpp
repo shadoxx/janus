@@ -89,9 +89,10 @@ VirtualKeyboard::VirtualKeyboard() :
         a->Load();
         assetobjs[cit.key()] = a;
 
-        const QString jsid = "__menu_" + cit.value();
+        const QString jsid = "__" + cit.value();
         QPointer <RoomObject> o = new RoomObject();
         o->SetType(TYPE_OBJECT);
+        o->SetInterfaceObject(true);
         o->GetProperties()->SetJSID(jsid);
         o->GetProperties()->SetID(jsid);
         o->SetAssetObject(a);
@@ -143,16 +144,16 @@ void VirtualKeyboard::Update()
     for (cit=envobjects.begin(); cit!= envobjects.end(); ++cit) {
         if (cit.value()) {
             const QString js_id = cit.value()->GetProperties()->GetJSID();
-            if (shift_modifier && js_id == "__menu_shift") {
+            if (shift_modifier && js_id == "__shift") {
                 cit.value()->SetAssetImage(keypress_img);
             }
-            else if (control_modifier && js_id == "__menu_control") {
+            else if (control_modifier && js_id == "__control") {
                 cit.value()->SetAssetImage(keypress_img);
             }
-            else if (alt_modifier && js_id == "__menu_alt") {
+            else if (alt_modifier && js_id == "__alt") {
                 cit.value()->SetAssetImage(keypress_img);
             }
-            else if (capslock && js_id == "__menu_capslock") {
+            else if (capslock && js_id == "__capslock") {
                 cit.value()->SetAssetImage(keypress_img);
             }
             else if (cur_selected[0] == cit.value() && mouse_pressed[0]) {
@@ -201,16 +202,16 @@ void VirtualKeyboard::mousePressEvent(const int index)
 {
     mouse_pressed[index] = true;
 
-    if (cur_selected[index] == envobjects["__menu_shift"]) {
+    if (cur_selected[index] == envobjects["__shift"]) {
         shift_modifier = !shift_modifier;
     }
-    else if (cur_selected[index] == envobjects["__menu_control"]) {
+    else if (cur_selected[index] == envobjects["__control"]) {
         control_modifier = !control_modifier;
     }
-    else if (cur_selected[index] == envobjects["__menu_alt"]) {
+    else if (cur_selected[index] == envobjects["__alt"]) {
         alt_modifier = !alt_modifier;
     }
-    else if (cur_selected[index] == envobjects["__menu_capslock"]) {
+    else if (cur_selected[index] == envobjects["__capslock"]) {
         capslock = !capslock;
     }
     else if (cur_selected[index]) {

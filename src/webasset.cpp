@@ -191,7 +191,7 @@ void WebAsset::ClearData()
 
 float WebAsset::GetProgress() const
 {    
-    return GetError() ? 1.0f : progress;
+    return (GetError() || finished) ? 1.0f : progress;
 }
 
 bool WebAsset::GetError() const

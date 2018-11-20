@@ -245,7 +245,7 @@ void GeomIOSystem::Clear()
     data_cache.clear();
 }
 
-void GeomIOSystem::SetMTLFilePath(const QString & s)
+void GeomIOSystem:: SetMTLFilePath(const QString & s)
 {
     mtl_file_path = s;
 }
@@ -293,7 +293,7 @@ Assimp::IOStream * GeomIOSystem::Open(const std::string & pFile, const std::stri
 
 Assimp::IOStream * GeomIOSystem::Open(const char *pFile)
 {
-//    qDebug() << "GeomIOSystem::Open" << base_path.toString() << pFile << mtl_file_path;
+//    qDebug() << "GeomIOSystem::Open" << this << base_path.toString() << pFile << mtl_file_path << gzipped;
     QString p(pFile);
     QUrl u;
 
@@ -366,6 +366,13 @@ Assimp::IOStream * GeomIOSystem::Open(const char *pFile)
 //        qDebug() << QString(pFile) << w->GetURL().toString();
         if (w->GetRedirected() && QString(pFile).right(4) != w->GetURL().toString().right(4)) {
             w->ClearData();
+        }
+        else if (u_str.right(7).toLower().contains(".obj") && !mtl_file_path.isEmpty()) {
+            //61.0 mtllib override
+            QByteArray b = w->GetData();
+            if (!b.left(1000).contains("mtllib ")) {
+                w->SetData(QString("mtllib " + mtl_file_path + "\n").toLatin1() + b);
+            }
         }
 
         //cache the data if fetched again
@@ -1021,13 +1028,13 @@ void Geom::DrawGL(QPointer <AssetShader> shader, const QColor col, const bool ov
         //58.0 - Change diffuse only when lighting is enabled (or some surfaces, menu/websurface, appear dark),
         //later change to restore since it causes inconsistent behaviour
         //changes again, this time to not use it if there's a texture override (this should work ok)
-        if (textures[0].img.isNull()&& !override_texture)
+        if (textures[0].img.isNull() && !override_texture)
         {
             shader->SetDiffuse(QVector4D(mat.kd.redF(), mat.kd.greenF(), mat.kd.blueF(), mat.kd.alphaF()));
         }
         else
         {
-            shader->SetDiffuse(QVector4D(1,1,1,1));
+            shader->SetDiffuse(QVector4D(1, 1, 1, mat.kd.alphaF())); //61.0 - support transparency (d value in OBJ .mtl)
         }
 
         if (textures[1].img.isNull())
@@ -1732,9 +1739,10 @@ void Geom::get_bounding_box_for_node(const struct aiNode* nd,
 
 void Geom::SetupMaterialPath(const struct aiMaterial *mtl, GeomMaterial & mat, aiTextureType t, const int i)
 {
+//    qDebug() << "Geom::SetupMaterialPath mtlfilepath" << mtl_file_path;
     aiString texturePath;
     mtl->GetTexture(t, 0, &texturePath);
-//    qDebug() << "Geom::SetupMaterialPath" << i << texturePath.C_Str();
+//    qDebug() << "Geom::SetupMaterialPath" << mtl_file_path << i << texturePath.C_Str();
     if (t != aiTextureType_NONE && mtl->GetTextureCount(t) > 0 && mtl->GetTexture(t, 0, &texturePath) == AI_SUCCESS)
     {        
         const QString s(texturePath.C_Str());
@@ -1755,6 +1763,7 @@ void Geom::SetupMaterialPath(const struct aiMaterial *mtl, GeomMaterial & mat, a
             }
         }
         mat.textures[i].filename = u.resolved(s).toString();
+//        qDebug() << "Geom::SetupMaterialPath" << mat.textures[i].filename;
     }
 }
 

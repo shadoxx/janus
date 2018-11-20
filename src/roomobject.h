@@ -62,6 +62,9 @@ public:
     void SetType(const ElementType t);
     ElementType GetType() const;
 
+    void SetInterfaceObject(const bool b);
+    bool GetInterfaceObject() const;
+
     bool GetRaycastIntersection(const QMatrix4x4 transform, QList <QVector3D> & int_verts, QList <QVector3D> & int_normals, QList <QVector2D> & int_texcoords);
 
     void SetAttributeModelMatrix(const QMatrix4x4 & m);
@@ -133,6 +136,8 @@ public:
 
     void ReadXMLCode(const QString & str);
     QString GetXMLCode(const bool show_defaults = false) const;
+
+    QVariantMap GetJSONCode(const bool show_defaults) const;
 
     void Update(const double dt_sec);
     void UpdateMedia();
@@ -483,6 +488,8 @@ protected:
 
     bool grabbed;
     bool draw_back;
+
+    bool interface_object;
 
 private:
 

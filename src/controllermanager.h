@@ -70,7 +70,7 @@ struct ControllerState
         return b[0];
     }
 
-    ControllerButtonState & GetPocketspace()
+    ControllerButtonState & GetHome()
     {
         return b[1];
     }

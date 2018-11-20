@@ -2,7 +2,7 @@
 
 int AndroidWebView::sm_tag = 0;
 
-//TODO: keyboard events, Janus window object (for translators and menu/pocketspace dashboard)
+//TODO: keyboard events, Janus window object (for translators)
 
 AndroidWebView::AndroidWebView()
     : m_androidID(generateNewTag())

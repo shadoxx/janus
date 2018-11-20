@@ -84,6 +84,7 @@ void AssetObject::SetTextureFile(const QString & tex, const unsigned int index)
 
 void AssetObject::SetMTLFile(const QString & mtl)
 {    
+//    qDebug() << "AssetObject::SetMTLFile" << mtl << QUrl(props->GetBaseURL()).resolved(mtl).toString();
     props->SetMTL(mtl);
     geom->SetMTLFile(QUrl(props->GetBaseURL()).resolved(mtl).toString());
 }

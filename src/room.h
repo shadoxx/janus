@@ -50,7 +50,7 @@ public:
     void Clear();
 
     bool HasJSFunctionContains(const QString & s, const QString & code);    
-    void CallJSFunction(const QString & s, QPointer <Player> player, QList <QPointer <DOMNode> > nodes = QList <QPointer <DOMNode> >());
+    void CallJSFunction(const QString & s, QPointer <Player> player, MultiPlayerManager * multi_players, QList <QPointer <DOMNode> > nodes = QList <QPointer <DOMNode> >());
 
     void SetProperties(const QVariantMap & d);
     void SetProperties(QPointer <DOMNode> props);
@@ -130,7 +130,7 @@ public:
     void SetPlayerPosTrans(const QVector3D p);
     void SetUseClipPlane(const bool b, const QVector4D p = QVector4D(0,0,0,0));
 
-    void BindShader(QPointer <AssetShader> shader);
+    void BindShader(QPointer <AssetShader> shader, const bool disable_fog = false);
     void UnbindShader(QPointer <AssetShader> shader);
 
     void DrawCollisionModelGL(QPointer <AssetShader> shader);
@@ -148,7 +148,7 @@ public:
 
     void UpdateAssets();
     void UpdateObjects(QPointer <Player> player, MultiPlayerManager*  multi_players, const bool player_in_room);
-    void UpdateJS(QPointer <Player> player);
+    void UpdateJS(QPointer <Player> player, MultiPlayerManager *multi_players);
     void UpdatePhysics(QPointer <Player> player);
     void UpdateAutoPlay();
 
@@ -166,15 +166,17 @@ public:
     bool SaveXML(const QString & filename);
     void SaveXML(QTextStream & ofs);
 
+    bool SaveJSON(const QString & filename);
+
     void OnCollisionEnter(QPointer <RoomObject> envobject, QPointer <RoomObject> other_envobject, QPointer <Player> player);
     void OnCollisionExit(QPointer <RoomObject> envobject, QPointer <RoomObject> other_envobject, QPointer <Player> player);
 
-    bool RunKeyPressEvent(QKeyEvent * e, QPointer <Player> player);
-    bool RunKeyReleaseEvent(QKeyEvent * e, QPointer <Player> player);
+    bool RunKeyPressEvent(QKeyEvent * e, QPointer <Player> player, MultiPlayerManager * multi_players);
+    bool RunKeyReleaseEvent(QKeyEvent * e, QPointer <Player> player, MultiPlayerManager * multi_players);
 
     unsigned int GetRoomNumTris() const;    
 
-    void SetPlayerLastTransform(const QMatrix4x4 & m); //remmebers player's last position here when going to/from pocketspace
+    void SetPlayerLastTransform(const QMatrix4x4 & m); //remmebers player's last position
     QMatrix4x4 GetPlayerLastTransform() const;   
 
     void StartURLRequest();    
@@ -263,6 +265,8 @@ public slots:
     void Create_Custom_Translator_Loaded();
 
 private:   
+
+    QVariantMap GetJSONCode(const bool show_defaults) const;
 
     void LinkToAssets(QPointer <RoomObject> o);    
 

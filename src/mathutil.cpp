@@ -2471,7 +2471,7 @@ QString MathUtil::GetSaveTimestampFilename()
 }
 
 
-QString MathUtil::AssetTypeFromFilename(const QString filename)
+ElementType MathUtil::AssetTypeFromFilename(const QString filename)
 {
     //make lowercase, strip the .gz if present
     QString s = filename.toLower().trimmed();
@@ -2482,34 +2482,34 @@ QString MathUtil::AssetTypeFromFilename(const QString filename)
 
 //    qDebug() << "AssetTypeFromFilename testing suffix" << filename << suffix;
     if (MathUtil::img_extensions.contains(suffix)) {
-        return "assetimage";
+        return TYPE_ASSETIMAGE;
     }
     else if (MathUtil::sound_extensions.contains(suffix)) {
-        return "assetsound";
+        return TYPE_ASSETSOUND;
     }
     else if (MathUtil::vid_extensions.contains(suffix)) {
-        return "assetvideo";
+        return TYPE_ASSETVIDEO;
     }
     else if (MathUtil::geom_extensions.contains(suffix)) {
-        return "assetobject";
+        return TYPE_ASSETOBJECT;
     }
     else if (suffix == "js") {
-        return "assetscript";
+        return TYPE_ASSETSCRIPT;
     }
     else if (suffix == "txt") {
-        return "assetghost";
+        return TYPE_ASSETGHOST;
     }
     else if (suffix == "frag" || suffix == "vert") {
-        return "assetshader";
+        return TYPE_ASSETSHADER;
     }
     else if (suffix == "html" || suffix == "htm" || suffix == "pdf") {
-        return "assetwebsurface";
+        return TYPE_ASSETWEBSURFACE;
     }
     else if (suffix == "rec") {
-        return "assetrecording";
+        return TYPE_ASSETRECORDING;
     }    
     else { //if format is unrecognized or all else, assume an image
-        return "asseterror";
+        return TYPE_ERROR;
     }
 }
 

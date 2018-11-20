@@ -83,6 +83,56 @@ QString Asset::GetXMLCode() const
     return s;
 }
 
+QVariantMap Asset::GetJSONCode() const
+{
+    QVariantMap m;
+
+    if (props->GetID().length() > 0) {
+        m["id"] = props->GetID();
+    }
+    if (props->GetSrc().length() > 0) {
+        m["src"] = props->GetSrc();
+    }
+    if (props->GetVertexSrc().length() > 0) {
+        m["vertex_src"] =  props->GetVertexSrc();
+    }
+    if (props->GetMTL().length() > 0) {
+        m["mtl"] = props->GetMTL();
+    }
+    if (props->GetSBS3D()) {
+        m["sbs3d"] = true;
+    }
+    if (props->GetOU3D()) {
+        m["ou3d"] = true;
+    }
+    if (props->GetReverse3D()) {
+        m["reverse3d"] = true;
+    }
+    if (props->GetTexClamp()) {
+        m["tex_clamp"] = true;
+    }
+    if (!props->GetTexLinear()) {
+        m["tex_linear"] = false;
+    }
+    if (props->GetTexCompress()) {
+        m["tex_compress"] = true;
+    }
+    if (!props->GetTexPreMultiply()) {
+        m["tex_premultiply"] = false;
+    }
+    if (!props->GetTexMipmap()) {
+        m["tex_mipmap"] = false;
+    }
+    if (props->GetTexAlpha() != "undefined") {
+        m["tex_alpha"] = props->GetTexAlpha();
+    }
+    if (props->GetTexColorspace() != "sRGB") {
+        m["tex_colorspace"] = props->GetTexColorspace();
+    }
+
+    return m;
+}
+
 QPointer <DOMNode> Asset::GetProperties()
 {
     return props;

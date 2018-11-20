@@ -469,7 +469,7 @@ void ControllerManager::UpdateControllers()
                         b_hover = hmd_manager->GetControllerThumbpadTouched(i) && (dist < 0.3f);
                     }
                     else if (j == 1) {
-                        //App button pocketspace
+                        //App button home
                         b_pressed = hmd_manager->GetControllerMenuPressed(i);
                     }
                 }
@@ -484,7 +484,7 @@ void ControllerManager::UpdateControllers()
                         //b_hover = hmd_manager->GetControllerThumbpadTouched(i); //Can't hover with trigger
                     }
                     else if (j == 1) {
-                        //App button pocketspace
+                        //App button home
                         b_pressed = hmd_manager->GetControllerMenuPressed(i);
                     }
                 }

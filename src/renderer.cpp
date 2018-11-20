@@ -60,36 +60,10 @@ void Renderer::Initialize(QString const & p_requested_gl_version)
     m_requested_version_string = p_requested_gl_version;
 #endif
 
-    //59.3 - below line ot needed?
+    //59.3 - below line not needed?
     QOpenGLContext * c = QOpenGLContext::currentContext();
 
-
-#if !defined(__APPLE__) && !defined(__ANDROID__)
-    bool const has_viewport_extension_AMD = c->hasExtension(QByteArrayLiteral("GL_AMD_vertex_shader_viewport_index"));
-    bool const has_viewport_extension_NV = c->hasExtension(QByteArrayLiteral("GL_NV_viewport_array2"));
-
-    bool const is_using_extensions = (has_viewport_extension_AMD || has_viewport_extension_NV);
-    if (m_requested_version_string == "4.4EXT" || m_requested_version_string == "FORCE4.4EXT")
-    {
-        if(is_using_extensions || m_requested_version_string == "FORCE4.4EXT")
-        {
-            m_abstractRenderer = std::unique_ptr<AbstractRenderer>(new RendererGL44_LoadingThread());
-        }
-        else
-        {
-            m_abstractRenderer = std::unique_ptr<AbstractRenderer>(new RendererGL44_LoadingThread());
-        }
-    }
-    else if (m_requested_version_string == "4.4")
-    {
-
-        m_abstractRenderer = std::unique_ptr<AbstractRenderer>(new RendererGL44_LoadingThread());
-    }
-    else
-#endif
-    {
-        m_abstractRenderer = std::unique_ptr<AbstractRenderer>(new RendererGL33_LoadingThread());
-    }
+    m_abstractRenderer = std::unique_ptr<AbstractRenderer>(new RendererGL33());
 
     //m_abstractRenderer = std::unique_ptr<AbstractRenderer>(new RendererGL33_LoadingThread());
     InitializeScopes();

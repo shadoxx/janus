@@ -9,10 +9,8 @@
 #include <algorithm>
 #include "rendererinterface.h"
 #include "assetimagedata.h"
-#include "renderergl33_loadingthread.h"
-#ifndef __ANDROID__
-#include "renderergl44_loadingthread.h"
-#else
+#include "renderergl33.h"
+#ifdef __ANDROID__
 #include "jniutil.h"
 #endif
 

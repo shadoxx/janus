@@ -17,7 +17,8 @@ public:
     void SetProperties(const QVariantMap & d);
     void SetSrc(const QString & base, const QString & src_str);
     QString GetXMLCode() const;
-    QPointer <DOMNode> GetProperties();
+    QVariantMap GetJSONCode() const;
+    QPointer <DOMNode> GetProperties();    
 
 protected:
 

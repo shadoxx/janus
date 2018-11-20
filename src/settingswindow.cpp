@@ -290,6 +290,10 @@ QWidget * SettingsWindow::GetDeveloperWidget()
     checkbox_updatecustomavatars->setText("Update Custom Avatars");
     connect(checkbox_updatecustomavatars, SIGNAL(clicked(bool)), this, SLOT(SlotSetUpdateCustomAvatars()));
 
+    checkbox_updateassetimages = new QCheckBox();
+    checkbox_updateassetimages->setText("Update AssetImages");
+    connect(checkbox_updateassetimages, SIGNAL(clicked(bool)), this, SLOT(SlotSetUpdateAssetImages()));
+
     QFormLayout * dev_layout = new QFormLayout();
     dev_layout->addRow(checkbox_editmode);
     dev_layout->addRow(checkbox_editmodeicons);
@@ -298,6 +302,7 @@ QWidget * SettingsWindow::GetDeveloperWidget()
     dev_layout->addRow(checkbox_updatecmft);
     dev_layout->addRow(checkbox_updatevoip);
     dev_layout->addRow(checkbox_updatecustomavatars);
+    dev_layout->addRow(checkbox_updateassetimages);
 
     QWidget * w = new QWidget();
     w->setLayout(dev_layout);
@@ -315,6 +320,7 @@ void SettingsWindow::Update()
     checkbox_updatecmft->setChecked(SettingsManager::GetUpdateCMFT());
     checkbox_updatevoip->setChecked(SettingsManager::GetUpdateVOIP());
     checkbox_updatecustomavatars->setChecked(SettingsManager::GetUpdateCustomAvatars());
+    checkbox_updateassetimages->setChecked(SettingsManager::GetAssetImagesEnabled());
     checkbox_crosshair->setChecked(SettingsManager::GetCrosshairEnabled());
     slider_fov->setValue(SettingsManager::GetFOV());
     checkbox_comfortmode->setChecked(SettingsManager::GetComfortMode());
@@ -393,6 +399,11 @@ void SettingsWindow::SlotSetUpdateVOIP()
 void SettingsWindow::SlotSetUpdateCustomAvatars()
 {
     SettingsManager::settings["updatecustomavatars"] = checkbox_updatecustomavatars->isChecked();
+}
+
+void SettingsWindow::SlotSetUpdateAssetImages()
+{
+    SettingsManager::settings["assetimages"] = checkbox_updateassetimages->isChecked();
 }
 
 void SettingsWindow::SlotSetCrosshair()

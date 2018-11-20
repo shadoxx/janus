@@ -382,12 +382,24 @@ void Room::SetCubemap(const QVector <QString> & skybox_image_ids, CUBEMAP_TYPE p
     QVector <QPointer <AssetImage> > imgs = QVector<QPointer <AssetImage> >(imageCount);
 
     for (int imageIndex = 0; imageIndex < imageCount; ++imageIndex) {
-        if (assetimages.contains(skybox_image_ids[imageIndex]) &&
-                assetimages[skybox_image_ids[imageIndex]]) {
+        if (!skybox_image_ids[imageIndex].isEmpty() && assetimages.contains(skybox_image_ids[imageIndex]) && assetimages[skybox_image_ids[imageIndex]]) {
             imgs[imageIndex] = dynamic_cast<AssetImage *>(assetimages[skybox_image_ids[imageIndex]].data());
             if (imgs[imageIndex]) {
                 imgs[imageIndex]->GetProperties()->SetTexClamp(true);
             }
+        }
+        else if (skybox_image_ids[imageIndex].isEmpty()) { //error
+            const QString error_id = "_skybox_error_image"+QString::number(imageIndex);
+            if (!assetimages.contains(error_id)) {
+//                qDebug() << "error?" << skybox_image_ids[imageIndex] << assetimages.contains(skybox_image_ids[imageIndex]) << assetimages[skybox_image_ids[imageIndex]];
+                QPointer <AssetImage> new_asset_image(new AssetImage());
+                new_asset_image->CreateFromText(QString("<p align=\"center\">no skybox image</p>"), 24, true, QColor(255,128,192), QColor(25,25,128), 1.0f, 256, 256, true);
+                new_asset_image->GetProperties()->SetID(error_id);
+                new_asset_image->GetProperties()->SetSaveToMarkup(false);
+                new_asset_image->GetProperties()->SetTexClamp(true);
+                AddAssetImage(new_asset_image);
+            }
+            imgs[imageIndex] = dynamic_cast<AssetImage *>(assetimages[error_id].data());
         }
     }
 
@@ -584,7 +596,7 @@ void Room::SetUseClipPlane(const bool b, const QVector4D p)
     plane_eqn = p;
 }
 
-void Room::BindShader(QPointer <AssetShader> shader)
+void Room::BindShader(QPointer <AssetShader> shader, const bool disable_fog)
 {
     if (shader.isNull()) {
         return;
@@ -592,7 +604,7 @@ void Room::BindShader(QPointer <AssetShader> shader)
 
     shader->SetUseClipPlane(use_clip_plane);
     shader->SetClipPlane(plane_eqn);    
-    shader->SetFogEnabled(props->GetFog());
+    shader->SetFogEnabled(disable_fog ? false : props->GetFog());
     int fog_mode = 0;
     const QString s = props->GetFogMode().toLower();
     if (s == "linear") {
@@ -1326,7 +1338,7 @@ void Room::UpdateObjects(QPointer <Player> player, MultiPlayerManager *multi_pla
                         QList <QPointer <DOMNode> > args;
                         args.push_back(envobjects[obj->GetProperties()->GetJSID()]->GetProperties());
                         args.push_back(envobjects[o->GetProperties()->GetJSID()]->GetProperties());
-                        CallJSFunction("room.onCollisionEnter", player, args);
+                        CallJSFunction("room.onCollisionEnter", player, multi_players, args);
                     }
                 }
                 //process onexit
@@ -1336,7 +1348,7 @@ void Room::UpdateObjects(QPointer <Player> player, MultiPlayerManager *multi_pla
                         QList <QPointer <DOMNode> > args;
                         args.push_back(envobjects[obj->GetProperties()->GetJSID()]->GetProperties());
                         args.push_back(envobjects[o->GetProperties()->GetJSID()]->GetProperties());
-                        CallJSFunction("room.onCollisionExit", player, args);
+                        CallJSFunction("room.onCollisionExit", player, multi_players, args);
                     }
                 }
 
@@ -1404,15 +1416,14 @@ void Room::UpdateObjects(QPointer <Player> player, MultiPlayerManager *multi_pla
             if (a) {
                 ++nObjects;
                 progress += a->GetProgress();
+//                qDebug() << "o" << a << a->GetProgress();
                 if (!a->GetFinished() && !a->GetError()) {
-//                    qDebug() << "WAITING ON" << a->GetProperties()->GetID() << a->GetProperties()->GetTypeAsString() << a->GetFinished() << a->GetError();
                     is_room_ready = false;
                     is_room_ready_for_screenshot = false;
                 }
                 if (!a->GetTexturesFinished()) {
                     is_room_ready_for_screenshot = false;
                 }
-//                qDebug() << "object" << a->GetProperty("src") << a->GetFinished() << a->GetTexturesFinished();
             }
         }        
 
@@ -1420,10 +1431,10 @@ void Room::UpdateObjects(QPointer <Player> player, MultiPlayerManager *multi_pla
             if (a) {
                 ++nImages;
                 progress += a->GetProgress();
+//                qDebug() << "i" << a << a->GetProgress() << a->GetProperties()->GetID() << a->GetProperties()->GetSrc() << a->GetFinished();
                 if (!a->GetFinished() && !a->GetError()) {
                     is_room_ready_for_screenshot = false;
-                }
-//                qDebug() << "image" << a->GetProperty("src") << a->GetFinished();
+                }                
             }
         }
 
@@ -1433,10 +1444,9 @@ void Room::UpdateObjects(QPointer <Player> player, MultiPlayerManager *multi_pla
         else{
             progress = 0.0f;
         }
-
         props->SetProgress(progress);
 
-        //qDebug() << "progress" << progress;
+//        qDebug() << "progress" << progress << is_room_ready << is_room_ready_for_screenshot << nObjects << nImages;
         if (is_room_ready) {
             props->SetReady(true);
         }
@@ -1550,10 +1560,12 @@ void Room::UpdatePhysics(QPointer <Player> player)
     }
 }
 
-void Room::UpdateJS(QPointer <Player> player)
+void Room::UpdateJS(QPointer <Player> player, MultiPlayerManager * multi_players)
 {    
     bool all_scripts_ready = (!assetscripts.isEmpty() && GetProcessed());
     const QVector3D d = player->GetProperties()->GetDir()->toQVector3D();
+    QMap <QString, DOMNode *> remote_players = multi_players->GetPlayersInRoomDOMNodeMap(props->GetURL());  
+
 //    qDebug() << "Room::UpdateJS()" << assetscripts.size();
     for (QPointer <AssetScript> & script : assetscripts) {
         if (script) {
@@ -1569,14 +1581,14 @@ void Room::UpdateJS(QPointer <Player> player)
                 if (!script->GetOnLoadInvoked()) {
 //                    qDebug() << "Room::UpdateJS scriptonload" << script << script->GetProperties()->GetSrc() << script->HasRoomFunction("onLoad") << script->GetOnLoadInvoked();
                     script->SetOnLoadInvoked(true);
-                    QList<QPointer <RoomObject> > objectsAdded = script->DoRoomLoad(envobjects, player);
+                    QList<QPointer <RoomObject> > objectsAdded = script->DoRoomLoad(envobjects, player, remote_players);
                     LogErrorOnException(script);
                     AddRoomObjects(objectsAdded);
                 }
                 else {
 //                    qDebug() << " calling update";
 //                    qDebug() << "setdeltatime" << (int)(player->GetDeltaTime()* 1000);
-                    QList<QPointer <RoomObject> > objectsAdded = script->DoRoomUpdate(envobjects, player, QScriptValueList() << (int)(player->GetDeltaTime()* 1000));
+                    QList<QPointer <RoomObject> > objectsAdded = script->DoRoomUpdate(envobjects, player, remote_players, QScriptValueList() << (int)(player->GetDeltaTime()* 1000));
                     LogErrorOnException(script);
                     AddRoomObjects(objectsAdded);
                 }
@@ -1590,13 +1602,13 @@ void Room::UpdateJS(QPointer <Player> player)
                     }
                     queued_functions.push_back(itr.value());
                 }
-                script->GetGlobalProperty("room").property(ScriptBuiltins::janus_queued_functions).setProperty("length", 0);               
+                script->GetGlobalProperty("room").property(ScriptBuiltins::janus_queued_functions).setProperty("length", 0);                              
             }
             else {
                 all_scripts_ready = false;
             }
         }
-    }
+    } 
 
     // 59.13 - once all scripts are loaded
     if (all_scripts_ready) {
@@ -1606,6 +1618,33 @@ void Room::UpdateJS(QPointer <Player> player)
     //player dir may have updated
     if (player->GetProperties()->GetDir()->toQVector3D() != d) {
         player->UpdateDir();
+    }
+
+    if (scripts_ready) {
+        //callback for room.onPlayerEnterEvent
+        QList <QPointer <RoomObject> > & enter_events = multi_players->GetOnPlayerEnterEvents();
+        QList <QPointer <RoomObject> > & exit_events = multi_players->GetOnPlayerExitEvents();
+        for (QPointer <AssetScript> & script : assetscripts) {
+            if (script && script->GetFinished()) {
+                //call player enter events
+                for (QPointer <RoomObject> o : enter_events) {
+                    if (o && o->GetProperties()) {
+//                        qDebug() << "Room::UpdateJS calling JS function enter" << o << o->GetProperties()->GetID();
+                        script->DoRoomOnPlayerEnterEvent(envobjects, player, remote_players, QScriptValueList() << script_engine->toScriptValue(o->GetProperties()));
+                    }
+                }
+
+                //call player exit events
+                for (QPointer <RoomObject> o : exit_events) {
+                    if (o && o->GetProperties()) {
+//                        qDebug() << "Room::UpdateJS calling JS function exit" << o << o->GetProperties()->GetID();
+                        script->DoRoomOnPlayerExitEvent(envobjects, player, remote_players, QScriptValueList() << script_engine->toScriptValue(o->GetProperties()));
+                    }
+                }
+            }
+        }
+        enter_events.clear();
+        exit_events.clear();
     }
 }
 
@@ -1639,9 +1678,10 @@ void Room::LogErrorOnException(QPointer <AssetScript> script)
     }
 }
 
-void Room::CallJSFunction(const QString & s, QPointer <Player> player, QList <QPointer <DOMNode> > nodes)
+void Room::CallJSFunction(const QString & s, QPointer <Player> player, MultiPlayerManager * multi_players, QList <QPointer <DOMNode> > nodes)
 {
     const QVector3D d = player->GetProperties()->GetDir()->toQVector3D();
+    QMap <QString, DOMNode *> remote_players = multi_players->GetPlayersInRoomDOMNodeMap(props->GetURL());
 
     for (QPointer <AssetScript> & script : assetscripts) {
         if (script) {            
@@ -1651,11 +1691,11 @@ void Room::CallJSFunction(const QString & s, QPointer <Player> player, QList <QP
                 for (QPointer <DOMNode> & n : nodes) {
                     args << (n ? script_engine->toScriptValue(n) : QScriptValue());
                 }
-                objectsAdded = script->RunFunctionOnObjects(s, envobjects, player, args);
+                objectsAdded = script->RunFunctionOnObjects(s, envobjects, player, remote_players, args);
                 LogErrorOnException(script);
             }
             else {
-                objectsAdded = script->RunScriptCodeOnObjects(s, envobjects, player);
+                objectsAdded = script->RunScriptCodeOnObjects(s, envobjects, player, remote_players);
                 LogErrorOnException(script);
             }
             AddRoomObjects(objectsAdded);
@@ -2030,31 +2070,32 @@ bool Room::DeleteSelected(const QString & selected, const bool do_sync, const bo
             MathUtil::room_delete_code += o->GetXMLCode();
         }
 
-        if (!(o->GetType() == TYPE_LINK && o->GetProperties()->GetOpen()))
-        {
-            //remove this object from physics sim
-            if (physics) {
-                physics->RemoveRigidBody(o);
-            }
-
-            //remove this object from it's parent's child list
-            if (o->GetParentObject()) {
-                o->GetParentObject()->GetChildObjects().removeAll(o);
-            }
-
-            o->SetSelected(false);
-            o->Stop();
-            if (play_delete_sound) {
-                o->PlayDeleteObject();
-            }
-
-            if (envobjects.contains(selected) && envobjects[selected] && envobjects[selected]->GetParentObject()) {
-                envobjects[selected]->GetParentObject()->GetProperties()->removeChild(envobjects[selected]->GetProperties());
-            }
-
-            envobjects.remove(selected);
-            did_delete = true;
+        if (o->GetType() == TYPE_LINK && o->GetProperties()->GetOpen()) {
+            o->GetProperties()->SetOpen(false);
         }
+
+        //remove this object from physics sim
+        if (physics) {
+            physics->RemoveRigidBody(o);
+        }
+
+        //remove this object from it's parent's child list
+        if (o->GetParentObject()) {
+            o->GetParentObject()->GetChildObjects().removeAll(o);
+        }
+
+        o->SetSelected(false);
+        o->Stop();
+        if (play_delete_sound) {
+            o->PlayDeleteObject();
+        }
+
+        if (envobjects.contains(selected) && envobjects[selected] && envobjects[selected]->GetParentObject()) {
+            envobjects[selected]->GetParentObject()->GetProperties()->removeChild(envobjects[selected]->GetProperties());
+        }
+
+        envobjects.remove(selected);
+        did_delete = true;
     }
 
     return did_delete;
@@ -2132,8 +2173,6 @@ void Room::SaveXML(QTextStream & ofs)
     ofs << "<Room";
 
     //write out all room attributes
-    QVariantMap rd;
-
     if (QString::compare(props->GetServer(), SettingsManager::GetServer()) != 0) {
         ofs << " server=\"" << props->GetServer() << "\"";
     }
@@ -2311,16 +2350,293 @@ bool Room::SaveXML(const QString & filename)
     return true;
 }
 
-bool Room::RunKeyPressEvent(QKeyEvent * e, QPointer <Player> player)
+bool Room::SaveJSON(const QString & filename)
+{
+    QFile file(filename);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qDebug() << "Room::SaveJSON(): File " << filename << " can't be saved";
+        return false;
+    }
+
+    QTextStream ofs(&file);
+
+    ofs.setRealNumberNotation(QTextStream::FixedNotation);
+    ofs << QJsonDocument::fromVariant(GetJSONCode(false)).toJson();
+
+    file.close();
+
+    qDebug() << "Room::SaveJSON() - File" << filename << "saved.";
+    return true;
+}
+
+QVariantMap Room::GetJSONCode(const bool show_defaults) const
+{
+    QVariantMap root;
+
+    QVariantMap fireboxroom;
+    QVariantMap assetsmap;
+    QVariantList assetobjectlist;
+    QVariantList assetimagelist;
+    QVariantList assetghostlist;
+    QVariantList assetrecordinglist;
+    QVariantList assetshaderlist;
+    QVariantList assetscriptlist;
+    QVariantList assetsoundlist;
+    QVariantList assetvideolist;
+    QVariantList assetwebsurfacelist;
+
+    QVariantMap room;
+    QMap <QString, QVariantList> elementlistmap;
+
+    for (const QPointer <AssetObject> & a : assetobjects) {
+        if (a && !a->GetProperties()->GetPrimitive() && a->GetProperties()->GetSaveToMarkup()) {
+            assetobjectlist.push_back(a->GetJSONCode());
+        }
+    }
+
+    for (const QPointer <AssetImage> & a : assetimages) {
+        if (a && a->GetProperties()->GetSaveToMarkup()) {
+            assetimagelist.push_back(a->GetJSONCode());
+        }
+    }
+
+    for (const QPointer <AssetGhost> & a : assetghosts) {
+        if (a && a->GetProperties()->GetSaveToMarkup()) {
+            assetghostlist.push_back(a->GetJSONCode());
+        }
+    }
+
+    for (const QPointer <AssetRecording> & a : assetrecordings) {
+        if (a && a->GetProperties()->GetSaveToMarkup()) {
+            assetrecordinglist.push_back(a->GetJSONCode());
+        }
+    }
+
+    for (const QPointer <AssetShader> & a : assetshaders) {
+        if (a && a->GetProperties()->GetSaveToMarkup()) {
+            assetshaderlist.push_back(a->GetJSONCode());
+        }
+    }
+
+    for (const QPointer <AssetScript> & a : assetscripts) {
+        if (a && a->GetProperties()->GetSaveToMarkup()) {
+            assetscriptlist.push_back(a->GetJSONCode());
+        }
+    }
+
+    for (const QPointer <AssetSound> & a : assetsounds) {
+        if (a && a->GetProperties()->GetSaveToMarkup()) {
+            assetsoundlist.push_back(a->GetJSONCode());
+        }
+    }
+
+    for (const QPointer <AssetVideo> & a : assetvideos) {
+        if (a && a->GetProperties()->GetSaveToMarkup()) {
+            assetvideolist.push_back(a->GetJSONCode());
+        }
+    }
+
+    for (const QPointer <AbstractWebSurface> & a : assetwebsurfaces) {
+        if (a && a->GetProperties()->GetSaveToMarkup()) {
+            assetwebsurfacelist.push_back(a->GetJSONCode());
+        }
+    }
+
+    if (!assetobjectlist.empty()) {
+        assetsmap.insert("assetobject", assetobjectlist);
+    }
+    if (!assetimagelist.empty()) {
+        assetsmap.insert("assetimage", assetimagelist);
+    }
+    if (!assetghostlist.empty()) {
+        assetsmap.insert("assetghost", assetghostlist);
+    }
+    if (!assetrecordinglist.empty()) {
+        assetsmap.insert("assetrecording", assetrecordinglist);
+    }
+    if (!assetshaderlist.empty()) {
+        assetsmap.insert("assetshader", assetshaderlist);
+    }
+    if (!assetscriptlist.empty()) {
+        assetsmap.insert("assetscript", assetscriptlist);
+    }
+    if (!assetsoundlist.empty()) {
+        assetsmap.insert("assetsound", assetsoundlist);
+    }
+    if (!assetvideolist.empty()) {
+        assetsmap.insert("assetvideo", assetvideolist);
+    }
+    if (!assetwebsurfacelist.empty()) {
+        assetsmap.insert("assetwebsurface", assetwebsurfacelist);
+    }
+
+    //populate room tag attributes
+    if (QString::compare(props->GetServer(), SettingsManager::GetServer()) != 0) {
+        room["server"] = props->GetServer();
+    }
+    if (props->GetServerPort() != SettingsManager::GetPort()) {
+        room["port"] = QString::number(props->GetServerPort());
+    }
+    if (props->GetLocked()) {
+        room["locked"] = true;
+    }
+    if (room_template.length() > 0) {
+        room["use_local_asset"] = room_template;
+    }
+    if (!props->GetVisible()) {
+        room["visible"] = false;
+    }
+    if (!props->GetCursorVisible()) {
+        room["cursor_visible"] = false;
+    }
+
+    if (entrance_object) {
+//        qDebug() << "Room::SaveFireBoxRoom() - saving" << entrance_object << entrance_object->GetPos();
+        if (entrance_object->GetPos() != QVector3D(0,0,0)) {
+            room["pos"] = MathUtil::GetVectorAsString(entrance_object->GetPos(), false);
+        }
+        if (entrance_object->GetXDir() != QVector3D(1,0,0)) {
+            room["xdir"] = MathUtil::GetVectorAsString(entrance_object->GetXDir(), false);
+        }
+        if (entrance_object->GetYDir() != QVector3D(0,1,0)) {
+            room["ydir"] = MathUtil::GetVectorAsString(entrance_object->GetYDir(), false);
+        }
+        if (entrance_object->GetZDir() != QVector3D(0,0,1)) {
+            room["zdir"] = MathUtil::GetVectorAsString(entrance_object->GetZDir(), false);
+        }
+    }
+
+    if (cubemap) {
+        if (cubemap->GetAssetImages().size() == 6) {
+            QVector <QPointer <AssetImage> > & skybox_imgs = cubemap->GetAssetImages();
+            //faces 0 right 1 left 2 up 3 down 4 front 5 back
+            if (skybox_imgs[0] && skybox_imgs[0]->GetProperties()->GetSaveToMarkup()) {
+                room["skybox_right_id"] = skybox_imgs[0]->GetProperties()->GetID();
+            }
+            if (skybox_imgs[1] && skybox_imgs[1]->GetProperties()->GetSaveToMarkup()) {
+                room["skybox_left_id"] = skybox_imgs[1]->GetProperties()->GetID();
+            }
+            if (skybox_imgs[2] && skybox_imgs[2]->GetProperties()->GetSaveToMarkup()) {
+                room["skybox_up_id"] = skybox_imgs[2]->GetProperties()->GetID();
+            }
+            if (skybox_imgs[3] && skybox_imgs[3]->GetProperties()->GetSaveToMarkup()) {
+                room["skybox_down_id"] = skybox_imgs[3]->GetProperties()->GetID();
+            }
+            if (skybox_imgs[4] && skybox_imgs[4]->GetProperties()->GetSaveToMarkup()) {
+                room["skybox_front_id"] = skybox_imgs[4]->GetProperties()->GetID();
+            }
+            if (skybox_imgs[5] && skybox_imgs[5]->GetProperties()->GetSaveToMarkup()) {
+                room["skybox_back_id"] = skybox_imgs[5]->GetProperties()->GetID();
+            }
+        }
+        else if (cubemap->GetAssetImages().size() == 1) {
+            if (cubemap->GetAssetImages().first()) {
+                room["cubemap_id"] = cubemap->GetAssetImages().first()->GetProperties()->GetID();
+            }
+        }
+    }
+    if (cubemap_radiance &&
+            !cubemap_radiance->GetAssetImages().empty() &&
+            cubemap_radiance->GetAssetImages().first()) {
+        room["cubemap_radiance_id"] = cubemap_radiance->GetAssetImages().first()->GetProperties()->GetID();
+    }
+    if (cubemap_irradiance &&
+            !cubemap_irradiance->GetAssetImages().empty() &&
+            cubemap_irradiance->GetAssetImages().first()) {
+        room["cubemap_irradiance_id"] = cubemap_irradiance->GetAssetImages().first()->GetProperties()->GetID();
+    }
+    if (props->GetNearDist() != 0.01f) {
+        room["near_dist"] = MathUtil::GetNumber(props->GetNearDist());
+    }
+    if (props->GetFarDist() != 1000.0f) {
+        room["far_dist"] = MathUtil::GetNumber(props->GetFarDist());
+    }
+    if (props->GetGrabDist() != 0.5f) {
+        room["grab_dist"] = MathUtil::GetNumber(props->GetGrabDist());
+    }
+    if (props->GetGravity() != -9.8f) {
+        room["gravity"] = MathUtil::GetNumber(props->GetGravity());
+    }
+    if (props->GetJumpVelocity() != 5.0f) {
+        room["jump_velocity"] = MathUtil::GetNumber(props->GetJumpVelocity());
+    }
+    if (props->GetWalkSpeed() != 1.8f) {
+        room["walk_speed"] = MathUtil::GetNumber(props->GetWalkSpeed());
+    }
+    if (props->GetRunSpeed() != 5.4f) {
+        room["run_speed"] = MathUtil::GetNumber(props->GetRunSpeed());
+    }
+
+    //fog stuff
+    if (!props->GetPartyMode()) {
+        room["party_mode"] = false;
+    }
+    if (props->GetFog()) {
+        room["fog"] = true;
+    }
+    if (props->GetFogMode() == 0) {
+        room["fog_mode"] = "linear";
+    }
+    else if (props->GetFogMode() == 2) {
+        room["fog_mode"] = "exp2";
+    }
+    if (props->GetFogDensity() != 1.0f) {
+        room["fog_density"] = MathUtil::GetNumber(props->GetFogDensity());
+    }
+    if (props->GetFogStart() != 0.0f) {
+        room["fog_start"] = MathUtil::GetNumber(props->GetFogStart());
+    }
+    if (props->GetFogEnd() != 1.0f) {
+        room["fog_end"] = MathUtil::GetNumber(props->GetFogEnd());
+    }
+    if (MathUtil::GetVector4AsColour(props->GetFogCol()->toQVector4D()) != QColor(0, 0, 0)) {
+        room["fog_col"] = MathUtil::GetColourAsString(MathUtil::GetVector4AsColour(props->GetFogCol()->toQVector4D()), false);
+    }
+    if (props->GetTeleportMinDist() != 0.0f) {
+        room["teleport_min_dist"] = MathUtil::GetNumber(props->GetTeleportMinDist());
+    }
+    if (props->GetTeleportMaxDist() != 100.0f) {
+        room["teleport_max_dist"] = MathUtil::GetNumber(props->GetTeleportMaxDist());
+    }
+    if (props->GetShaderID().length() > 0) {
+        room["shader_id"] = props->GetShaderID();
+    }
+    if (props->GetResetVolume().first != QVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX) && props->GetResetVolume().second != QVector3D(-FLT_MAX, -100.0f, -FLT_MAX)) {
+        room["reset_volume"] = MathUtil::GetAABBAsString(props->GetResetVolume(), false);
+    }
+
+    //write the environment objects out, easy
+    for (const QPointer <RoomObject> & obj : envobjects) {
+        if (obj && (obj->GetType() != TYPE_LINK || (obj->GetType() == TYPE_LINK && obj != GetEntranceObject() && obj->GetSaveToMarkup()))) {
+            elementlistmap[obj->GetProperties()->GetTypeAsString()].push_back(obj->GetJSONCode(show_defaults));
+        }
+    }
+
+    //add all qvariantlists to room
+    QMap <QString, QVariantList>::const_iterator ele_cit;
+    for (ele_cit=elementlistmap.begin(); ele_cit!=elementlistmap.end(); ++ele_cit) {
+        room.insert(ele_cit.key(), ele_cit.value());
+    }
+
+    //assemble fireboxroom
+    fireboxroom.insert("assets", assetsmap);
+    fireboxroom.insert("room", room);
+
+    root.insert("FireBoxRoom", fireboxroom);
+
+    return root;
+}
+
+bool Room::RunKeyPressEvent(QKeyEvent * e, QPointer <Player> player, MultiPlayerManager * multi_players)
 {
     bool defaultPrevented = false;
-
     const QVector3D d = player->GetProperties()->GetDir()->toQVector3D();
+    QMap <QString, DOMNode *> remote_players = multi_players->GetPlayersInRoomDOMNodeMap(props->GetURL());
 
     for (QPointer <AssetScript> & a : assetscripts) {
         if (a) {
             bool eachDefaultPrevented = false;
-            QList<QPointer <RoomObject> > objectsAdded = a->OnKeyEvent("onKeyDown", e, envobjects, player, &eachDefaultPrevented);
+            QList<QPointer <RoomObject> > objectsAdded = a->OnKeyEvent("onKeyDown", e, envobjects, player, remote_players, &eachDefaultPrevented);
             AddRoomObjects(objectsAdded);
 
             if (eachDefaultPrevented) {
@@ -2337,15 +2653,16 @@ bool Room::RunKeyPressEvent(QKeyEvent * e, QPointer <Player> player)
     return defaultPrevented;
 }
 
-bool Room::RunKeyReleaseEvent(QKeyEvent * e, QPointer <Player> player)
-{
-    const QVector3D d = player->GetProperties()->GetDir()->toQVector3D();
+bool Room::RunKeyReleaseEvent(QKeyEvent * e, QPointer <Player> player, MultiPlayerManager * multi_players)
+{    
     bool defaultPrevented = false;
+    const QVector3D d = player->GetProperties()->GetDir()->toQVector3D();
+    QMap <QString, DOMNode *> remote_players = multi_players->GetPlayersInRoomDOMNodeMap(props->GetURL());
 
     for (QPointer <AssetScript> & a : assetscripts) {
         if (a) {
             bool eachDefaultPrevented = false;
-            QList<QPointer <RoomObject> > objectsAdded = a->OnKeyEvent("onKeyUp", e, envobjects, player, &eachDefaultPrevented);
+            QList<QPointer <RoomObject> > objectsAdded = a->OnKeyEvent("onKeyUp", e, envobjects, player, remote_players, &eachDefaultPrevented);
             AddRoomObjects(objectsAdded);
 
             if (eachDefaultPrevented) {
@@ -2430,6 +2747,7 @@ void Room::DoEdit(const QString & s)
         obj->SetParentObject(QPointer <RoomObject> ());
         obj->GetProperties()->SetSync(false);
 
+//        qDebug() << "Room::DoEdit checking for js_id" << obj->GetProperties()->GetJSID();
         QPointer <RoomObject> o2 = GetRoomObject(obj->GetProperties()->GetJSID());
         if (o2) {            
             //object already exists
@@ -2447,6 +2765,10 @@ void Room::DoEdit(const QString & s)
             o2 = new RoomObject();
             o2->Copy(obj);            
             o2->GetProperties()->SetInterpolate(true);
+            //60.1 - ensure we copy the js_id (so things like drag and drop work correctly and fix a bug with generating new objects with new js_id's)
+            if (!obj->GetProperties()->GetJSID().isEmpty()) {
+                o2->GetProperties()->SetJSID(obj->GetProperties()->GetJSID());
+            }
 
             //make new objects scale in
             o2->GetProperties()->SetScale(QVector3D(0,0,0));
@@ -2616,6 +2938,7 @@ void Room::Create_Default(const QVariantMap fireboxroom)
 {
 //    qDebug() << page->GetData()["FireBoxRoom"].toMap()["Assets"].toMap()["AssetObject"].toList();
 //    QVariantMap fireboxroom = page->GetData()["FireBoxRoom"].toMap();
+//    qDebug() << "Room::Create_Default() 1" << props->GetURL();
 
     QVariantMap assets = fireboxroom["assets"].toMap();
     QVariantMap room;
@@ -2626,7 +2949,7 @@ void Room::Create_Default(const QVariantMap fireboxroom)
     Create_Default_Assets_Helper(assets);
 
 //    qDebug() << "room" << fireboxroom["room"].toMap();
-    SetProperties(room);
+    SetProperties(room);    
 
     QPointer <RoomObject> root_object(new RoomObject());
     root_object->SetType(TYPE_ROOM);
@@ -2643,7 +2966,7 @@ void Room::Create_Default(const QVariantMap fireboxroom)
 
 void Room::Create()
 {
-//    qDebug() << "Room::Create()" << this->GetURL();
+//    qDebug() << "Room::Create()" << props->GetURL() << page->GetURL();
     //update portal with page title and set this portal as the room's parent
     const QString url = props->GetURL();
     const QString title = page->GetTitle();
@@ -2672,7 +2995,7 @@ void Room::Create()
     }
     else if (page->FoundFireBoxContent()) {
         SetProperties(d_room);
-        props->SetURL(url); //60.1 - replace URL if it was overwritten
+        props->SetURL(url); //60.1 - replace URL if it was overwritten        
         entrance_object->SetProperties(d_room); //sets initial position/dir for entrance
     }
     else if (!use_translator_name.isEmpty()) {
@@ -3635,15 +3958,16 @@ void Room::Create_Default_Helper(const QVariantMap & d, QPointer <RoomObject> p)
 {
     QVariantMap::const_iterator it;
     for (it=d.begin(); it!=d.end(); ++it) {
-        const QString t = it.key();
+        const QString t_str = it.key();
+        const ElementType t = DOMNode::StringToElementType(t_str);
 //            qDebug() << "NAME" << name;
-        if (!t.isEmpty()) {
-            QVariantList l = d[t].toList();
+        if (!t_str.isEmpty()) {
+            QVariantList l = d[t_str].toList();
             for (int i=0; i<l.size(); ++i) {
                 QVariantMap d = l[i].toMap();
 
                 QPointer <RoomObject> o = new RoomObject();
-                o->SetType(DOMNode::StringToElementType(t));
+                o->SetType(t);
                 o->SetProperties(d);
                 if (d.contains("js_id")) {
                     o->GetProperties()->SetJSID(d["js_id"].toString());
@@ -3651,7 +3975,8 @@ void Room::Create_Default_Helper(const QVariantMap & d, QPointer <RoomObject> p)
 
                 //60.0 - resolve links relative to this room's path
                 if (t == TYPE_LINK) {
-                    o->SetURL(this->GetProperties()->GetURL(), o->GetProperties()->GetURL());
+//                    qDebug() << "Room::Create_Default_Helper" << props->GetURL() << o->GetProperties()->GetURL();
+                    o->SetURL(props->GetURL(), o->GetProperties()->GetURL());
 
                     if (!page->FoundFireBoxContent()) {
                         QVector3D pos, dir;

@@ -38,108 +38,28 @@ QString Environment::GetLaunchURL()
     return launch_url;
 }
 
-void Environment::SetupPocketspace()
-{
+void Environment::Reset()
+{    
+#ifdef __ANDROID__
+    if (JNIUtil::GetLaunchURL() != ""){
+        Environment::SetLaunchURLIsCustom(true);
+        Environment::SetLaunchURL(JNIUtil::GetLaunchURL());
+    }
+#endif
+
+    qsrand(QDateTime::currentMSecsSinceEpoch() % 1000);
+
     if (rootnode) {
         //delete all children
         rootnode->GetChildren().clear();
         delete rootnode;
     }
 
-    //setup pocketspace
-    rootnode = new Room();   
-
-//    qDebug() << "Environment::SetupPocketspace()";
-//    QPointer <RoomObject> portal = rootnode->GetPortal0();
-    QPointer <RoomObject> parent_portal = new RoomObject();
-    parent_portal->SetType(TYPE_LINK);
-    rootnode->SetParentObject(parent_portal);
-
-    //portal->SetURL("", "http://usagii.net/other/personal/work/pocketspace3/space/index.html");
-#ifdef __ANDROID__
-    parent_portal->SetURL(MathUtil::GetApplicationURL(), "https://vesta.janusvr.com");
-    //parent_portal->SetURL(MathUtil::GetApplicationURL(), "http://janusvr.com");
-    //parent_portal->SetURL(MathUtil::GetApplicationURL(), "https://vesta.janusvr.com/aussie/live-stream-abc-tv-australia-in-webvr");
-    //parent_portal->SetURL(MathUtil::GetApplicationURL(), "https://vesta.janusvr.com/firefoxg/learn-about-pyramids-in-multiplayer-webvr");
-#else
-    parent_portal->SetURL(MathUtil::GetApplicationURL(), "assets/3dui/index.html");
-#endif
-    parent_portal->GetProperties()->SetPos(QVector3D(0,0,0));
-    parent_portal->SetDir(QVector3D(0,0,1));
-
-    QPointer <RoomObject> entrance_portal = rootnode->GetEntranceObject();
-    entrance_portal->GetProperties()->SetPos(QVector3D(0,0,0));
-    entrance_portal->SetDir(QVector3D(0,0,1));
-
-    parent_portal->GetProperties()->SetVisible(false);
-    parent_portal->GetProperties()->SetActive(false);
-    parent_portal->SetSaveToMarkup(false);
-
-    entrance_portal->GetProperties()->SetVisible(false);
-    entrance_portal->GetProperties()->SetActive(false);
-    entrance_portal->SetSaveToMarkup(false);
-
-//    rootnode->SetUseExperimentalWebsurfaces(false); //Cannot use experimental websurfaces since we need to pass window.janus object to it
-    rootnode->GetProperties()->SetURL(parent_portal->GetURL());
-
+    //setup root
+    rootnode = new Room();
+    rootnode->GetProperties()->SetURL(launch_url_is_custom ? launch_url : SettingsManager::GetHomeURL());
     curnode = rootnode;
-}
-
-void Environment::Reset()
-{    
-    qsrand(QDateTime::currentMSecsSinceEpoch() % 1000);
-
-    SetupPocketspace();
-
-#ifdef __ANDROID__
-    if (JNIUtil::GetLaunchURL() != ""){
-        Environment::SetLaunchURLIsCustom(true);
-        Environment::SetLaunchURL(JNIUtil::GetLaunchURL());
-    }
-    if (launch_url_is_custom) {
-        //seed with launch URL
-        QPointer <RoomObject> new_portal = new RoomObject();
-        new_portal->SetType(TYPE_LINK);
-        if (launch_url_is_custom) {
-            new_portal->SetURL("", launch_url);
-        }
-        else {
-            new_portal->SetURL("", SettingsManager::GetHomeURL());
-        }
-        new_portal->GetProperties()->SetVisible(false);
-        new_portal->GetProperties()->SetActive(false);
-        rootnode->AddRoomObject(new_portal);
-        curnode = AddRoom(new_portal);
-        lastnode = curnode;
-    }
-    else {
-        lastnode.clear();
-        curnode = rootnode;
-    }
-#else
-    //seed with launch URL
-    QPointer <RoomObject> new_portal = new RoomObject();
-    new_portal->SetType(TYPE_LINK);
-    if (launch_url_is_custom) {
-        new_portal->SetURL("", launch_url);
-    }
-    else {
-        new_portal->SetURL("", SettingsManager::GetHomeURL());
-    }
-    new_portal->GetProperties()->SetVisible(false);
-    new_portal->GetProperties()->SetActive(false);
-
-    rootnode->AddRoomObject(new_portal);
-    lastnode = AddRoom(new_portal);
-    curnode = (launch_url_is_custom ? lastnode : rootnode);
-//    qDebug() << launch_url_is_custom << launch_url;
-
-    QPointer <RoomObject> o = lastnode->GetEntranceObject();
-    if (o) {
-        o->GetProperties()->SetVisible(false);
-        o->GetProperties()->SetActive(false);
-    }
-#endif
+    lastnode = rootnode;
 
     emit RoomsChanged();
 }
@@ -216,8 +136,8 @@ void Environment::draw_current_room(MultiPlayerManager*  multi_players, QPointer
     // This draws it near the farclip but avoids the corners being depth failed
     // drawing it far from the user is to keep stereo disparity to near-zero so it's perceived
     // as being infinitely far away.
-    m.scale(curnode->GetProperties()->GetFarDist() * 0.3f);
-    curnode->BindShader(Room::GetSkyboxShader());
+    m.scale(curnode->GetProperties()->GetFarDist() * 0.3f);    
+    curnode->BindShader(Room::GetSkyboxShader(), true); //61.0 - "true" flag disables fog for skybox
     curnode->DrawSkyboxGL(Room::GetSkyboxShader(), m);
 
     renderer->EndCurrentScope();
@@ -466,7 +386,7 @@ void Environment::DrawRoomWithinPortalStencilGL(QPointer <RoomObject> portal, QP
     m.scale(room->GetProperties()->GetFarDist() * 0.05f); // Prevents portals appearing black when looking through them
 #endif
     renderer->BeginScope(RENDERER::RENDER_SCOPE::CHILD_ROOM_SKYBOX);
-    room->BindShader(Room::GetSkyboxShader());
+    room->BindShader(Room::GetSkyboxShader(), true);
     room->DrawSkyboxGL(Room::GetSkyboxShader(), m * currentRoomToOtherRoomRotation);
     renderer->EndCurrentScope();
 
@@ -633,7 +553,7 @@ void Environment::UpdateAssets()
     }
 }
 
-void Environment::Update1(QPointer <Player> player)
+void Environment::Update1(QPointer <Player> player, MultiPlayerManager *multi_players)
 {        
     if (curnode) {                
         curnode->UpdatePhysics(player);             
@@ -642,7 +562,7 @@ void Environment::Update1(QPointer <Player> player)
 
         //update JS
         if (curnode->GetReady()) {
-            curnode->UpdateJS(player);
+            curnode->UpdateJS(player, multi_players);
             curnode->UpdateAutoPlay();
         }
     }   

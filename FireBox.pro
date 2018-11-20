@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 # Define version
-__VERSION=60.1
+__VERSION=62.0
 
 #JamesMcCrae: define this when doing Oculus-submitted builds (either for Rift of GearVR app categories)
 #DEFINES += OCULUS_SUBMISSION_BUILD
@@ -22,7 +22,6 @@ DEFINES += GEAR_ID=\\\"$$system(type gearid.txt)\\\"
 DEFINES += RIFT_ID=\\\"$$system(cat riftid.txt)\\\"
 DEFINES += GEAR_ID=\\\"$$system(cat gearid.txt)\\\"
 }
-
 
 # Default rules for deployment.
 android:include(deployment.pri)
@@ -124,10 +123,7 @@ SOURCES += \
     src/player.cpp \
     src/propertieswindow.cpp \
     src/renderer.cpp \
-    src/renderergl33_loadingthread.cpp \
-    src/renderergl33_renderthread.cpp \    
-    src/renderergl44_loadingthread.cpp \
-    src/renderergl44_renderthread.cpp \    
+    src/renderergl33.cpp \
     src/rendererinterface.cpp \    
     src/room.cpp \
     src/roomobject.cpp \
@@ -149,7 +145,8 @@ SOURCES += \
     src/texturemanager.cpp \    
     src/virtualkeyboard.cpp \
     src/webasset.cpp \
-    src/gamepad.c
+    src/gamepad.c \
+    src/renderergl33.cpp
 
 unix:!android:!macx:SOURCES += ./resources/cef/linux/libcef_dll/base/cef_atomicops_x86_gcc.cc
 
@@ -202,10 +199,7 @@ HEADERS += \
     src/player.h \
     src/propertieswindow.h \
     src/renderer.h \
-    src/renderergl33_loadingthread.h \
-    src/renderergl33_renderthread.h \    
-    src/renderergl44_loadingthread.h \
-    src/renderergl44_renderthread.h \    
+    src/renderergl33.h \
     src/rendererinterface.h \    
     src/room.h \
     src/roomobject.h \
@@ -226,7 +220,8 @@ HEADERS += \
     src/textureimporterqimage.h \
     src/texturemanager.h \    
     src/virtualkeyboard.h \
-    src/webasset.h
+    src/webasset.h \
+    src/renderergl33.h
 
 # NVIDIA HBAO
 #win32:INCLUDEPATH += "./resources/HBAOPlus/include"
