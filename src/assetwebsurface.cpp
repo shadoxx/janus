@@ -17,25 +17,25 @@ AssetWebSurface::AssetWebSurface() :
 
     cursor_pos = QPoint(500, 400);
 
-#ifdef __ANDROID__
-    webview = (AbstractWebView*)new AndroidWebView();
-#else
-    webview = (AbstractWebView*)new CEFWebView();
-#endif
-    webview->initialize();
-    webview->initializeMenu();
+//#ifdef __ANDROID__
+//    webview = (AbstractWebView*)new AndroidWebView();
+//#else
+//    webview = (AbstractWebView*)new CEFWebView();
+//#endif
+//    webview->initialize();
+//    webview->initializeMenu();
 
-    webview->setCookieJar(CookieJar::cookie_jar);
-    if (CookieJar::cookie_jar) {
-        CookieJar::cookie_jar->setParent(NULL); //prevem_max_width, m_max_heightnt NAM from taking ownership of cookie jar
-    }
+//    webview->setCookieJar(CookieJar::cookie_jar);
+//    if (CookieJar::cookie_jar) {
+//        CookieJar::cookie_jar->setParent(NULL); //prevem_max_width, m_max_heightnt NAM from taking ownership of cookie jar
+//    }
 
-    connect(webview, SIGNAL(repaintRequested(QRect)), this, SLOT(UpdateTexture(QRect)));
-    connect(webview, SIGNAL(scrollRequested(int,int,QRect)), this, SLOT(UpdateTexture())); //49.24 bugfix clicking page anchors
-    connect(webview, SIGNAL(loadStarted()), this, SLOT(LoadStarted()));
-    connect(webview, SIGNAL(loadProgress(int)), this, SLOT(LoadProgress(int)));
-    connect(webview, SIGNAL(loadFinished(bool)), this, SLOT(LoadFinished()));
-    connect(webview, SIGNAL(urlChanged(QUrl)), this, SLOT(URLChanged(QUrl)));
+//    connect(webview, SIGNAL(repaintRequested(QRect)), this, SLOT(UpdateTexture(QRect)));
+//    connect(webview, SIGNAL(scrollRequested(int,int,QRect)), this, SLOT(UpdateTexture())); //49.24 bugfix clicking page anchors
+//    connect(webview, SIGNAL(loadStarted()), this, SLOT(LoadStarted()));
+//    connect(webview, SIGNAL(loadProgress(int)), this, SLOT(LoadProgress(int)));
+//    connect(webview, SIGNAL(loadFinished(bool)), this, SLOT(LoadFinished()));
+//    connect(webview, SIGNAL(urlChanged(QUrl)), this, SLOT(URLChanged(QUrl)));
 
 }
 
@@ -337,7 +337,7 @@ void AssetWebSurface::SetHeight(const int h)
 
 TextureHandle* AssetWebSurface::GetTextureHandle() const
 {
-    return webview->GetTextureHandle();
+    return webview ? webview->GetTextureHandle() : AssetImage::null_image_tex_handle.get();
 }
 
 void AssetWebSurface::UpdateTexture()
@@ -410,7 +410,7 @@ void AssetWebSurface::UpdateGL()
     const int width = props->GetWidth();
     const int height = props->GetHeight();
 
-    if (QSize(width, height) != webview->viewportSize()) {
+    if (webview && QSize(width, height) != webview->viewportSize()) {
         webview->setViewportSize(QSize(width, height));
     }
 //    qDebug() << "AssetWebSurface::UpdateGL() completed" << GetS("_src_url");
@@ -442,7 +442,7 @@ QPointer <AbstractWebView> AssetWebSurface::GetWebView()
 
 bool AssetWebSurface::GetTextEditing()
 {
-    return webview->getTextEditing();
+    return webview ? webview->getTextEditing() : false;
 }
 
 void AssetWebSurface::SetFocus(const bool b)
@@ -452,5 +452,5 @@ void AssetWebSurface::SetFocus(const bool b)
 
 bool AssetWebSurface::GetFocus() const
 {
-    return webview->GetFocus();
+    return webview ? webview->GetFocus() : false;
 }

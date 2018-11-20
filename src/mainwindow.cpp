@@ -334,7 +334,7 @@ MainWindow::MainWindow()
 
 MainWindow::~MainWindow()
 {
-    disconnect(&timer2);
+//    disconnect(&timer2);
     MathUtil::FlushErrorLog();
 
     CookieJar::cookie_jar->SaveToDisk();
@@ -760,13 +760,13 @@ void MainWindow::Update()
 
 void MainWindow::CEFTimeOut()
 {    
-#ifndef __ANDROID__  
-    if (game && !game->GetDoExit() && SettingsManager::GetUpdateWebsurfaces()) {
-//        qDebug() << "MainWindow::CEFTimeOut() enter";
-        CefDoMessageLoopWork();
-//        qDebug() << "MainWindow::CEFTimeOut() exit";
-    }
-#endif
+//#ifndef __ANDROID__
+//    if (game && !game->GetDoExit() && SettingsManager::GetUpdateWebsurfaces()) {
+////        qDebug() << "MainWindow::CEFTimeOut() enter";
+//        CefDoMessageLoopWork();
+////        qDebug() << "MainWindow::CEFTimeOut() exit";
+//    }
+//#endif
 }
 
 void MainWindow::TimeOut()
@@ -1036,16 +1036,16 @@ void MainWindow::Initialize()
     }
 
     //use Qt::ConnectionType::QueuedConnection for timeouts, makes VOIP smooth, etc.
-#ifndef __ANDROID__
-    connect(&timer2, SIGNAL(timeout()), this, SLOT(CEFTimeOut()), Qt::ConnectionType::QueuedConnection);
-//    connect(&timer2, SIGNAL(timeout()), this, SLOT(CEFTimeOut()));
-#endif
-    connect(&timer, SIGNAL(timeout()), this, SLOT(TimeOut()), Qt::ConnectionType::QueuedConnection);
-//    connect(&timer, SIGNAL(timeout()), this, SLOT(TimeOut()));
+//#ifndef __ANDROID__
+//    connect(&timer2, SIGNAL(timeout()), this, SLOT(CEFTimeOut()), Qt::ConnectionType::QueuedConnection);
+////    connect(&timer2, SIGNAL(timeout()), this, SLOT(CEFTimeOut()));
+//#endif
+//    connect(&timer, SIGNAL(timeout()), this, SLOT(TimeOut()), Qt::ConnectionType::QueuedConnection);
+    connect(&timer, SIGNAL(timeout()), this, SLOT(TimeOut()));
 
-#ifndef __ANDROID__
-    timer2.start( 10 );
-#endif
+//#ifndef __ANDROID__
+//    timer2.start( 10 );
+//#endif
     timer.start( 0 );
 }
 
@@ -1073,7 +1073,7 @@ void MainWindow::Closed()
     qDebug() << "MainWindow::Closed()";      
 
     disconnect(&timer, 0, 0, 0);
-    disconnect(&timer2, 0, 0, 0);    
+//    disconnect(&timer2, 0, 0, 0);
 
     if (social_window) {
         social_window->Shutdown();
@@ -1090,13 +1090,13 @@ void MainWindow::Closed()
 //    QApplication::closeAllWindows();
     QCoreApplication::quit(); //60.0 - important!  Calling QCoreApplication::quit clears the event loop, so no more events go to CEF
 
-#ifndef __ANDROID__
-    //shut down CEF
-    CEFWebView::Shutdown();
-    qDebug() << "CefShutdown() started";
-    CefShutdown();
-    qDebug() << "CefShutdown() done";
-#endif
+//#ifndef __ANDROID__
+//    //shut down CEF
+//    CEFWebView::Shutdown();
+//    qDebug() << "CefShutdown() started";
+//    CefShutdown();
+//    qDebug() << "CefShutdown() done";
+//#endif
 }
 
 void MainWindow::SetupWidgets()

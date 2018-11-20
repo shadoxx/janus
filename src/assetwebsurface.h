@@ -119,7 +119,7 @@ private:
     QPoint cursor_pos;
     QPoint cursor_click_pos;
 
-    AbstractWebView * webview; //36.1 note: using qpointer stops the destructor from deleting this, which causes a crash
+    QPointer <AbstractWebView> webview; //36.1 note: using qpointer stops the destructor from deleting this, which causes a crash
 
     bool tex_alpha;
 	std::shared_ptr<TextureHandle> m_texture_handle;

@@ -105,6 +105,7 @@ SOURCES += \
     src/environment.cpp \
     src/filteredcubemapmanager.cpp \        
     src/game.cpp \
+    src/gamepad.c \
     src/geom.cpp \
     src/glwidget.cpp \
     src/hierarchywindow.cpp \
@@ -144,9 +145,7 @@ SOURCES += \
     src/textureimporterqimage.cpp \
     src/texturemanager.cpp \    
     src/virtualkeyboard.cpp \
-    src/webasset.cpp \
-    src/gamepad.c \
-    src/renderergl33.cpp
+    src/webasset.cpp
 
 unix:!android:!macx:SOURCES += ./resources/cef/linux/libcef_dll/base/cef_atomicops_x86_gcc.cc
 
@@ -220,8 +219,7 @@ HEADERS += \
     src/textureimporterqimage.h \
     src/texturemanager.h \    
     src/virtualkeyboard.h \
-    src/webasset.h \
-    src/renderergl33.h
+    src/webasset.h
 
 # NVIDIA HBAO
 #win32:INCLUDEPATH += "./resources/HBAOPlus/include"

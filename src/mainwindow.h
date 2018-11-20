@@ -192,7 +192,7 @@ private:
     QString GetNewWorkspaceDirectory();
 
     QTimer timer;
-    QTimer timer2;    
+//    QTimer timer2;
 
     QPointer <Game> game;
     QPointer <AbstractHMDManager> hmd_manager;

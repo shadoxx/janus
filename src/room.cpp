@@ -1236,7 +1236,9 @@ void Room::UpdateAssets()
                 a->SetStarted(true);
                 a->Load();
             }
-            a->GetWebView()->update();
+            if (a->GetWebView()) {
+                a->GetWebView()->update();
+            }
             a->UpdateGL();
         }
     }
@@ -4727,24 +4729,26 @@ void Room::AddAsset(const QString asset_type, const QVariantMap & property_list,
 #if !defined(__APPLE__) && !defined(__ANDROID__)
         a = (AbstractWebSurface*)new AssetWebSurface();
         a->SetTextureAlpha(true);
-        a->GetWebView()->initializeNonMenu();
+        if (a->GetWebView()) {
+            a->GetWebView()->initializeNonMenu();
 
-        //adjust background colour palette based on if menu is in focus or not
-        QPalette palette = a->GetWebView()->palette();
-        palette.setBrush(QPalette::Window, Qt::white);
-        palette.setBrush(QPalette::Base, QColor(0,0,0,0));
-        a->GetWebView()->setPalette(palette);
-#else
-        a = (AbstractWebSurface*)new AssetWebSurface();
-        a->SetTextureAlpha(true);
-        a->GetWebView()->initializeNonMenu();
+            //adjust background colour palette based on if menu is in focus or not
+            QPalette palette = a->GetWebView()->palette();
+            palette.setBrush(QPalette::Window, Qt::white);
+            palette.setBrush(QPalette::Base, QColor(0,0,0,0));
+            a->GetWebView()->setPalette(palette);
+    #else
+            a = (AbstractWebSurface*)new AssetWebSurface();
+            a->SetTextureAlpha(true);
+            a->GetWebView()->initializeNonMenu();
 
-        //adjust background colour palette based on if menu is in focus or not
-        QPalette palette = a->GetWebView()->palette();
-        palette.setBrush(QPalette::Window, Qt::white);
-        palette.setBrush(QPalette::Base, QColor(0,0,0,0));
-        a->GetWebView()->setPalette(palette);
-#endif   
+            //adjust background colour palette based on if menu is in focus or not
+            QPalette palette = a->GetWebView()->palette();
+            palette.setBrush(QPalette::Window, Qt::white);
+            palette.setBrush(QPalette::Base, QColor(0,0,0,0));
+            a->GetWebView()->setPalette(palette);
+    #endif
+        }
 
         a->SetSrc(url, property_list["src"].toString());
         a->SetProperties(property_list);
@@ -4775,11 +4779,13 @@ void Room::Create_Custom_Translator_Loaded()
     }
     f.close();
 
-    room_jsengine->GetWebView()->addToJavaScriptWindowObject("janus", this);
+    if (room_jsengine->GetWebView()) {
+        room_jsengine->GetWebView()->addToJavaScriptWindowObject("janus", this);
 
-    //execute builtin function window.janus.create_room() for translator generation    
-    room_jsengine->GetWebView()->evaluateJavaScript(translator_code);
-    room_jsengine->GetWebView()->evaluateJavaScript("window.janus.createroom();");
+        //execute builtin function window.janus.create_room() for translator generation
+        room_jsengine->GetWebView()->evaluateJavaScript(translator_code);
+        room_jsengine->GetWebView()->evaluateJavaScript("window.janus.createroom();");
+    }
 
     //set room Property from the qvariantmap read
 //    qDebug() << "Room::Create_Custom_Translator_Loaded() roomattribs" << room_jsoperations->GetRoomAttribs();

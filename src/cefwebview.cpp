@@ -331,30 +331,10 @@ CEFWebView::CEFWebView() :
     browser = CefBrowserHost::CreateBrowserSync(window_info, browserClient.get(), "about:blank", browserSettings, nullptr);
 
     browser_list.push_back(browser);
-
-    // Create the new V8 object.
-//    CefRefPtr<CefV8Value> testObjPtr = CefV8Value::CreateObject(NULL);
-//    // Add the new V8 object to the global window object with the name
-//    // "cef_test".
-//    object->SetValue("cef_test", testObjPtr, V8_PROPERTY_ATTRIBUTE_NONE);
-
-//    // Create an instance of ClientV8FunctionHandler as the V8 handler.
-//    CefRefPtr<CefV8Handler> handlerPtr = new ClientV8FunctionHandler();
-
-//    // Add a new V8 function to the cef_test object with the name "Dump".
-//    testObjPtr->SetValue("Dump",
-//                         CefV8Value::CreateFunction("Dump", handlerPtr),
-//                         V8_PROPERTY_ATTRIBUTE_NONE);
 }
 
 CEFWebView::~CEFWebView()
 {
-//    qDebug() << "CEFWebView::~CEFWebView()" << this;
-//    delete browserClient;
-//    delete renderHandler;
-//    browser->Release();
-//    CefBrowserHost::CloseBrowser()
-//    delete browser;
     if (browser && browser->GetHost()) {
         qDebug() << "CEFWebView::~CEFWebView() closebrowser" << this;
         browser->GetHost()->CloseBrowser(true);

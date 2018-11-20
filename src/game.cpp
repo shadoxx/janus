@@ -277,7 +277,9 @@ void Game::UpdatePrivateWebsurfaces()
                 a->SetStarted(true);
                 a->Load();
             }
-            a->GetWebView()->update();
+            if (a->GetWebView()) {
+                a->GetWebView()->update();
+            }
             a->UpdateGL();
         }
     }

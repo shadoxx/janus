@@ -250,8 +250,8 @@ extern "C"
 
 int main(int argc, char *argv[])
 {
-    bool    cefIsInitialized; // for storing the result of calling CefInitialize()
-    int     cefExecuteResult; // for storing the result of calling CefExecuteProcess()
+//    bool    cefIsInitialized; // for storing the result of calling CefInitialize()
+//    int     cefExecuteResult; // for storing the result of calling CefExecuteProcess()
 
     //duplicate argv so CEF doesn't modify it, and Janus cmd line parameters continue to work
     char ** argv_copy = new char *[argc];
@@ -261,64 +261,64 @@ int main(int argc, char *argv[])
         memcpy(argv_copy[i], argv[i], len);
     }
 
-#ifdef WIN32
-    CefMainArgs main_args;
-#elif !defined(__ANDROID__)
-    CefMainArgs main_args(argc, argv_copy);
-    //CefMainArgs main_args;
-#endif
+//#ifdef WIN32
+//    CefMainArgs main_args;
+//#elif !defined(__ANDROID__)
+//    CefMainArgs main_args(argc, argv_copy);
+//    //CefMainArgs main_args;
+//#endif
 
-#ifndef __ANDROID__
-    CefRefPtr<CEFApp> janusapp = new CEFApp();
+//#ifndef __ANDROID__
+//    CefRefPtr<CEFApp> janusapp = new CEFApp();
 
-    cefExecuteResult = CefExecuteProcess(main_args, janusapp, nullptr);
+//    cefExecuteResult = CefExecuteProcess(main_args, janusapp, nullptr);
 
-    // checkout CefApp, derive it and set it as second parameter, for more control on
-    // command args and resources.
-    if (cefExecuteResult >= 0) // child proccess has endend, so exit.
-    {
-        qDebug() << "CefExecuteProcess(): The child has terminated abnormally";
-        return cefExecuteResult;
-    }
-    if (cefExecuteResult == -1)
-    {
-        // we are here in the father proccess.
-        qDebug() << "CefExecuteProcess(): Chromium Embedded Framework Started";
-    }
+//    // checkout CefApp, derive it and set it as second parameter, for more control on
+//    // command args and resources.
+//    if (cefExecuteResult >= 0) // child proccess has endend, so exit.
+//    {
+//        qDebug() << "CefExecuteProcess(): The child has terminated abnormally";
+//        return cefExecuteResult;
+//    }
+//    if (cefExecuteResult == -1)
+//    {
+//        // we are here in the father proccess.
+//        qDebug() << "CefExecuteProcess(): Chromium Embedded Framework Started";
+//    }
 
 
-// TODO: Move this to its own initialization function
-    CefSettings settings;
+//// TODO: Move this to its own initialization function
+//    CefSettings settings;
 
-// Toggle the verbosity of CefEngine output
-#ifndef QT_DEBUG
-    settings.log_severity = LOGSEVERITY_DEFAULT;
-#else
-    settings.log_severity = LOGSEVERITY_DEBUG;
-#endif
+//// Toggle the verbosity of CefEngine output
+//#ifndef QT_DEBUG
+//    settings.log_severity = LOGSEVERITY_DEFAULT;
+//#else
+//    settings.log_severity = LOGSEVERITY_DEBUG;
+//#endif
 
-    settings.multi_threaded_message_loop = false;
-    settings.no_sandbox = true;
-    settings.ignore_certificate_errors = true;
-    settings.persist_session_cookies = true;
-    settings.persist_user_preferences = true;
-    settings.external_message_pump = true;
+//    settings.multi_threaded_message_loop = false;
+//    settings.no_sandbox = true;
+//    settings.ignore_certificate_errors = true;
+//    settings.persist_session_cookies = true;
+//    settings.persist_user_preferences = true;
+//    settings.external_message_pump = true;
 
-    CefString(&settings.cache_path).FromASCII(MathUtil::GetAppDataPath().toLatin1().constData());
+//    CefString(&settings.cache_path).FromASCII(MathUtil::GetAppDataPath().toLatin1().constData());
 
-    cefIsInitialized = CefInitialize(main_args, settings, janusapp, nullptr);
-    // CefInitialize creates a sub-proccess and executes the same executeable, as calling CefInitialize, if not set different in settings.browser_subprocess_path
-    // if you create an extra program just for the childproccess you only have to call CefExecuteProcess(...) in it.
-    if (!cefIsInitialized) {
-        // handle error
-        qDebug() << "CefInitialize(): Unable to initialize CefEngine";
-        return -1;
-    } else {
-        qDebug() << "CefInitialize(): CefEngine Initialization successful! Starting the message pump...";
-        CefDoMessageLoopWork();
-//        CefRunMessageLoop();
-    }
-#endif
+//    cefIsInitialized = CefInitialize(main_args, settings, janusapp, nullptr);
+//    // CefInitialize creates a sub-proccess and executes the same executeable, as calling CefInitialize, if not set different in settings.browser_subprocess_path
+//    // if you create an extra program just for the childproccess you only have to call CefExecuteProcess(...) in it.
+//    if (!cefIsInitialized) {
+//        // handle error
+//        qDebug() << "CefInitialize(): Unable to initialize CefEngine";
+//        return -1;
+//    } else {
+//        qDebug() << "CefInitialize(): CefEngine Initialization successful! Starting the message pump...";
+//        CefDoMessageLoopWork();
+////        CefRunMessageLoop();
+//    }
+//#endif
 
     QApplication a(argc, argv);
     a.setStyle(QStyleFactory::create("fusion"));
@@ -335,15 +335,7 @@ int main(int argc, char *argv[])
     SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 #endif
 
-    int ideal_thread_count = QThread::idealThreadCount();
-    if (ideal_thread_count > 2)
-    {
-        // Leave two threads out of the pool for use in the main and render threads which are created
-        // outside of the thread pool
-        ideal_thread_count = ideal_thread_count - 2;
-    }
-    //    QThreadPool::globalInstance()->setMaxThreadCount(ideal_thread_count);
-    //    QThreadPool::globalInstance()->setMaxThreadCount(2);
+    int ideal_thread_count = QThread::idealThreadCount();    
 
 #ifdef __ANDROID__
     qDebug() << "JNI initialize";
