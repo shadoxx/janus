@@ -185,6 +185,8 @@ PropertiesWindow::PropertiesWindow(Game * g) :
     connect(sound_loop, SIGNAL(stateChanged(int)), this, SLOT(SetSyncOnObject()));
     sound_gain = new PropertiesWindowFloatValue;
     connect(sound_gain, SIGNAL(textChanged(QString)), this, SLOT(SetSyncOnObject()));
+    sound_doppler_factor = new PropertiesWindowFloatValue;
+    connect(sound_doppler_factor, SIGNAL(textChanged(QString)), this, SLOT(SetSyncOnObject()));
     sound_pitch = new PropertiesWindowFloatValue;
     connect(sound_pitch, SIGNAL(textChanged(QString)), this, SLOT(SetSyncOnObject()));
 
@@ -283,6 +285,7 @@ PropertiesWindow::PropertiesWindow(Game * g) :
     sound_layout->addRow("Loop", sound_loop);
     sound_layout->addRow("Gain", sound_gain);
     sound_layout->addRow("Pitch", sound_pitch);
+    sound_layout->addRow("Doppler Factor", sound_doppler_factor);
     sound_groupbox = new QGroupBox();
     sound_groupbox->setLayout(sound_layout);
     sound_groupbox->setTitle("SOUND");
@@ -542,6 +545,13 @@ void PropertiesWindow::UpdateProperties()
         }
         else {
             cur_object->GetProperties()->SetGain(sound_gain->GetValue());
+        }
+
+        if (!sound_doppler_factor->hasFocus()) {
+            sound_doppler_factor->SetValue(cur_object->GetProperties()->GetDopplerFactor());
+        }
+        else {
+            cur_object->GetProperties()->SetDopplerFactor(sound_doppler_factor->GetValue());
         }
     }
 

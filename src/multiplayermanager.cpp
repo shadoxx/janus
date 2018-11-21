@@ -287,6 +287,11 @@ bool MultiPlayerManager::GetEnabled()
     return enabled;
 }
 
+QString MultiPlayerManager::GetCurURL() const
+{
+    return cur_url;
+}
+
 void MultiPlayerManager::Update(QPointer <Player> player, const QString & url, const QList <QString> adjacent_urls, const QString & name, const bool room_allows_party_mode, const float delta_time)
 {    
     if (user_ghost) {

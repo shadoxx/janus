@@ -96,10 +96,7 @@ bool Environment::ClearRoom(QPointer <RoomObject> p)
 {
 //    qDebug() << "Environment::ClearRoom" << p;
     QPointer <Room> r = curnode->GetConnectedRoom(p);
-    if (r == rootnode) {
-        return true;
-    }
-    else if (r && r != curnode && r != rootnode && r->GetReady()) {
+    if (r && r != curnode && r->GetReady()) {
         if (r != curnode->GetLastChild()) {
             curnode->RemoveChild(r);
         }
@@ -786,8 +783,7 @@ void Environment::Update2(QPointer <Player> player, MultiPlayerManager *multi_pl
     QHash <QString, QHash <int, QSet <QString> > > connections;
     for (QPointer <Room> & r : rooms) {
         //60.0 - we deallocate very conservatively, only when Room has completed loading ("ready for screenshot")
-        //qDebug() << r << r->GetURL() << r->GetReady() << !visible_rooms.contains(r) << (r != rootnode) << (r != curnode) << (r != lastnode);
-        if (r && r->GetReady() && !visible_rooms.contains(r) && r != rootnode && r != curnode && r != lastnode) { //deallocate
+        if (r && r->GetReady() && !visible_rooms.contains(r) && r != curnode && r != lastnode) { //deallocate
             r->Clear();            
             emit RoomsChanged();
         }

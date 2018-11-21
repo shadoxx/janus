@@ -636,6 +636,12 @@ void GLWidget::paintGL()
         return;
     }
 
+    bool make_virtual_menu_visible = game->GetVirtualMenu()->GetVisible();
+    if (game->GetVirtualMenu()->GetDoBookmarkAdd() || game->GetVirtualMenu()->GetDoBookmarkRemove()) {
+        DoBookmark();
+        game->GetVirtualMenu()->SetTakingScreenshot(true);
+    }
+
     //int64_t t1 = JNIUtil::GetTimestampNsec();
     game->SetDrawCursor(this->hasFocus());   
     game->Update();
@@ -1406,6 +1412,10 @@ void GLWidget::paintGL()
         MathUtil::glFuncs->glFlush();
         game->SaveBookmark();
         take_bookmark = false;
+        if (game->GetVirtualMenu()->GetVisible()) {
+            game->GetVirtualMenu()->SetTakingScreenshot(false);
+            game->GetVirtualMenu()->ConstructSubmenus();
+        }
     }   
 
     /*int64_t t10 = JNIUtil::GetTimestampNsec();

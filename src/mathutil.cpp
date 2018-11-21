@@ -2470,7 +2470,6 @@ QString MathUtil::GetSaveTimestampFilename()
     return MathUtil::GetWorkspacePath() + "out-" + MathUtil::GetCurrentDateTimeAsString() + ".html";
 }
 
-
 ElementType MathUtil::AssetTypeFromFilename(const QString filename)
 {
     //make lowercase, strip the .gz if present

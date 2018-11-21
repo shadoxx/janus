@@ -84,7 +84,7 @@ void SettingsManager::LoadSettings()
     settings["FPSLimitRender"] = 0;
     settings["FPSLimitUpdate"] = 0;
     settings["vivetrackpadmovement"] = false;
-    settings["homeurl"] = QString("https://vesta.janusvr.com");
+    settings["homeurl"] = QString("https://vesta.janusvr.com/");
     settings["websurfaceurl"] = QString("https://google.com");
 #ifdef __ANDROID__
     settings["renderportalrooms"] = false;

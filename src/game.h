@@ -38,6 +38,7 @@
 #include "menu.h"
 #include "rendererinterface.h"
 #include "virtualkeyboard.h"
+#include "virtualmenu.h"
 #include "bookmarkmanager.h"
 #include "controllermanager.h"
 #ifndef __ANDROID__
@@ -112,6 +113,7 @@ public:
     void keyReleaseEvent(QKeyEvent * e);
 
     QPointer <Environment> GetEnvironment();
+    QPointer <VirtualMenu> GetVirtualMenu();
     QPointer <Player> GetPlayer();
     QPointer <MultiPlayerManager> GetMultiPlayerManager();
     QPointer <ControllerManager> GetControllerManager();
@@ -252,6 +254,9 @@ private:
 
     void ClearSelection(const int cursor_index);   
 
+    void UpdateVirtualMenu();
+    void DrawVirtualMenu();
+
     void UpdateVirtualKeyboard();
     void DrawVirtualKeyboard();
 
@@ -299,6 +304,7 @@ private:
     QPointer <Player> player;
     QPointer <Environment> env;
     QPointer <MultiPlayerManager> multi_players;
+    QPointer <VirtualMenu> virtualmenu;
     QPointer <VirtualKeyboard> virtualkeyboard;
     QPointer <BookmarkManager> bookmarks;
     QPointer <ControllerManager> controller_manager;

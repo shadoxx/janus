@@ -125,6 +125,7 @@ private:
 
     //sounds
     PropertiesWindowFloatValue * sound_gain;
+    PropertiesWindowFloatValue * sound_doppler_factor;
     PropertiesWindowFloatValue * sound_pitch;
     QCheckBox * sound_loop;
 

@@ -305,17 +305,14 @@ void AssetGhost::ConvertPacketToFrame(const QVariantMap & map, GhostFrame & fram
     if (m.contains("cscale")) {
         frame.cscale = m["cscale"].toString().toFloat();
     }
-
     if (m.contains("speaking")) {
-        frame.speaking = true;
+        frame.speaking = m["speaking"].toBool();
     }
-
     if (m.contains("audio")) {
         QByteArray b = QByteArray::fromBase64(m["audio"].toByteArray());
         frame.sound_buffers.push_back(b); //Old
         frame.current_sound_level = MathUtil::GetSoundLevel(b);
     }
-
     if (m.contains("audio_opus")) {
         frame.sound_buffers.push_back(m["audio_opus"].toByteArray());
         frame.current_sound_level = (m.contains("sound_level"))?m["sound_level"].toFloat():1.0f;

@@ -1394,6 +1394,7 @@ void RoomObject::UpdateMedia()
         const QVector3D scale = GetScale();
         media_ctx.dist = qMax(scale.x(), qMax(scale.y(), scale.z()));
         media_ctx.gain = gain_env * props->GetGain();
+        media_ctx.doppler_factor = props->GetDopplerFactor();
         media_ctx.pitch = props->GetPitch();
         media_ctx.positional_sound = (positional_env && media_ctx.pos != QVector3D(0,0,0));
         media_ctx.audio_lock.unlock();
@@ -1408,6 +1409,7 @@ void RoomObject::UpdateMedia()
         const QVector3D scale = GetScale();
         media_ctx.dist = qMax(scale.x(), qMax(scale.y(), scale.z()));
         media_ctx.gain = gain_env * props->GetGain();
+        media_ctx.doppler_factor = props->GetDopplerFactor();
         media_ctx.pitch = props->GetPitch();
         media_ctx.positional_sound = (positional_env && media_ctx.pos != QVector3D(0,0,0));
         media_ctx.audio_lock.unlock();
@@ -3014,6 +3016,9 @@ QString RoomObject::GetXMLCode(const bool show_defaults) const
     if (t != TYPE_OBJECT && (show_defaults || props->GetGain() != 1.0f)) {
         code_str += " gain=" + MathUtil::GetFloatAsString(props->GetGain());
     }
+    if (t != TYPE_OBJECT && (show_defaults || props->GetDopplerFactor() != 1.0f)) {
+        code_str += " doppler_factor=" + MathUtil::GetFloatAsString(props->GetDopplerFactor());
+    }
     if (t != TYPE_OBJECT && (show_defaults || props->GetPitch() != 1.0f)) {
         code_str += " pitch=" + MathUtil::GetFloatAsString(props->GetPitch());
     }
@@ -3325,6 +3330,9 @@ QVariantMap RoomObject::GetJSONCode(const bool show_defaults) const
     }
     if (t != TYPE_OBJECT && (show_defaults || props->GetGain() != 1.0f)) {
         m["gain"] = props->GetGain();
+    }
+    if (show_defaults || props->GetDopplerFactor() != 1.0f) {
+        m["doppler_factor"] = props->GetDopplerFactor();
     }
     if (t != TYPE_OBJECT && (show_defaults || props->GetPitch() != 1.0f)) {
         m["pitch"] = props->GetPitch();

@@ -34,6 +34,7 @@ DOMNode::DOMNode(QObject *parent) : QObject(parent)
     loop = false;
     pitch = 1.0f;
     gain = 1.0f;
+    doppler_factor = 1.0f;
     outer_gain = 0.0f;
     inner_angle = 360.0f;
     outer_angle = 360.0f;    
@@ -92,6 +93,7 @@ DOMNode::DOMNode(QObject *parent) : QObject(parent)
     teleport_override = false;
     reloaded = false;
     cur_mount = 0;
+    url_changed = false;
 
     //assets
     tex_alpha = "undefined";
@@ -532,6 +534,9 @@ void DOMNode::SetProperties(const QVariantMap & d)
     }
     if (d.contains("gain")) {
         SetGain(d["gain"].toFloat());
+    }
+    if (d.contains("doppler_factor")) {
+        SetDopplerFactor(d["doppler_factor"].toFloat());
     }
     if (d.contains("outer_gain")) {
         SetOuterGain(d["outer_gain"].toFloat());
@@ -1273,6 +1278,11 @@ void DOMNode::SetGain(const float f)
     gain = f;
 }
 
+void DOMNode::SetDopplerFactor(const float f)
+{
+    doppler_factor = f;
+}
+
 void DOMNode::SetOuterGain(const float f)
 {
     outer_gain = f;
@@ -1802,8 +1812,17 @@ void DOMNode::SetVisible(const bool b)
 
 void DOMNode::SetURL(const QString & s)
 {
-    //    qDebug() << "DOMNode::SetURL" << s;
+//    qDebug() << "DOMNode::SetURL" << s;
+    if (!url_changed && url != s) {
+        url_changed = true;
+    }
     url = s;
+
+}
+
+void DOMNode::SetURLChanged(const bool b)
+{
+    url_changed = b;
 }
 
 void DOMNode::SetBaseURL(const QString & s)

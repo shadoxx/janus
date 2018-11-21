@@ -102,6 +102,8 @@ public:
     void SetEnabled(const bool b);
     bool GetEnabled();
 
+    QString GetCurURL() const;
+
     QList <ServerConnection> & GetConnectionList();
     void SetConnections(QHash <QString, QHash <int, QSet <QString> > > cs);
     QHash <QString, QHash <int, QSet <QString> > > GetConnections() const;

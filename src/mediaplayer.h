@@ -59,6 +59,7 @@ struct MediaContext
     QVector3D vel = QVector3D(0,0,0);
     float dist = 0.0f;
     float gain = 1.0f;
+    float doppler_factor = 1.0f;
     float pitch = 1.0f;
     bool positional_sound = true;
 

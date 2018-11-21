@@ -520,6 +520,13 @@ void Room::LinkToAssets(QPointer <RoomObject> o)
                                                o->GetProperties()->GetID() :
                                                o->GetProperties()->GetVideoID()));
         break;
+    case TYPE_LINK:
+        //62.0 - update portal URL if it changed
+        if (o->GetProperties()->GetURLChanged()) {
+            o->SetURL(props->GetURL(), o->GetProperties()->GetURL());
+            o->GetProperties()->SetURLChanged(false);
+        }
+        break;
     default:
         break;
     }
@@ -1685,23 +1692,23 @@ void Room::CallJSFunction(const QString & s, QPointer <Player> player, MultiPlay
     const QVector3D d = player->GetProperties()->GetDir()->toQVector3D();
     QMap <QString, DOMNode *> remote_players = multi_players->GetPlayersInRoomDOMNodeMap(props->GetURL());
 
-    for (QPointer <AssetScript> & script : assetscripts) {
-        if (script) {            
-            QList<QPointer <RoomObject> > objectsAdded;
-            if (script->HasFunction(s)) {
-                QScriptValueList args;
-                for (QPointer <DOMNode> & n : nodes) {
-                    args << (n ? script_engine->toScriptValue(n) : QScriptValue());
-                }
-                objectsAdded = script->RunFunctionOnObjects(s, envobjects, player, remote_players, args);
-                LogErrorOnException(script);
+    //62.0 - bugfix all in the first script (they share a common script_engine instance anyway)
+    QList <QPointer <AssetScript> > l = assetscripts.values();
+    if (!l.isEmpty() && l[0]) {
+        QPointer <AssetScript> & script = l[0];
+        QList<QPointer <RoomObject> > objectsAdded;
+        if (script->HasFunction(s)) {
+            QScriptValueList args;
+            for (QPointer <DOMNode> & n : nodes) {
+                args << (n ? script_engine->toScriptValue(n) : QScriptValue());
             }
-            else {
-                objectsAdded = script->RunScriptCodeOnObjects(s, envobjects, player, remote_players);
-                LogErrorOnException(script);
-            }
-            AddRoomObjects(objectsAdded);
+            objectsAdded = script->RunFunctionOnObjects(s, envobjects, player, remote_players, args);
         }
+        else {
+            objectsAdded = script->RunScriptCodeOnObjects(s, envobjects, player, remote_players);
+        }
+        LogErrorOnException(script);
+        AddRoomObjects(objectsAdded);
     }
 
     //player dir may have updated

@@ -447,7 +447,9 @@ bool AssetWebSurface::GetTextEditing()
 
 void AssetWebSurface::SetFocus(const bool b)
 {    
-    webview->SetFocus(b);
+    if (webview) {
+        webview->SetFocus(b);
+    }
 }
 
 bool AssetWebSurface::GetFocus() const

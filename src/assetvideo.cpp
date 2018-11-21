@@ -184,7 +184,7 @@ TextureHandle* AssetVideo::GetTextureHandle(MediaContext * ctx, const bool left_
     else {
         return media_player.GetTextureHandle(ctx);
     }
-	return nullptr;
+    return AssetImage::null_image_tex_handle.get();
 }
 
 float AssetVideo::GetAspectRatio(MediaContext * ctx) const

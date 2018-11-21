@@ -700,11 +700,13 @@ void MediaPlayer::play(void *data, const void *samples, unsigned count, int64_t 
         alSourcei(ctx->openal_source, AL_SOURCE_RELATIVE, AL_FALSE);
         alSource3f(ctx->openal_source, AL_POSITION, ctx->pos.x(), ctx->pos.y(), ctx->pos.z()); //set source position
         alSource3f(ctx->openal_source, AL_VELOCITY, ctx->vel.x(), ctx->vel.y(), ctx->vel.z()); //set source velocity
+        alSourcef(ctx->openal_source, AL_DOPPLER_FACTOR, ctx->doppler_factor);
     }
     else{
         alSourcei(ctx->openal_source, AL_SOURCE_RELATIVE, AL_TRUE);
         alSource3f(ctx->openal_source, AL_POSITION, 0, 0, 0); //set source position
         alSource3f(ctx->openal_source, AL_VELOCITY, 0, 0, 0); //set source velocity
+        alSourcef(ctx->openal_source, AL_DOPPLER_FACTOR, ctx->doppler_factor);
     }
 
     alSourcef(ctx->openal_source, AL_ROLLOFF_FACTOR, 2.0f);

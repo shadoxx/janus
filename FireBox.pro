@@ -145,7 +145,8 @@ SOURCES += \
     src/textureimporterqimage.cpp \
     src/texturemanager.cpp \    
     src/virtualkeyboard.cpp \
-    src/webasset.cpp
+    src/webasset.cpp \
+    src/virtualmenu.cpp
 
 unix:!android:!macx:SOURCES += ./resources/cef/linux/libcef_dll/base/cef_atomicops_x86_gcc.cc
 
@@ -219,7 +220,8 @@ HEADERS += \
     src/textureimporterqimage.h \
     src/texturemanager.h \    
     src/virtualkeyboard.h \
-    src/webasset.h
+    src/webasset.h \
+    src/virtualmenu.h
 
 # NVIDIA HBAO
 #win32:INCLUDEPATH += "./resources/HBAOPlus/include"
