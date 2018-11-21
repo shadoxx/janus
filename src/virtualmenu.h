@@ -9,6 +9,7 @@
 enum VirtualMenuIndex
 {
     VirtualMenuIndex_MAIN,
+    VirtualMenuIndex_URL,
     VirtualMenuIndex_BOOKMARKS,
     VirtualMenuIndex_AVATAR,
     VirtualMenuIndex_SOCIAL,
@@ -29,6 +30,7 @@ struct VirtualMenuButton
         label = new RoomObject();
         label->SetType(TYPE_TEXT);
         label->SetInterfaceObject(true);
+        label->GetProperties()->SetJSID(js_id+"_label");
         label->SetFixedSize(true, 0.05f);
         label->SetText(text);
 
@@ -192,6 +194,9 @@ public:
     VirtualMenuImageButton * AddNewImageButton(const VirtualMenuIndex index, const QString js_id, const QString url, const QString thumb_id, const QMatrix4x4 m);
     VirtualMenuImageUserButton * AddNewImageUserButton(const VirtualMenuIndex index, const QString js_id, const QString user, const QString url, const QString thumb_id, const QMatrix4x4 m);
 
+    bool GetDoBack();
+    bool GetDoForward();
+    bool GetDoReload();
     bool GetDoEscapeToHome();
     bool GetDoExit();
     bool GetDoCreatePortal();
@@ -212,6 +217,7 @@ private:
 
     void Clear();
     void ConstructSubmenuMain();
+    void ConstructSubmenuURL();
     void ConstructSubmenuBookmarks();
     void ConstructSubmenuAvatar();
     void ConstructSubmenuSocial();
@@ -235,6 +241,9 @@ private:
     int cur_user;
     int num_users;
 
+    bool do_back;
+    bool do_forward;
+    bool do_reload;
     bool do_escape_to_home;
     bool do_exit;
     bool do_create_portal;
@@ -248,6 +257,7 @@ private:
     WebAsset partymode_data_request;
 
     QString last_url;
+    QString entered_url;
 };
 
 #endif // VIRTUALMENU_H

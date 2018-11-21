@@ -4674,6 +4674,15 @@ void Game::UpdateVirtualMenu()
     virtualmenu->Update();
 
     if (virtualmenu->GetVisible()) {
+        if (virtualmenu->GetDoBack()) {
+            StartResetPlayer();
+        }
+        if (virtualmenu->GetDoForward()) {
+            StartResetPlayerForward();
+        }
+        if (virtualmenu->GetDoReload()) {
+            env->ReloadRoom();
+        }
         if (virtualmenu->GetDoEscapeToHome()) {
             StartEscapeToHome();
         }

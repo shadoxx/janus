@@ -1034,7 +1034,12 @@ void Geom::DrawGL(QPointer <AssetShader> shader, const QColor col, const bool ov
         }
         else
         {
-            shader->SetDiffuse(QVector4D(1, 1, 1, mat.kd.alphaF())); //61.0 - support transparency (d value in OBJ .mtl)
+            if (mat.kd.alphaF() != 0.0f) {
+                shader->SetDiffuse(QVector4D(1, 1, 1, mat.kd.alphaF())); //61.0 - support transparency (d value in OBJ .mtl)
+            }
+            else {
+                shader->SetDiffuse(QVector4D(1, 1, 1, 1)); //61.0 - support transparency (d value in OBJ .mtl)
+            }
         }
 
         if (textures[1].img.isNull())
