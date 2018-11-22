@@ -242,8 +242,9 @@ void WebAsset::ProcessThread()
             }
         }
         else {
-//            qDebug() << "WebAsset::ProcessThread() - REDIRECTION detected" << redirect_url << status_code;
             redirect_url.setFragment(url.fragment());
+            redirect_url = url.resolved(redirect_url);
+//            qDebug() << "WebAsset::ProcessThread() - REDIRECTION detected" << redirect_url << status_code << url.fragment();
             reply->close();
             Load(redirect_url);
             redirected = true;

@@ -144,7 +144,6 @@ SOURCES += \
     src/textureimportergli.cpp \
     src/textureimporterqimage.cpp \
     src/texturemanager.cpp \    
-    src/virtualkeyboard.cpp \
     src/webasset.cpp \
     src/virtualmenu.cpp
 
@@ -218,8 +217,7 @@ HEADERS += \
     src/textureimportercmft.h \    
     src/textureimportergli.h \
     src/textureimporterqimage.h \
-    src/texturemanager.h \    
-    src/virtualkeyboard.h \
+    src/texturemanager.h \        
     src/webasset.h \
     src/virtualmenu.h
 

@@ -48,8 +48,7 @@ Game::Game() :
     bookmarks->LoadBookmarks();
     bookmarks->LoadWorkspaces();
 
-    controller_manager = new ControllerManager();
-    virtualkeyboard = new VirtualKeyboard();    
+    controller_manager = new ControllerManager();    
     env = new Environment();
     multi_players = new MultiPlayerManager();
 
@@ -292,6 +291,13 @@ void Game::UpdatePrivateWebsurfaces()
 void Game::DrawPrivateWebsurfacesGL(QPointer <AssetShader> shader)
 {
     for (int i=0; i<private_websurfaces.size(); ++i) {
+        if (private_websurfaces[i].asset) {
+            private_websurfaces[i].asset->UpdateGL();
+        }
+        if (private_websurfaces[i].plane_obj) {
+            private_websurfaces[i].plane_obj->Update();
+            private_websurfaces[i].plane_obj->UpdateGL();
+        }
         if (private_websurfaces[i].obj) {
 //            qDebug() << "draw" << i;
             private_websurfaces[i].obj->Update(0.0f);
@@ -335,10 +341,7 @@ void Game::Update()
     UpdatePrivateWebsurfaces();
 
     //update virtual menu
-    UpdateVirtualMenu();
-
-    //update virtual keyboard
-    UpdateVirtualKeyboard();
+    UpdateVirtualMenu();   
 
     //Update AssetRecordings
     UpdateAssetRecordings();
@@ -429,8 +432,7 @@ float Game::UpdateCursorRaycast(const QMatrix4x4 transform, const int cursor_ind
     const QVector3D ray_d = transform.column(2).toVector3D();
 
     struct IntersectionElement {
-        QPointer <RoomObject> envobject;
-        QPointer <RoomObject> kbobject;
+        QPointer <RoomObject> envobject;        
         QPointer <RoomObject> webobject;
         QPointer <RoomObject> menuobject;
         QVector3D v;
@@ -537,30 +539,6 @@ float Game::UpdateCursorRaycast(const QMatrix4x4 transform, const int cursor_ind
         }
     }
 
-    //virtual keyboard
-    if (virtualkeyboard->GetVisible()) {
-        QHash <QString, QPointer <RoomObject> > & kbobjects = virtualkeyboard->GetEnvObjects();
-        QHash <QString, QPointer <RoomObject> >::iterator it;
-        for (it = kbobjects.begin(); it!=kbobjects.end(); ++it) {
-            if (it.value()) {
-                QList <QVector3D> vs;
-                QList <QVector3D> ns;
-                QList <QVector2D> uvs;
-                if (it.value()->GetRaycastIntersection(transform, vs, ns, uvs)) {
-                    for (int i=0; i<vs.size(); ++i) {
-                        IntersectionElement intersection_element;
-                        intersection_element.kbobject = it.value();
-                        intersection_element.v = vs[i];
-                        intersection_element.n = ns[i];
-                        intersection_element.uv = uvs[i];
-                        intersection_list.push_back(intersection_element);
-//                        qDebug() << "doing virtual kb test?" << virtualkeyboard->GetVisible() << it.value()->GetJSID();
-                    }
-                }
-            }
-        }
-    }
-
     //find closest intersection point as the object for interaction
     float min_dist = FLT_MAX;
     int min_index = -1;
@@ -624,10 +602,7 @@ float Game::UpdateCursorRaycast(const QMatrix4x4 transform, const int cursor_ind
                 video_selected[cursor_index] = vid;
                 clear_video = false;
             }
-        }
-        else if (intersection_list[min_index].kbobject) {
-            player->SetCursorObject(intersection_list[min_index].kbobject->GetProperties()->GetJSID(), cursor_index);
-        }
+        }        
         else if (intersection_list[min_index].menuobject) {
             player->SetCursorObject(intersection_list[min_index].menuobject->GetProperties()->GetJSID(), cursor_index);
         }
@@ -639,7 +614,6 @@ float Game::UpdateCursorRaycast(const QMatrix4x4 transform, const int cursor_ind
 
         player->SetCursorActive(true, cursor_index);
 
-        virtualkeyboard->SetSelected(intersection_list[min_index].kbobject, cursor_index);
         cursor_uv[cursor_index] = QPointF(intersection_list[min_index].uv.x(), intersection_list[min_index].uv.y());
     }
     else {
@@ -934,10 +908,9 @@ void Game::DrawGL(const float ipd, const QMatrix4x4 head_xform, const bool set_m
 
     // Update the cursor (Object ID, normal, world-space location)
     QPointer <Room> r = env->GetCurRoom();
-    RendererInterface::m_pimpl->BeginScope(RENDERER::RENDER_SCOPE::VIRTUAL_KEYBOARD);
+    RendererInterface::m_pimpl->BeginScope(RENDERER::RENDER_SCOPE::VIRTUAL_MENU);
     r->BindShader(Room::GetTransparencyShader());
-    DrawVirtualMenu();
-    DrawVirtualKeyboard();    
+    DrawVirtualMenu();    
     r->UnbindShader(Room::GetTransparencyShader());
     RendererInterface::m_pimpl->EndCurrentScope();
 
@@ -2671,12 +2644,7 @@ void Game::TeleportPlayer()
     player->SetFollowModeUserID("");
 
     //Note: at this point in the code, player's curroom may have changed
-    env->GetCurRoom()->SetPlayerInRoom(player);
-
-    if (virtualkeyboard->GetVisible()) {
-        virtualkeyboard->SetVisible(false);
-        virtualkeyboard->SetWebSurface(NULL);
-    }
+    env->GetCurRoom()->SetPlayerInRoom(player);   
 }
 
 float Game::GetCurrentNearDist()
@@ -2877,8 +2845,9 @@ void Game::DrawCursorGL()
                   (cursor_active == 0 || (cursor_active == 1 && (!cs[0].active || cs[1].GetClick().hover || cs[1].GetTeleport().hover || cs[1].GetGrab().pressed)))))
                     && r->GetProperties()->GetCursorVisible()) {
 #else
-            if ((draw_cursor || (controller_manager->GetUsingSpatiallyTrackedControllers() && controller_manager->GetStates()[cursor_active].GetClick().hover))
-                    && r->GetProperties()->GetCursorVisible()) {
+            if (virtualmenu->GetVisible() ||
+                    ((draw_cursor || (controller_manager->GetUsingSpatiallyTrackedControllers() && controller_manager->GetStates()[cursor_active].GetClick().hover))
+                    && r->GetProperties()->GetCursorVisible())) {
 #endif
                 MathUtil::PushModelMatrix();
                 MathUtil::LoadModelIdentity();
@@ -2887,7 +2856,8 @@ void Game::DrawCursorGL()
 
                 //56.0 - hacky bugfix - if we do not draw something in the "cursor" scope, the 2DUI websurface does not update properly
     //            qDebug() << p << x << y << z << s << alpha;
-                if (websurface_selected[cursor_active] ||
+                if (virtualmenu->GetVisible() ||
+                        websurface_selected[cursor_active] ||
                         (video_selected[cursor_active] && cursor_obj && !video_selected[cursor_active]->GetPlaying(cursor_obj->GetMediaContext()))) {
                     if (RoomObject::cursor_arrow_obj) {
                         RoomObject::cursor_arrow_obj->DrawGL(shader, QColor(255,255,255,255));
@@ -4670,7 +4640,25 @@ void Game::UpdateControllers()
 }
 
 void Game::UpdateVirtualMenu()
-{
+{    
+    // Draw keyboard if HMD is in use, websurface selected, and text cursor is within a text-editable region
+    const bool text_entry = GetPlayerEnteringText();
+    player->SetEnteringText(text_entry);
+
+    //update state of virtual keyboard if HMD is enabled
+    if ((player->GetHMDEnabled() || controller_manager->GetUsingGamepad()) && text_entry && !virtualmenu->GetVisible()) { //show keyboard if hidden and needed
+    //if (text_entry && !virtualmenu->GetVisible()) { //uncomment this and comment above for testing with mouse
+        virtualmenu->SetMenuIndex(VirtualMenuIndex_KEYBOARD);
+        virtualmenu->SetVisible(true);
+
+        if (websurface_selected[0] && websurface_selected[0]->GetTextEditing()) {
+            virtualmenu->SetWebSurface(websurface_selected[0]);
+        }
+        else if (websurface_selected[1] && websurface_selected[1]->GetTextEditing()) {
+            virtualmenu->SetWebSurface(websurface_selected[1]);
+        }
+    }
+
     virtualmenu->Update();
 
     if (virtualmenu->GetVisible()) {
@@ -4719,60 +4707,6 @@ void Game::DrawVirtualMenu()
     if (virtualmenu->GetVisible() && !virtualmenu->GetTakingScreenshot()) {
         virtualmenu->DrawGL(Room::GetTransparencyShader());
     }
-}
-
-void Game::UpdateVirtualKeyboard()
-{
-    // Draw keyboard if HMD is in use, websurface selected, and text cursor is within a text-editable region
-    const bool text_entry = GetPlayerEnteringText();
-    player->SetEnteringText(text_entry);
-
-    //update state of virtual keyboard if HMD is enabled
-    if ((player->GetHMDEnabled() || controller_manager->GetUsingGamepad()) && text_entry && !virtualkeyboard->GetVisible()) { //show keyboard if hidden and needed
-    //if (text_entry && !virtualkeyboard->GetVisible()) { //uncomment this and comment above for testing with mouse
-        QVector3D z = -player->GetProperties()->GetDir()->toQVector3D();
-        z.setY(0.0f);
-        z.normalize();
-        const QVector3D y(0,1,0);
-        const QVector3D x = QVector3D::crossProduct(y, z).normalized();
-
-        QVector3D p = player->GetProperties()->GetEyePoint();
-        p.setY(player->GetProperties()->GetPos()->toQVector3D().y() + 0.5f);
-
-        QMatrix4x4 m;
-        m.translate(p);
-        m.setColumn(0, x * 0.6f);
-        m.setColumn(1, y * 0.6f);
-        m.setColumn(2, z * 0.6f);
-
-        virtualkeyboard->SetModelMatrix(m);
-        virtualkeyboard->SetVisible(true);
-
-        if (websurface_selected[0] && websurface_selected[0]->GetTextEditing()) {
-            virtualkeyboard->SetWebSurface(websurface_selected[0]);
-        }
-        else if (websurface_selected[1] && websurface_selected[1]->GetTextEditing()) {
-            virtualkeyboard->SetWebSurface(websurface_selected[1]);
-        }
-    }
-    else if (virtualkeyboard->GetVisible()) {
-        if (player->GetWalking()) { //if player moves, hide the virtual keyboard
-            virtualkeyboard->SetVisible(false);
-            virtualkeyboard->SetWebSurface(NULL);
-        }
-        else {
-            //59.3 - note! potentially costly on Android (3-5 msec) when visible
-//            virtualkeyboard->Update();
-        }
-    }
-}
-
-void Game::DrawVirtualKeyboard()
-{
-    //draw virtual keyboard if visible
-    if (virtualkeyboard->GetVisible()) {
-        virtualkeyboard->DrawGL(Room::GetTransparencyShader());
-    }
 
     if (GetPrivateWebsurfacesVisible()) {
         DrawPrivateWebsurfacesGL(Room::GetTransparencyShader());
@@ -4810,24 +4744,12 @@ void Game::SetGamepadButtonPress(const bool b)
 
 void Game::StartOpInteractionTeleport(const int i)
 {
-#ifdef __ANDROID__
-    if (virtualkeyboard->GetKeySelected(player->GetCursorObject(i)) != 0){
-        return;
-    }
-#endif
-
     state = JVR_STATE_INTERACT_TELEPORT;
     teleport_held_time.start();
 }
 
 void Game::EndOpInteractionTeleport(const int i)
 {
-#ifdef __ANDROID__
-    if (virtualkeyboard->GetKeySelected(player->GetCursorObject(i)) != 0){
-        return;
-    }
-#endif
-
 //    qDebug() << "Game::EndOpInteractionTeleport" << i << GetAllowTeleport(i);
     QPointer <Room> r = env->GetCurRoom();
     QPointer <RoomObject> cursor_obj = r->GetRoomObject(player->GetCursorObject(i));
@@ -4897,12 +4819,7 @@ void Game::StartOpInteractionDefault(const int i)
         virtualmenu->mousePressEvent(player->GetCursorObject(i));
     }
 
-    bool keyboard_clicked = false;
-    if (virtualkeyboard->GetVisible() && virtualkeyboard->GetKeySelected(player->GetCursorObject(i)) != 0) {
-        virtualkeyboard->mousePressEvent(i);
-        keyboard_clicked = true;
-    }
-    else if (o && o->GetType() == TYPE_OBJECT && o->GetAssetWebSurface()) {
+    if (o && o->GetType() == TYPE_OBJECT && o->GetAssetWebSurface()) {
         websurface_selected[i] = o->GetAssetWebSurface();
 
         //if websurface is still on about:blank, load it
@@ -4940,8 +4857,8 @@ void Game::StartOpInteractionDefault(const int i)
         websurface_selected[i]->mousePressEvent(&e2, i);
     }
 
-    //59.3 - make any websurfaces in the room cursor active false (60.0 - only if we didn't click keyboard)
-    if (!keyboard_clicked) {
+    //59.3 - make any websurfaces in the room cursor active false (60.0 - only if we didn't click keyboard) (62.0 - refactored into VirtualMenu)
+    if (!(virtualmenu->GetVisible() && virtualmenu->GetMenuIndex() == VirtualMenuIndex_KEYBOARD)) {
         for (QPointer <AbstractWebSurface> & aw : r->GetAssetWebSurfaces()) {
             if (aw && aw != websurface_selected[i]) {
                 aw->SetFocus(false);
@@ -4960,10 +4877,7 @@ void Game::EndOpInteractionDefault(const int i)
         virtualmenu->mouseReleaseEvent(player->GetCursorObject(i));
     }
 
-    if (virtualkeyboard->GetKeySelected(curs) != 0) {
-        virtualkeyboard->mouseReleaseEvent(i);
-    }
-    else if (o) {
+    if (o) {
         //55.2 - onclick is on mouse release, and should only happen once per mouse click
         QString click_code = o->GetProperties()->GetOnClick();
         qDebug() << "onclick code" << click_code;
@@ -5624,24 +5538,8 @@ void Game::UpdateMultiplayer()
 void Game::UpdateAssets()
 {
     env->UpdateAssets();
-
-    if (virtualkeyboard) {
-        virtualkeyboard->Update();
-    }
-
     SpinAnimation::UpdateAssets();
-
-    RoomObject::UpdateAssets();
-
-    for (int i=0; i<private_websurfaces.size(); ++i) {
-        if (private_websurfaces[i].asset) {
-            private_websurfaces[i].asset->UpdateGL();
-        }
-        if (private_websurfaces[i].plane_obj) {
-            private_websurfaces[i].plane_obj->Update();
-            private_websurfaces[i].plane_obj->UpdateGL();
-        }
-    }
+    RoomObject::UpdateAssets();   
 }
 
 #ifdef __ANDROID__

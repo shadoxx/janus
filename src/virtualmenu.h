@@ -12,7 +12,10 @@ enum VirtualMenuIndex
     VirtualMenuIndex_URL,
     VirtualMenuIndex_BOOKMARKS,
     VirtualMenuIndex_AVATAR,
+    VirtualMenuIndex_SEARCH,
+    VirtualMenuIndex_SEARCHRESULT,
     VirtualMenuIndex_SOCIAL,
+    VirtualMenuIndex_KEYBOARD
 };
 
 struct VirtualMenuButton
@@ -25,7 +28,6 @@ struct VirtualMenuButton
         button->GetProperties()->SetJSID(js_id);
         button->GetProperties()->SetID("cube");
         button->GetProperties()->SetCollisionID("cube");
-//        button->GetProperties()->SetColour(QVector4D(0,0,0,0.25f));
 
         label = new RoomObject();
         label->SetType(TYPE_TEXT);
@@ -53,6 +55,45 @@ struct VirtualMenuButton
 
     QPointer <RoomObject> button;
     QPointer <RoomObject> label;
+};
+
+struct VirtualMenuIconButton
+{
+    VirtualMenuIconButton(const QString js_id, const QString imageurl, const QMatrix4x4 m)
+    {
+        button = new RoomObject();
+        button->SetType(TYPE_OBJECT);
+        button->SetInterfaceObject(true);
+        button->GetProperties()->SetJSID(js_id);
+        button->GetProperties()->SetID("cube");
+        button->GetProperties()->SetCollisionID("cube");
+//        button->GetProperties()->SetColour(QVector4D(0,0,0,0.25f));
+
+        overlay = new RoomObject();
+        overlay->SetType(TYPE_OBJECT);
+        overlay->SetInterfaceObject(true);
+        overlay->GetProperties()->SetID("plane");
+        overlay->GetProperties()->SetLighting(false);
+
+        SetModelMatrix(m);
+    }
+
+    void SetModelMatrix(const QMatrix4x4 m)
+    {
+        //place button
+        QMatrix4x4 m2 = m;
+        m2.scale(1, 1, 0.05f);
+        button->SetAttributeModelMatrix(m2);
+
+        //place text "in front"
+        QMatrix4x4 m3 = m;
+        m3.scale(1.0f, 1.0f, 0.05f);
+        m3.translate(0.0f, 0.0f,1.1f);
+        overlay->SetAttributeModelMatrix(m3);
+    }
+
+    QPointer <RoomObject> button;
+    QPointer <RoomObject> overlay;
 };
 
 struct VirtualMenuImageButton
@@ -179,6 +220,12 @@ public:
     void SetTakingScreenshot(const bool b);
     bool GetTakingScreenshot() const;
 
+    void SetMenuIndex(VirtualMenuIndex index);
+    VirtualMenuIndex GetMenuIndex() const;
+
+    void SetWebSurface(QPointer <AbstractWebSurface> w);
+    QPointer <AbstractWebSurface> GetWebSurface() const;
+
     void Update();
     void DrawGL(QPointer <AssetShader> shader);
 
@@ -192,6 +239,7 @@ public:
 
     VirtualMenuButton * AddNewButton(const VirtualMenuIndex index, const QString js_id, const QString label, const QMatrix4x4 m);
     VirtualMenuImageButton * AddNewImageButton(const VirtualMenuIndex index, const QString js_id, const QString url, const QString thumb_id, const QMatrix4x4 m);
+    VirtualMenuIconButton * AddNewIconButton(const VirtualMenuIndex index, const QString js_id, const QString imageurl, const QMatrix4x4 m);
     VirtualMenuImageUserButton * AddNewImageUserButton(const VirtualMenuIndex index, const QString js_id, const QString user, const QString url, const QString thumb_id, const QMatrix4x4 m);
 
     bool GetDoBack();
@@ -207,7 +255,7 @@ public:
 
     void MenuButtonPressed();
 
-    void ConstructSubmenus();
+    void ConstructSubmenus();   
 
 public slots:
 
@@ -220,7 +268,9 @@ private:
     void ConstructSubmenuURL();
     void ConstructSubmenuBookmarks();
     void ConstructSubmenuAvatar();
+    void ConstructSubmenuSearch();
     void ConstructSubmenuSocial();
+    void ConstructSubmenuKeyboard();
 
     QHash <QString, QPointer <AssetImage> > assetimgs;
     QHash <QString, QPointer <AssetObject> > assetobjs;
@@ -258,6 +308,14 @@ private:
 
     QString last_url;
     QString entered_url;
+
+    bool do_search;
+    QString entered_search;
+    QTime entered_search_time;
+    WebAsset search_data_request;
+    QVariantList search_data;
+
+    QPointer <AbstractWebSurface> websurface; //for virtual keyboard and text entry for websurfaces
 };
 
 #endif // VIRTUALMENU_H
