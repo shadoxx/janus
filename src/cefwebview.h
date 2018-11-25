@@ -224,8 +224,8 @@ public:
     QString GetLaunchURL();
     void ClearLaunchURL();
 
-    CefRefPtr<CEFFocusHandler> m_focusHandler;
     CefRefPtr<CEFRenderHandler> m_renderHandler;
+    CefRefPtr<CEFFocusHandler> m_focusHandler;    
     CefRefPtr<CEFLifeSpanHandler> m_lifespanHandler;
     CefRefPtr<CEFJSDialogHandler> m_JSDialogHandler;
 

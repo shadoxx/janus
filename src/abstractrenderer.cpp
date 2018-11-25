@@ -744,7 +744,7 @@ void AbstractRenderer::InitializeGLObjects()
     auto buffers = GetBufferHandlesForMeshHandle(m_slab_vao.get());
     m_slab_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_slab_vbo.get());
-    ConfigureBufferHandleData(m_slab_vbo, vbo_size * sizeof(GLfloat), (void* const)&vbo_data[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_slab_vbo, vbo_size * sizeof(GLfloat), (void*)&vbo_data[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     VertexAttributeLayout sky_cube_layout;
     sky_cube_layout.attributes[(uint32_t)VAO_ATTRIB::POSITION].in_use = true;
@@ -757,7 +757,7 @@ void AbstractRenderer::InitializeGLObjects()
     buffers = GetBufferHandlesForMeshHandle(m_skycube_vao.get());
     m_skycube_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_skycube_vbo.get());
-    ConfigureBufferHandleData(m_skycube_vbo, vbo_skysize * sizeof(GLfloat), (void* const)&vbo_skydata[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_skycube_vbo, vbo_skysize * sizeof(GLfloat), (void*)&vbo_skydata[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     VertexAttributeLayout cube_layout;
     cube_layout.attributes[(uint32_t)VAO_ATTRIB::NORMAL].in_use = true;
@@ -785,7 +785,7 @@ void AbstractRenderer::InitializeGLObjects()
     buffers = GetBufferHandlesForMeshHandle(m_cube_vao.get());
     m_cube_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_cube_vbo.get());
-    ConfigureBufferHandleData(m_cube_vbo, vbo_size2 * sizeof(GLfloat), (void* const)&vbo_data2[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_cube_vbo, vbo_size2 * sizeof(GLfloat), (void*)&vbo_data2[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     VertexAttributeLayout plane_layout;
     plane_layout.attributes[(uint32_t)VAO_ATTRIB::NORMAL].in_use = true;
@@ -813,7 +813,7 @@ void AbstractRenderer::InitializeGLObjects()
     buffers = GetBufferHandlesForMeshHandle(m_plane_vao.get());
     m_plane_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_plane_vbo.get());
-    ConfigureBufferHandleData(m_plane_vbo, vbo_size3 * sizeof(GLfloat), (void* const)&vbo_data3[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_plane_vbo, vbo_size3 * sizeof(GLfloat), (void*)&vbo_data3[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     VertexAttributeLayout disc_layout;
     disc_layout.attributes[(uint32_t)VAO_ATTRIB::NORMAL].in_use = true;
@@ -841,7 +841,7 @@ void AbstractRenderer::InitializeGLObjects()
     buffers = GetBufferHandlesForMeshHandle(m_disc_vao.get());
     m_disc_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_disc_vbo.get());
-    ConfigureBufferHandleData(m_disc_vbo, vbo_size4 * sizeof(GLfloat), (void* const)&vbo_data4[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_disc_vbo, vbo_size4 * sizeof(GLfloat), (void*)&vbo_data4[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     VertexAttributeLayout cone_layout;
     cone_layout.attributes[(uint32_t)VAO_ATTRIB::NORMAL].in_use = true;
@@ -869,7 +869,7 @@ void AbstractRenderer::InitializeGLObjects()
     buffers = GetBufferHandlesForMeshHandle(m_cone_vao.get());
     m_cone_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_cone_vbo.get());
-    ConfigureBufferHandleData(m_cone_vbo, vbo_size5 * sizeof(GLfloat), (void* const)&vbo_data5[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_cone_vbo, vbo_size5 * sizeof(GLfloat), (void*)&vbo_data5[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     VertexAttributeLayout pyramid_layout;
     pyramid_layout.attributes[(uint32_t)VAO_ATTRIB::NORMAL].in_use = true;
@@ -897,7 +897,7 @@ void AbstractRenderer::InitializeGLObjects()
     buffers = GetBufferHandlesForMeshHandle(m_pyramid_vao.get());
     m_pyramid_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_pyramid_vbo.get());
-    ConfigureBufferHandleData(m_pyramid_vbo, vbo_size6 * sizeof(GLfloat), (void* const)&vbo_data6[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_pyramid_vbo, vbo_size6 * sizeof(GLfloat), (void*)&vbo_data6[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     VertexAttributeLayout cone2_layout;
     cone2_layout.attributes[(uint32_t)VAO_ATTRIB::NORMAL].in_use = true;
@@ -925,7 +925,7 @@ void AbstractRenderer::InitializeGLObjects()
     buffers = GetBufferHandlesForMeshHandle(m_cone2_vao.get());
     m_cone2_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_cone2_vbo.get());
-    ConfigureBufferHandleData(m_cone2_vbo, vbo_size7 * sizeof(GLfloat), (void* const)&vbo_data7[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_cone2_vbo, vbo_size7 * sizeof(GLfloat), (void*)&vbo_data7[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     VertexAttributeLayout cube3_layout;
     cube3_layout.attributes[(uint32_t)VAO_ATTRIB::NORMAL].in_use = true;
@@ -953,7 +953,7 @@ void AbstractRenderer::InitializeGLObjects()
     buffers = GetBufferHandlesForMeshHandle(m_cube3_vao.get());
     m_cube3_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_cube3_vbo.get());
-    ConfigureBufferHandleData(m_cube3_vbo, vbo_size8 * sizeof(GLfloat), (void* const)&vbo_data8[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_cube3_vbo, vbo_size8 * sizeof(GLfloat), (void*)&vbo_data8[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     VertexAttributeLayout portal_stencil_cylinder_layout;
     portal_stencil_cylinder_layout.attributes[(uint32_t)VAO_ATTRIB::NORMAL].in_use = true;
@@ -974,7 +974,7 @@ void AbstractRenderer::InitializeGLObjects()
     buffers = GetBufferHandlesForMeshHandle(m_portal_stencil_cylinder_vao.get());
     m_portal_stencil_cylinder_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_portal_stencil_cylinder_vbo.get());
-    ConfigureBufferHandleData(m_portal_stencil_cylinder_vbo, vbo_sizec * sizeof(GLfloat), (void* const)&vbo_datac[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_portal_stencil_cylinder_vbo, vbo_sizec * sizeof(GLfloat), (void*)&vbo_datac[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     VertexAttributeLayout portal_stencil_cube_layout;
     portal_stencil_cube_layout.attributes[(uint32_t)VAO_ATTRIB::NORMAL].in_use = true;
@@ -995,7 +995,7 @@ void AbstractRenderer::InitializeGLObjects()
     buffers = GetBufferHandlesForMeshHandle(m_portal_stencil_cube_vao.get());
     m_portal_stencil_cube_vbo = (*buffers)[(GLuint)VAO_ATTRIB::POSITION];
     BindBufferHandle(m_portal_stencil_cube_vbo.get());
-    ConfigureBufferHandleData(m_portal_stencil_cube_vbo, vbo_size9 * sizeof(GLfloat), (void* const)&vbo_data9[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
+    ConfigureBufferHandleData(m_portal_stencil_cube_vbo, vbo_size9 * sizeof(GLfloat), (void*)&vbo_data9[0], BufferHandle::BUFFER_USAGE::STATIC_DRAW);
 
     //InitScreenQuadShaderProgram();
     //InitScreenAlignedQuad();
@@ -1093,7 +1093,7 @@ void AbstractRenderer::InitializeState()
     // Initialize GPU Frame timers
 #ifndef __ANDROID__
     m_GPUTimeQuery.resize(BUFFER_CHUNK_COUNT);
-    for (unsigned int i = 0; i < m_GPUTimeQuery.size(); ++i)
+    for (int i = 0; i < m_GPUTimeQuery.size(); ++i)
     {
         MathUtil::glFuncs->glGenQueries(1, &m_GPUTimeQuery[i]);
         MathUtil::glFuncs->glBeginQuery(GL_TIME_ELAPSED, m_GPUTimeQuery[i]);
@@ -3263,7 +3263,7 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateCubemapTextureHandleFromT
     int h = 0;
     GLint max_dim = 0;
 
-    const unsigned int imageCount = p_skybox_image_data.size();
+    const int imageCount = p_skybox_image_data.size();
     uchar max_pixel_size_in_bytes = 0;
     QVector<uchar> pixel_sizes_in_bytes;
     pixel_sizes_in_bytes.resize(6);
@@ -3283,7 +3283,7 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateCubemapTextureHandleFromT
     TextureHandle::COLOR_SPACE color_space = TextureHandle::LINEAR;
 
     //get max size needed
-    for (unsigned int i = 0; i < imageCount; i++)
+    for (int i = 0; i < imageCount; i++)
     {
         if (p_skybox_image_data[i])
         {
@@ -3416,19 +3416,19 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateCubemapTextureHandleFromT
     // Bind src fbo to READ FRAMEBUFFER
     MathUtil::glFuncs->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst_fbo);
     // For each face
-    for (size_t face_index = 0; face_index < imageCount; ++face_index)
+    for (int face_index = 0; face_index < imageCount; ++face_index)
     {
         // Attach src face to src fbo
         GLuint face_id = 0;
         TextureHandle * ref_handle = p_skybox_image_handles[face_index];
-        auto const tex_count = m_texture_handle_to_GL_ID.size();
+        const int tex_count = m_texture_handle_to_GL_ID.size();
         if (m_texture_handle_to_GL_ID[ref_handle->m_last_known_index].first->m_UUID.m_UUID == ref_handle->m_UUID.m_UUID)
         {
             face_id =  m_texture_handle_to_GL_ID[ref_handle->m_last_known_index].second;
         }
         else
         {
-            for (size_t itr = 0; itr < tex_count; ++itr)
+            for (int itr = 0; itr < tex_count; ++itr)
             {
                 if (m_texture_handle_to_GL_ID[itr].first->m_UUID.m_UUID == ref_handle->m_UUID.m_UUID)
                 {
@@ -4380,7 +4380,7 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureQImage(const QImag
 
     GLenum internal_format = GL_RGBA8;
     GLenum external_format = GL_RGB;
-    GLenum external_pixel_size = GL_UNSIGNED_BYTE;
+    GLenum external_pixel_size = GL_UNSIGNED_BYTE;    
     switch(img.format())
     {
     case QImage::Format_RGB888:
@@ -4448,15 +4448,15 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureQImage(const QImag
 
                 for (int row = 0; row < height; row++)
                 {
-					for (int column = first_alpha_offset; column < width; column += pixel_offset)
-					{
-						uchar const * this_alpha_ptr = &(img_data[row * width + column]);
-						if (this_alpha_ptr != nullptr)
-						{
-							found_zero = (found_zero) ? found_zero : (*this_alpha_ptr == 0x00);
-							found_one = (found_one) ? found_one : (*this_alpha_ptr == 0xff);
-							found_blended = (found_blended) ? found_blended : ((*this_alpha_ptr != 0xff) && (*this_alpha_ptr != 0x00));
-						}
+                    for (int column = first_alpha_offset; column < width; column += pixel_offset)
+                    {
+                        uchar const * this_alpha_ptr = &(img_data[row * width + column]);
+                        if (this_alpha_ptr != nullptr)
+                        {
+                            found_zero = (found_zero) ? found_zero : (*this_alpha_ptr == 0x00);
+                            found_one = (found_one) ? found_one : (*this_alpha_ptr == 0xff);
+                            found_blended = (found_blended) ? found_blended : ((*this_alpha_ptr != 0xff) && (*this_alpha_ptr != 0x00));
+                        }
                     }
                 }
 
@@ -5224,7 +5224,7 @@ void AbstractRenderer::CacheUniformLocations(GLuint p_program, QVector<QVector<G
 {
     GLint loc = -1;
 
-    if ((*p_map).size() <= p_program)
+    if ((*p_map).size() <= int(p_program))
     {
         (*p_map).resize(p_program + 128); // Allocate 128 here so that we aren't reallocating frequently
     }

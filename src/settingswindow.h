@@ -11,6 +11,7 @@ class SettingsWindow  : public QMainWindow
     Q_OBJECT
 public:
     SettingsWindow(Game * g);
+    void closeEvent(QCloseEvent *event);
 
 public slots:
 

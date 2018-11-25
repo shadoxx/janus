@@ -224,14 +224,6 @@ void BookmarkManager::LoadBookmarks()
         bookmarks = QJsonDocument::fromJson(ba).toVariant().toList();
         qDebug() << "BookmarkManager::LoadBookmarks() - Loaded" << bookmarks.size() << "bookmarks.";
     }
-
-#if defined(__ANDROID__) && defined(OCULUS_SUBMISSION_BUILD)
-    //For now just reset bookmarks on every load
-    bookmarks.clear();
-    const QString path = MathUtil::GetApplicationURL() + "assets/3dui/thumbs/";
-    AddBookmark("https://vesta.janusvr.com", path+"vesta.jpg");
-    SaveBookmarks();
-#endif
 }
 
 void BookmarkManager::SaveBookmarks()

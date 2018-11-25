@@ -73,7 +73,7 @@ VirtualMenuImageButton * VirtualMenu::AddNewImageButton(const VirtualMenuIndex i
         assetimgs[thumb_id]->Load();
     }
 
-    VirtualMenuImageButton * b = new VirtualMenuImageButton(js_id, url, thumb_id, m);
+    VirtualMenuImageButton * b = new VirtualMenuImageButton(js_id, url, m);
     b->button->SetAssetObject(assetobjs["cube"]);
     b->button->SetCollisionAssetObject(assetobjs["cube"]);
     b->button->SetAssetImage(assetimgs[thumb_id]);
@@ -92,7 +92,7 @@ VirtualMenuIconButton * VirtualMenu::AddNewIconButton(const VirtualMenuIndex ind
         assetimgs[imageurl]->Load();
     }
 
-    VirtualMenuIconButton * b = new VirtualMenuIconButton(js_id, imageurl, m);
+    VirtualMenuIconButton * b = new VirtualMenuIconButton(js_id, m);
     b->button->SetAssetObject(assetobjs["cube"]);
     b->button->SetCollisionAssetObject(assetobjs["cube"]);
     b->overlay->SetAssetObject(assetobjs["plane"]);
@@ -112,7 +112,7 @@ VirtualMenuImageUserButton * VirtualMenu::AddNewImageUserButton(const VirtualMen
         assetimgs[thumb_id]->Load();
     }
 
-    VirtualMenuImageUserButton * b = new VirtualMenuImageUserButton(js_id, user, url, thumb_id, m);
+    VirtualMenuImageUserButton * b = new VirtualMenuImageUserButton(js_id, user, url, m);
     b->button->SetAssetObject(assetobjs["cube"]);
     b->button->SetCollisionAssetObject(assetobjs["cube"]);
     b->button->SetAssetImage(assetimgs[thumb_id]);
@@ -187,8 +187,8 @@ void VirtualMenu::Update()
         const QByteArray & ba = partymode_data_request.GetData();
         MathUtil::GetPartyModeData() = QJsonDocument::fromJson(ba).toVariant().toMap()["data"].toList();
         partymode_data_request.SetProcessed(true);
-
-        ConstructSubmenus();
+        ConstructSubmenus();        
+//        qDebug() << MathUtil::GetPartyModeData();
     }
 
     if (search_data_request.GetLoaded() && !search_data_request.GetProcessed()) {
@@ -810,7 +810,7 @@ void VirtualMenu::UpdatePartyModeList()
     }
 
     if (!partymode_data_request.GetStarted() || partymode_data_request.GetProcessed()) {
-        partymode_data_request.Load(QUrl("http://api.janusvr.com/partymodeAPI"));
+        partymode_data_request.Load(QUrl("https://vesta.janusvr.com/api/party_mode"));
     }
 }
 

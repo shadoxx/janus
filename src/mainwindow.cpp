@@ -1338,6 +1338,11 @@ void MainWindow::SetupMenuWidgets()
     settingsAct->setStatusTip(tr("Settings..."));
     connect(settingsAct, &QAction::triggered, this, &MainWindow::ActionSettings);
 
+    virtualMenuAct = new QAction(tr("Virtual Menu"), this);
+//    virtualMenuAct->setShortcut(QKeySequence(Qt::Key_Tab)); //62.0 - enabling this causes TAB not to work in edit mode
+    virtualMenuAct->setStatusTip(tr("Show/hide virtual menu"));
+    connect(virtualMenuAct, &QAction::triggered, this, &MainWindow::ActionVirtualMenu);
+
     toggleFullscreenAct = new QAction(tr("Fullscreen"), this);
     toggleFullscreenAct->setStatusTip(tr("Toggle Fullscreen Mode"));
     connect(toggleFullscreenAct, &QAction::triggered, this, &MainWindow::ActionToggleFullscreen);
@@ -1420,6 +1425,8 @@ void MainWindow::SetupMenuWidgets()
 
 #ifndef __ANDROID__
     windowMenu = new QMenu("Window", this);
+    windowMenu->addAction(codeEditorAct);
+    windowMenu->addSeparator();
     windowMenu->addAction(socialAct);
     windowMenu->addAction(navigationAct);
     windowMenu->addSeparator();
@@ -1461,6 +1468,7 @@ void MainWindow::SetupMenuWidgets()
 #endif
     ellipsisMenu->addSeparator();
     ellipsisMenu->addAction(settingsAct);
+    ellipsisMenu->addAction(virtualMenuAct);
 #ifndef __ANDROID__
     ellipsisMenu->addAction(exitAct);
 #endif
@@ -1642,6 +1650,15 @@ void MainWindow::DoOpenURL(const QString url)
 void MainWindow::ActionSocial()
 {
     social_window->setVisible(socialAct->isChecked());
+}
+
+void MainWindow::ActionVirtualMenu()
+{
+    //62.0 - do not show menu when in edit mode or doing something else
+    if (game->GetState() == JVR_STATE_DEFAULT) {
+        game->GetVirtualMenu()->MenuButtonPressed();
+        glwidget->SetGrab(true);
+    }
 }
 
 #ifndef __ANDROID__

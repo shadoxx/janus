@@ -59,7 +59,7 @@ struct VirtualMenuButton
 
 struct VirtualMenuIconButton
 {
-    VirtualMenuIconButton(const QString js_id, const QString imageurl, const QMatrix4x4 m)
+    VirtualMenuIconButton(const QString js_id, const QMatrix4x4 m)
     {
         button = new RoomObject();
         button->SetType(TYPE_OBJECT);
@@ -98,7 +98,7 @@ struct VirtualMenuIconButton
 
 struct VirtualMenuImageButton
 {
-    VirtualMenuImageButton(const QString js_id, const QString url, const QString thumb_id, const QMatrix4x4 m)
+    VirtualMenuImageButton(const QString js_id, const QString url, const QMatrix4x4 m)
     {
         button = new RoomObject();
         button->SetType(TYPE_OBJECT);
@@ -140,7 +140,7 @@ struct VirtualMenuImageButton
 
 struct VirtualMenuImageUserButton
 {
-    VirtualMenuImageUserButton(const QString js_id, const QString user, const QString url, const QString thumb_id, const QMatrix4x4 m)
+    VirtualMenuImageUserButton(const QString js_id, const QString user, const QString url, const QMatrix4x4 m)
     {
         button = new RoomObject();
         button->SetType(TYPE_OBJECT);

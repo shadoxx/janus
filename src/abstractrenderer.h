@@ -408,7 +408,7 @@ public:
 			return;
 		}
 
-        size_t last_known_index = p_mesh_handle->m_last_known_index;
+        int last_known_index = p_mesh_handle->m_last_known_index;
         if (last_known_index < m_mesh_handle_to_GL_ID.size() && m_mesh_handle_to_GL_ID[last_known_index].first->m_UUID.m_UUID == p_mesh_handle->m_UUID.m_UUID)
         {
             VAO_id = m_mesh_handle_to_GL_ID[last_known_index].second;
@@ -416,7 +416,7 @@ public:
         else
         {
             const auto mesh_count = m_mesh_handle_to_GL_ID.size();
-            for (size_t itr = 0; itr < mesh_count; ++itr)
+            for (int itr = 0; itr < mesh_count; ++itr)
             {
                 if (m_mesh_handle_to_GL_ID[itr].first == p_mesh_handle && m_mesh_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_mesh_handle->m_UUID.m_UUID)
                 {
@@ -450,7 +450,7 @@ public:
 			return;
 		}
 
-        size_t last_known_index = p_buffer_handle->m_last_known_index;
+        int last_known_index = p_buffer_handle->m_last_known_index;
         if (last_known_index < m_buffer_handle_to_GL_ID.size() && m_buffer_handle_to_GL_ID[last_known_index].first->m_UUID.m_UUID == p_buffer_handle->m_UUID.m_UUID)
         {
             VBO_id = m_buffer_handle_to_GL_ID[last_known_index].second;
@@ -458,7 +458,7 @@ public:
         else
         {
             const auto buffer_count = m_buffer_handle_to_GL_ID.size();
-            for (size_t itr = 0; itr < buffer_count; ++itr)
+            for (int itr = 0; itr < buffer_count; ++itr)
             {
                 if (m_buffer_handle_to_GL_ID[itr].first == p_buffer_handle && m_buffer_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_buffer_handle->m_UUID.m_UUID)
                 {

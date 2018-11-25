@@ -72,8 +72,8 @@ void MediaPlayer::SetupOutput(MediaContext * ctx, QString vid_url, const bool lo
         ctx->player = this;
 
         if (!ctx->audio_only){
-            ctx->img[0] = new QImage(1080, 720, QImage::Format_RGB32);
-            ctx->img[1] = new QImage(1080, 720, QImage::Format_RGB32);
+            ctx->img[0] = new QImage(1080, 720, QImage::Format_ARGB32);
+            ctx->img[1] = new QImage(1080, 720, QImage::Format_ARGB32);
 
             ctx->ou3d = ou3d;
             ctx->sbs3d = sbs3d;
@@ -108,8 +108,9 @@ void MediaPlayer::SetupOutput(MediaContext * ctx, QString vid_url, const bool lo
                                            &MediaPlayer::lock,
                                            &MediaPlayer::unlock,
                                            &MediaPlayer::display,
-                                           ctx);
-                libvlc_video_set_format(ctx->media_player, "RV32", 1080, 720, 1080*4);
+                                           ctx);                
+//                libvlc_video_set_format(ctx->media_player, "RV32", 1080, 720, 1080*4);
+                libvlc_video_set_format(ctx->media_player, "RGBA", 1080, 720, 1080*4);
                 libvlc_audio_set_callbacks(ctx->media_player,
                                            &MediaPlayer::play,
                                            &MediaPlayer::pause,
@@ -347,17 +348,13 @@ void MediaPlayer::UpdateTexture(MediaContext * ctx)
         {
             if (ctx->m_texture_handles[0] == nullptr || ctx->m_texture_handles[0] == AssetImage::null_image_tex_handle)
             {
-                ctx->m_texture_handles[0] = RendererInterface::m_pimpl->CreateTextureQImage(*(ctx->img[0]), true, true, false, TextureHandle::ALPHA_TYPE::NONE, TextureHandle::COLOR_SPACE::SRGB);
+                //ctx->m_texture_handles[0] = RendererInterface::m_pimpl->CreateTextureQImage(*(ctx->img[0]), true, true, false, TextureHandle::ALPHA_TYPE::NONE, TextureHandle::COLOR_SPACE::SRGB);
+                ctx->m_texture_handles[0] = RendererInterface::m_pimpl->CreateTextureQImage(*(ctx->img[0]), true, true, false, TextureHandle::ALPHA_TYPE::BLENDED, TextureHandle::COLOR_SPACE::SRGB);
             }
             else
             {
-#ifdef __ANDROID__
                 RendererInterface::m_pimpl->UpdateTextureHandleData(ctx->m_texture_handles[0].get(), 0 ,0, 0,
-                                        ctx->img[0]->width(), ctx->img[0]->height(), GL_RGBA, GL_UNSIGNED_BYTE, (void *)ctx->img[0]->constBits(), ctx->img[0]->width() * ctx->img[0]->height() * 4);
-#else
-                RendererInterface::m_pimpl->UpdateTextureHandleData(ctx->m_texture_handles[0].get(), 0 ,0, 0,
-                                        ctx->img[0]->width(), ctx->img[0]->height(), GL_BGRA, GL_UNSIGNED_BYTE, (void *)ctx->img[0]->constBits(), ctx->img[0]->width() * ctx->img[0]->height() * 4);
-#endif
+                        ctx->img[0]->width(), ctx->img[0]->height(), GL_RGBA, GL_UNSIGNED_BYTE, (void *)ctx->img[0]->constBits(), ctx->img[0]->width() * ctx->img[0]->height() * 4);
                 RendererInterface::m_pimpl->GenerateTextureHandleMipMap(ctx->m_texture_handles[0].get());
             }
         }
@@ -368,7 +365,7 @@ void MediaPlayer::UpdateTexture(MediaContext * ctx)
 
 void MediaPlayer::UpdateLeftRightTextures(MediaContext * ctx)
 {
-    if (ctx->audio_only) return;
+    if (ctx->audio_only) return;    
     if (ctx->update_tex && ctx->video_lock.tryLock())
     {
         for (int i=0; i<2; ++i)
@@ -377,13 +374,17 @@ void MediaPlayer::UpdateLeftRightTextures(MediaContext * ctx)
             {
                 if (!ctx->m_texture_handles[i] || ctx->m_texture_handles[i] == AssetImage::null_image_tex_handle)
                 {
-                    ctx->m_texture_handles[i] = RendererInterface::m_pimpl->CreateTextureQImage(*(ctx->img[i]), true, true, false, TextureHandle::ALPHA_TYPE::NONE, TextureHandle::COLOR_SPACE::SRGB);
+//                    ctx->m_texture_handles[i] = RendererInterface::m_pimpl->CreateTextureQImage(*(ctx->img[i]), true, true, false, TextureHandle::ALPHA_TYPE::NONE, TextureHandle::COLOR_SPACE::SRGB);
+                    ctx->m_texture_handles[i] = RendererInterface::m_pimpl->CreateTextureQImage(*(ctx->img[i]), true, true, false, TextureHandle::ALPHA_TYPE::BLENDED, TextureHandle::COLOR_SPACE::SRGB);
                 }
                 else
                 {
 #ifdef __ANDROID__
                     RendererInterface::m_pimpl->UpdateTextureHandleData(ctx->m_texture_handles[i].get(),0 ,0, 0,
                             ctx->img[i]->width(), ctx->img[i]->height(), GL_RGBA, GL_UNSIGNED_BYTE, (void *)ctx->img[i]->constBits(), ctx->img[i]->width() * ctx->img[i]->height() * 4);
+#elif __linux__
+                RendererInterface::m_pimpl->UpdateTextureHandleData(ctx->m_texture_handles[0].get(), 0 ,0, 0,
+                                        ctx->img[0]->width(), ctx->img[0]->height(), GL_RGBA, GL_UNSIGNED_BYTE, (void *)ctx->img[0]->constBits(), ctx->img[0]->width() * ctx->img[0]->height() * 4);
 #else
                     RendererInterface::m_pimpl->UpdateTextureHandleData(ctx->m_texture_handles[i].get(),0 ,0, 0,
                             ctx->img[i]->width(), ctx->img[i]->height(), GL_BGRA, GL_UNSIGNED_BYTE, (void *)ctx->img[i]->constBits(), ctx->img[i]->width() * ctx->img[i]->height() * 4);
@@ -596,14 +597,8 @@ void MediaPlayer::unlock(void *data, void *id, void *const *)
                     ctx->video_height = videoTrack->i_height;
 
                     if (ctx->video_width > 1080 || ctx->video_height > 720) {
-
-#ifdef __ANDROID__
-                        QImage * new_0 = new QImage(ctx->img[0]->rgbSwapped().scaled(QSize(ctx->video_width,ctx->video_height)));
-                        QImage * new_1 = new QImage(ctx->img[0]->rgbSwapped().scaled(QSize(ctx->video_width,ctx->video_height)));
-#else
-                        QImage * new_0 = new QImage(ctx->img[0]->scaled(QSize(ctx->video_width,ctx->video_height)));
-                        QImage * new_1 = new QImage(ctx->img[0]->scaled(QSize(ctx->video_width,ctx->video_height)));
-#endif
+                        QImage * new_0 = new QImage(ctx->video_width, ctx->video_height, QImage::Format_ARGB32);
+                        QImage * new_1 = new QImage(ctx->video_width, ctx->video_height, QImage::Format_ARGB32);
 
                         delete ctx->img[0];
                         delete ctx->img[1];
@@ -622,11 +617,7 @@ void MediaPlayer::unlock(void *data, void *id, void *const *)
     //qDebug() << "Video size" << w << h;
 
     if (!resized) {
-#ifdef __ANDROID__
-        *(ctx->img[0]) = (ctx->img[0]->rgbSwapped().scaled(QSize(ctx->video_width,ctx->video_height)));
-#else
         *(ctx->img[0]) = (ctx->img[0]->scaled(QSize(ctx->video_width,ctx->video_height)));
-#endif
     }
 
     if (ctx->sbs3d || ctx->ou3d)
@@ -667,7 +658,8 @@ void MediaPlayer::unlock(void *data, void *id, void *const *)
         ctx->img[1] = nullptr;
     }
 
-    //ctx->img[0].save(MathUtil::GetScreenshotPath() + "out-" + MathUtil::GetCurrentDateTimeAsString() + ".jpg", "jpg", 90);
+//    ctx->img[0]->save(MathUtil::GetScreenshotPath() + "out-" + MathUtil::GetCurrentDateTimeAsString() + ".png", "png", 90);
+//    qDebug() << "ctx->img" << ctx->img[0]->format();
 
     ctx->update_tex = true;
 

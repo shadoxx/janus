@@ -260,7 +260,7 @@ void AssetImage::Load()
     }
     else {
         if (props->GetSrcURL().isEmpty()) {
-            qDebug() << "AssetImage::Load() ERROR: Tried to load with an empty url" << props->GetID() << props->GetSrc();
+//            qDebug() << "AssetImage::Load() ERROR: Tried to load with an empty url" << props->GetID() << props->GetSrc();
             SetLoaded(true);
             SetProcessed(true);
             SetFinished(true);

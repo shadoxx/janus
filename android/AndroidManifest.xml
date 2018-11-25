@@ -1,33 +1,33 @@
 <?xml version="1.0"?>
-<manifest package="org.janusvr" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:versionName="60.00" android:versionCode="49" android:installLocation="auto">
+<manifest package="org.janusvr" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:versionName="61.00" android:versionCode="50" android:installLocation="auto">
     <!--Normal app -->
-<!--
     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:keepScreenOn="true" android:label="JanusVR" android:icon="@drawable/icon">
         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="org.janus.JanusActivity" android:label="JanusVR" android:screenOrientation="landscape" android:launchMode="singleTop" android:resizeableActivity="false" android:theme="@style/VrActivityTheme" android:excludeFromRecents="true">
--->
     <!---->
     <!--For Oculus GO Submission -->
+<!--
     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:keepScreenOn="true" android:label="JanusVR" android:icon="@drawable/icon" android:debuggable="false">
             <meta-data android:name="com.samsung.android.vr.application.mode" android:value="vr_only"/>
-            <activity android:configChanges="density|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="org.janus.JanusActivity" android:label="JanusVR" android:screenOrientation="landscape" android:launchMode="singleTask" android:resizeableActivity="false" android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" android:excludeFromRecents="true">    
+            <activity android:configChanges="density|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="org.janus.JanusActivity" android:label="JanusVR" android:screenOrientation="landscape" android:launchMode="singleTask" android:resizeableActivity="false" android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" android:excludeFromRecents="true">
+-->
     <!---->
             <!--Normal app-->
-<!--
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
                 <category android:name="com.google.intent.category.DAYDREAM"/>
                 <category android:name="com.google.intent.category.CARDBOARD"/>
             </intent-filter>
--->
             <!---->
+
             <!--For Oculus GO Submission -->
+<!--
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.INFO"/>
             </intent-filter>
+-->
             <!---->
-
             <intent-filter>
                 <action android:name="org.janusvr.launchfrombrowser"/>
                 <category android:name="android.intent.category.DEFAULT"/>

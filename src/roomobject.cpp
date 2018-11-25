@@ -2218,23 +2218,18 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
                 const float angle = 90.0f - atan2f(z.z(), z.x()) * MathUtil::_180_OVER_PI;
 
                 //draw body
-                if (SettingsManager::GetUpdateCustomAvatars()) {
-                    if (!body_id.isEmpty()) {
-                        //enter here if body_id is empty, this allows blank id's to be "nodraw" for this part
-                        if (ghost_assetobjs.contains(body_id) && ghost_assetobjs[body_id]) {
-                            ghost_assetobjs[body_id]->Update();
-                            ghost_assetobjs[body_id]->UpdateGL();
+                bool custom_avatar_body = false;
+                if (SettingsManager::GetUpdateCustomAvatars() && !body_id.isEmpty() && ghost_assetobjs.contains(body_id) && ghost_assetobjs[body_id]) {
+                    ghost_assetobjs[body_id]->Update();
+                    ghost_assetobjs[body_id]->UpdateGL();
 
-                            if (ghost_assetobjs[body_id]->GetFinished()) {
-                                ghost_assetobjs[body_id]->DrawGL(shader, col);
-                            }
-                        }
-                        else if (avatar_obj && avatar_obj->GetFinished()) {
-                            avatar_obj->DrawGL(shader, col);
-                        }
+                    if (ghost_assetobjs[body_id]->GetFinished()) {
+                        custom_avatar_body = true;
+                        ghost_assetobjs[body_id]->DrawGL(shader, col);
                     }
                 }
-                else if (avatar_obj && avatar_obj->GetFinished()) {
+
+                if (!custom_avatar_body && body_id.isEmpty() && head_id.isEmpty() && avatar_obj && avatar_obj->GetFinished()) {
                     avatar_obj->DrawGL(shader, col);
                 }
 
@@ -2247,21 +2242,18 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
                 MathUtil::MultModelMatrix(m);
                 MathUtil::ModelMatrix().translate(-head_avatar_pos.x(), -head_avatar_pos.y(), -head_avatar_pos.z());
 
-                if (SettingsManager::GetUpdateCustomAvatars()) {
-                    if (!head_id.isEmpty()) {
-                        //enter here if head_id is empty, this allows blank id's to be "nodraw" for this part
-                        if (ghost_assetobjs.contains(head_id) && ghost_assetobjs[head_id]) {
-                            ghost_assetobjs[head_id]->Update();
-                            ghost_assetobjs[head_id]->UpdateGL();
+                bool custom_avatar_head = false;
+                if (SettingsManager::GetUpdateCustomAvatars() && !head_id.isEmpty() && ghost_assetobjs.contains(head_id) && ghost_assetobjs[head_id]) {
+                    ghost_assetobjs[head_id]->Update();
+                    ghost_assetobjs[head_id]->UpdateGL();
 
-                            if (ghost_assetobjs[head_id]->GetFinished()) {
-                                ghost_assetobjs[head_id]->DrawGL(shader, col);
-                            }
-                        }
-                        else if (avatar_head_obj && avatar_head_obj->GetFinished()) {
-                            avatar_head_obj->DrawGL(shader, col);
-                        }
+                    if (ghost_assetobjs[head_id]->GetFinished()) {
+                        custom_avatar_head = true;
+                        ghost_assetobjs[head_id]->DrawGL(shader, col);
                     }
+                }
+                if (!custom_avatar_head && body_id.isEmpty() && head_id.isEmpty() && avatar_head_obj && avatar_head_obj->GetFinished()) {
+                    avatar_head_obj->DrawGL(shader, col);
                 }
                 MathUtil::PopModelMatrix();
 

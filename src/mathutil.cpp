@@ -282,8 +282,7 @@ void MathUtil::Initialize()
 
     if (vid_extensions.isEmpty()) {
         vid_extensions.push_back("mpg");
-        vid_extensions.push_back("mp4");
-        vid_extensions.push_back("mpeg");
+        vid_extensions.push_back("mp4");        
         vid_extensions.push_back("mkv");
         vid_extensions.push_back("avi");
         vid_extensions.push_back("ogv");
@@ -293,6 +292,7 @@ void MathUtil::Initialize()
         vid_extensions.push_back("m4v");
         vid_extensions.push_back("m3u8");
         vid_extensions.push_back("webm");
+        vid_extensions.push_back("mpeg");
     }
 
     if (sound_extensions.isEmpty()) {

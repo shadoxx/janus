@@ -26,9 +26,9 @@ inline void Renderer::InitializeScopes()
     // frametime spikes when a new scope is first used
     // There are two vectors for each scope.
     m_abstractRenderer->m_scoped_render_commands_cache.resize(3);
-    auto const cache_size = m_abstractRenderer->m_scoped_render_commands_cache.size();
+    const int cache_size = m_abstractRenderer->m_scoped_render_commands_cache.size();
 
-    for (size_t cache_index = 0; cache_index < cache_size; ++cache_index)
+    for (int cache_index = 0; cache_index < cache_size; ++cache_index)
     {
         m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_STENCILS].reserve(1024);
         m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CHILD_ROOM_SKYBOX].reserve(1024);
@@ -53,19 +53,14 @@ inline void Renderer::InitializeScopes()
 void Renderer::Initialize(QString const & p_requested_gl_version)
 {
 //    qDebug() << "Renderer::Initialize" << this << p_requested_gl_version;
-
 #ifdef __APPLE__
     m_requested_version_string = "3.3";
 #else
     m_requested_version_string = p_requested_gl_version;
 #endif
 
-    //59.3 - below line not needed?
-    QOpenGLContext * c = QOpenGLContext::currentContext();
-
     m_abstractRenderer = std::unique_ptr<AbstractRenderer>(new RendererGL33());
 
-    //m_abstractRenderer = std::unique_ptr<AbstractRenderer>(new RendererGL33_LoadingThread());
     InitializeScopes();
     m_abstractRenderer->Initialize();    
 	RendererInterface::m_pimpl = (RendererInterface*)this;    

@@ -17,7 +17,7 @@ SettingsWindow::SettingsWindow(Game * g) :
     connect(tab_widget, SIGNAL(currentChanged(int)), this, SLOT(Update()));    
 
     setCentralWidget(tab_widget);
-    Update();
+    Update();   
 }
 
 QWidget * SettingsWindow::GetAudioWidget()
@@ -549,6 +549,11 @@ void SettingsWindow::SlotSetViveTrackpadMovement()
 void SettingsWindow::SlotSetRenderPortalRooms()
 {
     SettingsManager::settings["renderportalrooms"] = checkbox_renderportalrooms->isChecked();
+}
+
+void SettingsWindow::closeEvent(QCloseEvent *event)
+{
+    SettingsManager::SaveSettings();
 }
 
 #ifdef __ANDROID__

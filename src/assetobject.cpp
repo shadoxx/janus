@@ -106,7 +106,7 @@ void AssetObject::Load()
         QtConcurrent::run(geom.data(), &Geom::Load);
     }
     else {
-        qDebug() << "AssetObject::Load() ERROR: Tried to load with an empty url" << props->GetID() << props->GetSrc();
+//        qDebug() << "AssetObject::Load() ERROR: Tried to load with an empty url" << props->GetID() << props->GetSrc();
         SetLoaded(true);
         SetProcessed(true);
         SetFinished(true);

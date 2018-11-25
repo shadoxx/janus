@@ -153,6 +153,7 @@ public slots:
 
     void ActionOpenWindow();
     void ActionToggleFullscreen();
+    void ActionVirtualMenu();
     void ActionSocial();
 #ifndef __ANDROID__
     void ActionCodeEditor();
@@ -246,6 +247,7 @@ private:
     QAction *stopRecordingAct;
     QAction *syncToAct;
     QAction *settingsAct;
+    QAction *virtualMenuAct;
 #ifndef __ANDROID__
     QAction *codeEditorAct;
     QAction *navigationAct;

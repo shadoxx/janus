@@ -47,7 +47,7 @@ void PerformanceLogger::EndFrameSample()
 
 void PerformanceLogger::SetGPUTimeQueryResults(QVector<GLuint64> & v)
 {
-    for (unsigned int i=0; i<(unsigned int)(frame_samples.size()); ++i) {
+    for (int i=0; i<frame_samples.size(); ++i) {
         if (i < v.size()) {
             frame_samples[i].render_thread_gpu_time = double(v[i] / 1000000.0);
         }
@@ -59,7 +59,7 @@ void PerformanceLogger::SetGPUTimeQueryResults(QVector<GLuint64> & v)
 
 void PerformanceLogger::SetCPUTimeQueryResults(QVector<uint64_t>& v)
 {
-    for (unsigned int i=0; i<(unsigned int)(frame_samples.size()); ++i) {
+    for (int i=0; i<frame_samples.size(); ++i) {
         if (i < v.size()) {
             frame_samples[i].render_thread_cpu_time = double(v[i] / 1000000.0);
         }

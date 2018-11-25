@@ -766,8 +766,7 @@ public class JanusActivity extends org.qtproject.qt5.android.bindings.QtActivity
             boolean connected = false;
             int[] devices = mInputManager.getInputDeviceIds();
             for (int i = 0; i < devices.length; i++) {
-                if ((mInputManager.getInputDevice(devices[i]).getSources() & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
-                || (mInputManager.getInputDevice(devices[i]).getSources() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) {
+                if ((mInputManager.getInputDevice(devices[i]).getSources() & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) {
                     connected = true;
                     break;
                 }

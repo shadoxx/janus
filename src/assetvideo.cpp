@@ -84,8 +84,6 @@ void AssetVideo::SetSoundEnabled(MediaContext * ctx, const bool b)
 
 void AssetVideo::DrawGL(MediaContext * ctx, QPointer <AssetShader> shader, const bool left_eye, const float aspect_ratio)
 {
-    const float aspect = GetAspectRatio(ctx);
-
     shader->SetUseTextureAll(false);
     shader->SetUseTexture(0, true, false, false);
 

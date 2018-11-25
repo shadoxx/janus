@@ -92,12 +92,8 @@ Game::~Game()
     multi_players->SetEnabled(false);
 
     //    Analytics::PostEvent("session", "end", NULL,  "end");
-
     SoundManager::StopAll();
     env->Shutdown();
-
-    //save settings
-    SettingsManager::SaveSettings();
 
     //    qDebug() << "Game::DoExitNow()";
     TextureManager::Clear();
@@ -4130,19 +4126,7 @@ void Game::UpdateControllers()
                 }
                 if (b_home.proc_release) {
                     b_home.proc_release = false;
-                    if (controller_manager->GetHMDManager() && (controller_manager->GetHMDManager()->GetHMDType() == "go" || controller_manager->GetHMDManager()->GetHMDType() == "gear")){
-                        if (env->GetCurRoom() == env->GetRootRoom()){
-#if defined(__ANDROID__) && defined(OCULUS_SUBMISSION_BUILD)
-                            ((GearManager*)(controller_manager->GetHMDManager().data()))->ShowQuitMenu();
-#endif
-                        }
-                        else {
-                            StartResetPlayer();
-                        }
-                    }
-                    else {
-                        virtualmenu->MenuButtonPressed();
-                    }
+                    virtualmenu->MenuButtonPressed();
                 }
 
                 //let player grab stuff close by
@@ -4675,7 +4659,14 @@ void Game::UpdateVirtualMenu()
             StartEscapeToHome();
         }
         if (virtualmenu->GetDoExit()) {
-            SetDoExit(true);
+            if (controller_manager->GetHMDManager() && (controller_manager->GetHMDManager()->GetHMDType() == "go" || controller_manager->GetHMDManager()->GetHMDType() == "gear")){
+#if defined(__ANDROID__) && defined(OCULUS_SUBMISSION_BUILD)
+                ((GearManager*)(controller_manager->GetHMDManager().data()))->ShowQuitMenu();
+#endif
+            }
+            else {
+                SetDoExit(true);
+            }
         }
         if (virtualmenu->GetDoCreatePortal()) {
             CreatePortal(virtualmenu->GetDoCreatePortalURL(), true);
@@ -4880,7 +4871,7 @@ void Game::EndOpInteractionDefault(const int i)
     if (o) {
         //55.2 - onclick is on mouse release, and should only happen once per mouse click
         QString click_code = o->GetProperties()->GetOnClick();
-        qDebug() << "onclick code" << click_code;
+//        qDebug() << "onclick code" << click_code;
         if (click_code.length() > 0) { //special javascript onclick code to run
             r->CallJSFunction(click_code, player, multi_players);
         }

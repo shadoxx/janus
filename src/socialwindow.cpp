@@ -54,10 +54,8 @@ SocialWindow::SocialWindow(Game * g) :
     l2->addWidget(lineedit_chatentry);
     w2->setLayout(l2);
 
-#ifndef __ANDROID__
     layout->addWidget(label_globalusers);
     layout->addWidget(table_partymode);
-#endif
     layout->addWidget(label_localusers);
     layout->addWidget(table_roomusers);
     QLabel * local_chat = new QLabel("LOCAL CHAT");
@@ -69,10 +67,8 @@ SocialWindow::SocialWindow(Game * g) :
     w->setLayout(layout);
     setCentralWidget(w);
 
-#ifndef __ANDROID__
     connect(&partymode_request_timer, SIGNAL(timeout()), this, SLOT(UpdatePartyModeList()));
     partymode_request_timer.start(5000);
-#endif
 }
 
 void SocialWindow::Update()
@@ -103,7 +99,6 @@ void SocialWindow::Update()
         label_localusers->setText("LOCAL USERS (CURRENT URL) "+QString::number(players_list.size()));
     }
 
-#ifndef __ANDROID__
     //update party mode
     if (partymode_data_request.GetLoaded() && !partymode_data_request.GetProcessed()) {
         const QByteArray & ba = partymode_data_request.GetData();
@@ -113,7 +108,6 @@ void SocialWindow::Update()
         //repopulate the party mode stuff
         UpdatePartyModeTable();
     }
-#endif
 
     //update text chat messages
     QList <QPair <QString, QColor> > msgs = game->GetMultiPlayerManager()->GetNewChatMessages();
@@ -139,7 +133,7 @@ void SocialWindow::UpdatePartyModeList()
     }
 
     if (!partymode_data_request.GetStarted() || partymode_data_request.GetProcessed()) {
-        partymode_data_request.Load(QUrl("http://api.janusvr.com/partymodeAPI"));
+        partymode_data_request.Load(QUrl("https://vesta.janusvr.com/api/party_mode"));
     }
 }
 

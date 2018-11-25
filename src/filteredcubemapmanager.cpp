@@ -124,6 +124,8 @@ void FilteredCubemapManager::RadianceIrradianceFilter(qint64 p_key, Cubemaps& p_
 
 void FilteredCubemapManager::GenerateRadianceAndIrradianceMaps(qint64 p_key, Cubemaps* p_cubemaps, bool* p_processing_active)
 {
+    Q_UNUSED(p_key);
+
 // STAGE 2: Generate radiance and irradiance cubemaps with CMFT then save to local DDS files for use in room.
     // Load dds files from memory into cmft
     cmft::Image image_face_list_radiance[6];

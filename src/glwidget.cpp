@@ -115,6 +115,7 @@ void GLWidget::SetGrab(const bool b)
     grabbed = b;
 
     if (b) {
+        QCursor::setPos(GetWinCentre());
 #ifdef WIN32
         if (QApplication::overrideCursor() == 0) {
             QApplication::setOverrideCursor(Qt::BlankCursor);
