@@ -2319,12 +2319,16 @@ void Room::SaveXML(QTextStream & ofs)
 
     //60.0 - write out only root level envobjects (nested/child ones get
     //       output by their parent)
+    QMap <ElementType, QString> code;
     for (QPointer <RoomObject> & obj : envobjects) {
         if (obj && obj->GetSaveToMarkup()
                 && obj->GetParentObject().isNull() //root-level condition
                 && obj != entrance_object) {
-            ofs << obj->GetXMLCode(false) << "\n";
+            code[obj->GetType()] += obj->GetXMLCode(false) + "\n";
         }
+    }
+    for (const QString & s : code) {
+        ofs << s;
     }
 
     ofs << "</Room>\n";

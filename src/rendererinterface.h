@@ -126,7 +126,7 @@ public:
     }
 
     ProgramUUID m_UUID;
-    size_t m_last_known_index;
+    int m_last_known_index;
 };
 
 namespace FBO_TEXTURE
@@ -164,7 +164,7 @@ typedef uint32_t FBO_TEXTURE_BITFIELD_ENUM;
 
 namespace RENDERER
 {
-	enum class RENDER_SCOPE : size_t
+    enum RENDER_SCOPE
 	{
         CURRENT_ROOM_SKYBOX = 0,
         CURRENT_ROOM_PORTAL_THUMBS = 1,
@@ -196,7 +196,7 @@ namespace RENDERER
 
 static inline bool Float16ArrayCompare(float const * lhs, float const * rhs)
 {
-	for (size_t i = 0; i < 16; ++i)
+    for (int i = 0; i < 16; ++i)
 	{
 		if (lhs[i] != rhs[i])
 		{
@@ -208,7 +208,7 @@ static inline bool Float16ArrayCompare(float const * lhs, float const * rhs)
 
 static inline bool Float4ArrayCompare(float const * lhs, float const * rhs)
 {
-	for (size_t i = 0; i < 4; ++i)
+    for (int i = 0; i < 4; ++i)
 	{
 		if (lhs[i] != rhs[i])
 		{
@@ -220,7 +220,7 @@ static inline bool Float4ArrayCompare(float const * lhs, float const * rhs)
 
 static inline bool JointsArrayCompare(float const * lhs, float const * rhs)
 {
-	for (size_t i = 0; i < 16 * ASSETSHADER_MAX_JOINTS; ++i)
+    for (int i = 0; i < 16 * ASSETSHADER_MAX_JOINTS; ++i)
 	{
 		if (lhs[i] != rhs[i])
 		{
@@ -232,7 +232,7 @@ static inline bool JointsArrayCompare(float const * lhs, float const * rhs)
 
 static inline bool UseTextureArrayCompare(float const * lhs, float const * rhs)
 {
-	for (size_t i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
+    for (int i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
 	{
 		if (lhs[i] != rhs[i])
 		{
@@ -772,7 +772,7 @@ public:
 	void Clear() { m_UUID = MeshUUID(); }
 
 	MeshUUID m_UUID;
-    size_t m_last_known_index;
+    int m_last_known_index;
 };
 
 class BufferHandle
@@ -992,7 +992,7 @@ public:
 	}
 
 	BufferUUID m_UUID;
-    size_t m_last_known_index;
+    int m_last_known_index;
 };
 
 class TextureSet
@@ -1001,7 +1001,7 @@ public:
 	TextureSet():
 		m_is_3D_texture(false)
 	{
-        for (size_t i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
+        for (int i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
         {
             m_texture_handles_left[i] = nullptr;
             m_texture_handles_right[i] = nullptr;
@@ -1017,16 +1017,16 @@ public:
 
     bool operator!=(TextureSet const & rhs) const;
 
-    void SetTextureHandle(size_t p_index, TextureHandle* p_id, uint p_is_stereo_image = 0);
+    void SetTextureHandle(int p_index, TextureHandle* p_id, uint p_is_stereo_image = 0);
 
-    bool GetHasAlpha(size_t p_index) const;
+    bool GetHasAlpha(int p_index) const;
 
-    TextureHandle* GetTextureHandle(size_t p_index, bool p_is_left_texture = true) const;
+    TextureHandle* GetTextureHandle(int p_index, bool p_is_left_texture = true) const;
 
     int ContainsTextureHandle(TextureHandle* p_id) const;
 
-    TextureHandle* GetTextureHandleRef(size_t p_index, bool p_is_left_texture = true) const;
-    TextureHandle::ALPHA_TYPE GetAlphaType(size_t p_index) const;
+    TextureHandle* GetTextureHandleRef(int p_index, bool p_is_left_texture = true) const;
+    TextureHandle::ALPHA_TYPE GetAlphaType(int p_index) const;
     bool GetIs3DTexture() const;
 private:
     TextureHandle* m_texture_handles_left[ASSETSHADER_NUM_COMBINED_TEXURES];
@@ -1292,7 +1292,7 @@ public:
     {
 
     }
-    AbstractRenderCommand_sort(AbstractRenderCommand const & p_copy, size_t const p_index)
+    AbstractRenderCommand_sort(AbstractRenderCommand const & p_copy, const int p_index)
         : m_stencil_ref_value(p_copy.m_stencil_func.GetStencilReferenceValue()),
           m_draw_layer(p_copy.m_object_uniforms.m_draw_layer),
           m_room_space_distance(p_copy.m_object_uniforms.m_room_space_position_and_distance.w()),
@@ -1314,7 +1314,7 @@ public:
     float m_room_space_distance;
     uint32_t m_draw_id;
     uint32_t m_camera_id;
-    size_t m_original_index;
+    int m_original_index;
 };
 
 class VirtualCamera
@@ -1381,7 +1381,7 @@ private:
 	QVector4D m_viewport;
 	QMatrix4x4 m_viewMatrix;
 	QMatrix4x4 m_projectionMatrix;
-    bool m_scope_mask[static_cast<size_t>(RENDERER::RENDER_SCOPE::SCOPE_COUNT)];
+    bool m_scope_mask[static_cast<int>(RENDERER::RENDER_SCOPE::SCOPE_COUNT)];
 	bool m_is_left_eye;
 };
 
@@ -1408,12 +1408,12 @@ public:
 
     }
 
-    size_t GetInstanceCount() const
+    int GetInstanceCount() const
     {
         return m_instance_transforms.size();
     }
 
-	size_t GetIndexCount() const
+    int GetIndexCount() const
 	{
         return m_index_count;
 	}
@@ -1449,7 +1449,7 @@ public:
 
 	std::shared_ptr<MeshHandle> m_mesh_handle;
 	bool use_skelanim;
-    size_t m_index_count;
+    int m_index_count;
 };
 
 class AbstractRenderComandShaderData
@@ -1590,7 +1590,7 @@ public:
     virtual QVector<uint64_t>& GetCPUTimeQueryResults() = 0;
 
     virtual int64_t GetFrameCounter() = 0;
-    virtual size_t GetNumTextures() const = 0;
+    virtual int GetNumTextures() const = 0;
 	virtual QString GetRendererName() = 0;
 
     virtual std::shared_ptr<MeshHandle> GetSkyboxCubeVAO() = 0;

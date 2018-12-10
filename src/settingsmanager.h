@@ -14,8 +14,7 @@ public:
     static void LoadSettings();
     static void SaveSettings();   
 
-    static bool GetMultiplayerEnabled();
-    static bool GetSessionTrackingEnabled();
+    static bool GetMultiplayerEnabled();    
     static bool GetPartyModeEnabled();
     static bool GetSelfAvatar();
     static qint64 GetDeallocateAmount();

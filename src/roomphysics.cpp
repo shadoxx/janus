@@ -584,8 +584,8 @@ void RoomPhysics::AddMesh(const QPointer <RoomObject> o, short group, short mask
         GeomMaterial& mat = a->GetGeom()->GetData().GetMaterial(materials[i]);
 
         // For each mesh
-        size_t const mesh_count = mat.vbo_data.size();
-        for (size_t mesh_index = 0; mesh_index < mesh_count; ++mesh_index)
+        const int mesh_count = mat.vbo_data.size();
+        for (int mesh_index = 0; mesh_index < mesh_count; ++mesh_index)
         {
             GeomVBOData & vbo_data = a->GetGeom()->GetData().GetVBOData(materials[i], mesh_index);
             // For each instance

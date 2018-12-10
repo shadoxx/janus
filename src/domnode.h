@@ -25,6 +25,8 @@ class DOMNode : public QObject, protected QScriptable
     Q_PROPERTY(float walk_speed READ GetWalkSpeed WRITE SetWalkSpeed)
     Q_PROPERTY(float run_speed READ GetRunSpeed WRITE SetRunSpeed)
 
+    Q_PROPERTY(bool swallow READ GetSwallow WRITE SetSwallow)
+
     Q_PROPERTY(bool interpolate READ GetInterpolate WRITE SetInterpolate)
     Q_PROPERTY(ScriptableVector * pos READ GetPos WRITE SetPos)
     Q_PROPERTY(ScriptableVector * xdir READ GetXDir WRITE SetXDir)
@@ -164,8 +166,7 @@ class DOMNode : public QObject, protected QScriptable
     Q_PROPERTY(ScriptableVector * cursor1_pos READ GetCursor1Pos WRITE SetCursor1Pos)
     Q_PROPERTY(ScriptableVector * cursor1_xdir READ GetCursor1XDir WRITE SetCursor1XDir)
     Q_PROPERTY(ScriptableVector * cursor1_ydir READ GetCursor1YDir WRITE SetCursor1YDir)
-    Q_PROPERTY(ScriptableVector * cursor1_zdir READ GetCursor1ZDir WRITE SetCursor1ZDir)
-    Q_PROPERTY(QString oncollision READ GetOnCollision WRITE SetOnCollision)
+    Q_PROPERTY(ScriptableVector * cursor1_zdir READ GetCursor1ZDir WRITE SetCursor1ZDir)    
     Q_PROPERTY(QString userid READ GetUserID)    
 //    Q_PROPERTY(bool hmd_enabled READ GetHMDEnabled)
     Q_PROPERTY(ScriptableVector * local_head_pos READ GetLocalHeadPos)
@@ -456,6 +457,9 @@ public:
 
     void SetURLChanged(const bool b);
     inline bool GetURLChanged() const { return url_changed; }
+
+    void SetSwallow(const bool b);
+    inline bool GetSwallow() const { return swallow; }
 
     void SetBaseURL(const QString & s);
     inline QString GetBaseURL() const { return base_url; }
@@ -1115,6 +1119,8 @@ protected:
     int m_draw_layer;
 
     ScriptableVector * emitter_pos;
+
+    bool swallow;
 
 public slots:
 

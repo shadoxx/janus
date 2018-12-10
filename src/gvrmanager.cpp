@@ -92,8 +92,8 @@ void GVRManager::InitializeGL()
     left_viewport.SetSourceFov(r);
     right_viewport.SetSourceFov(r);
 
-    buffer_viewports.SetBufferViewport((size_t) 0, left_viewport);
-    buffer_viewports.SetBufferViewport((size_t) 1, right_viewport);
+    buffer_viewports.SetBufferViewport(0, left_viewport);
+    buffer_viewports.SetBufferViewport(1, right_viewport);
 
     std::vector<gvr::BufferSpec> specs;
 

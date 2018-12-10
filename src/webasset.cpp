@@ -399,14 +399,6 @@ void WebAsset::DoHTTPDelete(const QUrl & u)
 
 void WebAsset::DoHTTPPost(const QUrl & u, const QHash <QString, QString> & data)
 {
-    //http://api.easevr.com/v1/client/{guid}/event_custom
-
-//    api_key (API key; string)
-//    sid (session id; string)
-//    ts (timestamp; utc timestamp)
-//    event (event name; string)
-//    data (custom data; object)
-
     if (manager) {
         InitializeState();
         url = u;

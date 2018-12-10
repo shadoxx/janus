@@ -1103,6 +1103,7 @@ void MainWindow::SetupWidgets()
 {
 #ifndef __ANDROID__
     const unsigned int btn_size = 32 * this->devicePixelRatio();
+//    qDebug() << "MainWindow::SetupWidgets()" << btn_size << this->devicePixelRatio();
 #else
     const unsigned int btn_size = 92;
 #endif
@@ -1150,7 +1151,7 @@ void MainWindow::SetupWidgets()
     progressbar->setRange(0, 100);
     progressbar->setValue(0);
 #ifndef __ANDROID__
-    progressbar->setMaximumHeight(4);
+    progressbar->setMaximumHeight(btn_size/8);
 #else
     progressbar->setMaximumHeight(8);
 #endif
@@ -1161,6 +1162,8 @@ void MainWindow::SetupWidgets()
     button_bookmark = new QPushButton();
     button_bookmark->setIcon(QIcon(MathUtil::GetApplicationPath() + "assets/icons/bookmark.png"));
     button_bookmark->setIconSize(QSize(btn_size,btn_size));
+    button_bookmark->setMinimumWidth(btn_size);
+    button_bookmark->setMinimumHeight(btn_size);
     button_bookmark->setMaximumWidth(btn_size);
     button_bookmark->setMaximumHeight(btn_size);
     button_bookmark->setToolTip("Bookmark");
@@ -1182,7 +1185,7 @@ void MainWindow::SetupWidgets()
     l4->setMargin(0);
     w4->setLayout(l4);
 #ifndef __ANDROID__
-    w4->setMaximumHeight(32);
+    w4->setMaximumHeight(btn_size);
 #else
     w4->setFixedHeight(btn_size);
 #endif
@@ -1200,7 +1203,7 @@ void MainWindow::SetupWidgets()
     l3->setMargin(0);
     topbarwidget->setLayout(l3);
 #ifndef __ANDROID__
-    topbarwidget->setMaximumHeight(32);
+    topbarwidget->setMaximumHeight(btn_size);
 #else
     topbarwidget->setFixedHeight(btn_size);
 #endif

@@ -30,7 +30,7 @@ QPointer<BaseAssetData> TextureImporterCMFT::Import(const QByteArray& buffer, QP
     std::vector<char> mem_dds;
     cmft::imageSaveToMemDDS(image, &mem_dds, cmft::ImageFileType::Enum::DDS);
     // Copy the .dds file into the buffer so that gli has the data it needs
-    size_t const mem_size = mem_dds.size();
+    const size_t mem_size = mem_dds.size();
     ((QByteArray&)buffer).resize(mem_size);
     memcpy((char*)(((QByteArray&)(buffer)).constData()), mem_dds.data(), mem_dds.size());
 

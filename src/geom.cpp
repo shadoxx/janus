@@ -998,7 +998,7 @@ void Geom::DrawGL(QPointer <AssetShader> shader, const QColor col, const bool ov
     {
         GeomMaterial & mat = data.GetMaterial(materials[i]);
 
-        size_t const mesh_count = mat.vbo_data.size();
+        const int mesh_count = mat.vbo_data.size();
         if (mesh_count == 0)
         {
             // Skip materials with no meshes
@@ -1077,7 +1077,7 @@ void Geom::DrawGL(QPointer <AssetShader> shader, const QColor col, const bool ov
             }
         }
 
-        for (size_t mesh_index = 0; mesh_index < mesh_count; ++mesh_index)
+        for (int mesh_index = 0; mesh_index < mesh_count; ++mesh_index)
         {
             GeomVBOData & vbo_data = data.GetVBOData(materials[i], mesh_index);
 
@@ -1114,8 +1114,8 @@ void Geom::DrawGL(QPointer <AssetShader> shader, const QColor col, const bool ov
                                     renderer->GetPolyMode(),
                                     renderer->GetColorMask());
 
-            size_t const instance_count = vbo_data.m_instance_transforms.size();
-            for (size_t instance_index = 0; instance_index < instance_count; ++instance_index)
+            const int instance_count = vbo_data.m_instance_transforms.size();
+            for (int instance_index = 0; instance_index < instance_count; ++instance_index)
             {
                 MathUtil::PushModelMatrix();
                 MathUtil::MultModelMatrix(vbo_data.m_instance_transforms[instance_index]);
@@ -1390,8 +1390,8 @@ void Geom::PrepareVBOs()
             // If we have not already processed this mesh do so.
             GeomMaterial & mat = data.GetMaterial(mat_name);
             bool mesh_has_been_processed = false;
-            size_t mesh_index = mat.mesh_keys.size();
-            for (QPair<uint32_t, size_t>& mesh_key : mat.mesh_keys)
+            int mesh_index = mat.mesh_keys.size();
+            for (QPair<uint32_t, int>& mesh_key : mat.mesh_keys)
             {
                 if (mesh_key.first == nd->mMeshes[n])
                 {
@@ -1646,7 +1646,7 @@ void Geom::PrepareVBOs()
                 } // for (uint32_t vertex_index = 0; vertex_index < num_verts; ++vertex_index)
 
                 // Store key as we need this for parsing in the physics code
-                mat.mesh_keys.push_back(QPair<uint32_t, size_t>(nd->mMeshes[n], mesh_index));
+                mat.mesh_keys.push_back(QPair<uint32_t, int>(nd->mMeshes[n], mesh_index));
             } // if (mesh_has_been_processed == false)
 
             // Add new transform for this mesh this is the object-space to instance-space transform for this instance
@@ -1682,8 +1682,8 @@ void Geom::BuildVBOsGL()
         GeomMaterial & mat = data.GetMaterial(materials[i]);
 
         // For each mesh
-        size_t const mesh_count = mat.vbo_data.size();
-        for (size_t mesh_index = 0; mesh_index < mesh_count; ++mesh_index)
+        const int mesh_count = mat.vbo_data.size();
+        for (int mesh_index = 0; mesh_index < mesh_count; ++mesh_index)
         {
             GeomVBOData & vbo_data = data.GetVBOData(materials[i], mesh_index);
             RendererInterface::m_pimpl->CreateMeshHandleForGeomVBOData(&vbo_data);

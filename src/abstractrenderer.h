@@ -242,10 +242,10 @@ public:
     virtual void Initialize() = 0;
     void InitializeHMDManager(QPointer<AbstractHMDManager> p_hmd_manager);
     virtual QString GetRendererName();
-    virtual void Render(QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
+    virtual void Render(QHash<int, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
                         QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
-    virtual void PreRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
-    virtual void PostRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
+    virtual void PreRender(QHash<int, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
+    virtual void PostRender(QHash<int, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers) = 0;
     virtual void UpgradeShaderSource(QByteArray& p_shader_source, bool p_is_vertex_shader) = 0;
     void RequestScreenShot(uint32_t const p_width, uint32_t const p_height, uint32_t const p_sample_count, bool const p_is_equi, uint64_t p_frame_index);
    
@@ -537,7 +537,7 @@ public:
     void CreateShadowVAO(GLuint p_VAO, QVector<GLuint> p_VBOs);
     void CreateShadowFBO(GLuint p_FBO, QVector<GLuint> p_texture_ids);
 #if !defined(__APPLE__) && !defined(__ANDROID__)
-    void CreateMatrixSSBO(std::size_t p_ssbo_size, GLuint* p_ssbo_handle, GLintptr& p_ssbo_GPU_ptr, std::size_t* p_aligned_size);
+    void CreateMatrixSSBO(int p_ssbo_size, GLuint* p_ssbo_handle, GLintptr& p_ssbo_GPU_ptr, int* p_aligned_size);
     static void initPersistentlyMappedGLBuffer(GLsizeiptr* p_bufferPtr, GLuint* p_bufferID, GLsizeiptr* p_alignedChunkSizeInBytes, GLuint p_bufferIndex, GLsizeiptr p_chunkSizeInBytes, GLuint p_chunkCount, GLenum p_bufferType);
 #endif
     void WaitforFrameSyncObject();
@@ -553,7 +553,7 @@ public:
     QVector<uint64_t> & GetGPUTimeQueryResults();
     QVector<uint64_t> & GetCPUTimeQueryResults();
     int64_t GetFrameCounter();
-    size_t GetNumTextures() const;
+    int GetNumTextures() const;
     void prependDataInShaderMainFunction(QByteArray &p_shader_source, const char *p_insertion_string);
 
     static char const * g_gamma_correction_GLSL;
@@ -572,7 +572,7 @@ public:
     QVector<uint32_t> BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask, bool const p_bind_multisampled = true);
     void BindFBOAndTextures(QVector<uint32_t>& p_bound_buffers, uint32_t const p_texture_type,
                             uint32_t const p_framebuffer_target, uint32_t const p_fbo,
-                            size_t const p_texture_offset, FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask) const;
+                            int const p_texture_offset, FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask) const;
     void BlitMultisampledFramebuffer(FBO_TEXTURE_BITFIELD_ENUM const p_textures_bitmask,
                                      int32_t srcX0, int32_t srcY0, int32_t srcX1, int32_t srcY1,
                                      int32_t dstX0, int32_t dstY0, int32_t dstX1, int32_t dstY1);
@@ -590,7 +590,7 @@ public:
     GLuint m_active_texture_slot_render;
 
     QVector<QPair<TextureHandle*, GLuint>> m_texture_handle_to_GL_ID;
-    size_t m_num_deleted_textures;
+    int m_num_deleted_textures;
     QVector<MeshHandle*> m_meshes_pending_deletion;
     QMutex m_mesh_deletion_guard;
 
@@ -676,12 +676,12 @@ public:
     uint8_t m_rendering_index;
     uint64_t m_submitted_frame_id;
     uint64_t m_current_frame_id;
-    QVector<QHash<size_t, QVector<AbstractRenderCommand>>> m_scoped_render_commands_cache;
+    QVector<QHash<int, QVector<AbstractRenderCommand>>> m_scoped_render_commands_cache;
     QVector<QHash<StencilReferenceValue, LightContainer>> m_scoped_light_containers_cache;
     //QVector<QVector<VirtualCamera>> m_cameras_cache;
-    QVector<QHash<size_t, QVector<VirtualCamera>>> m_scoped_cameras_cache;
-    QHash<size_t, QVector<QMatrix4x4>> m_per_frame_scoped_cameras_view_matrix;
-    QHash<size_t, QVector<bool>> m_per_frame_scoped_cameras_is_left_eye;
+    QVector<QHash<int, QVector<VirtualCamera>>> m_scoped_cameras_cache;
+    QHash<int, QVector<QMatrix4x4>> m_per_frame_scoped_cameras_view_matrix;
+    QHash<int, QVector<bool>> m_per_frame_scoped_cameras_is_left_eye;
     uint32_t m_draw_id;
 
     // Screenshot info
@@ -809,7 +809,7 @@ protected:
 
 private:
 
-    void GetViewportsAndCameraCount(QVector<float>& viewports, RENDERER::RENDER_SCOPE const p_scope, uint32_t& camera_count);
+    void GetViewportsAndCameraCount(QVector<float>& viewports, RENDERER::RENDER_SCOPE const p_scope, int &camera_count);
 
     void InternalFormatFromSize(GLenum *p_pixel_format, const uint p_pixel_size);
 
@@ -839,7 +839,7 @@ private:
     BlendFunction m_current_blend_src;
     BlendFunction m_blend_dest;
     BlendFunction m_current_blend_dest;
-    GLuint m_light_UBOs[static_cast<size_t>(BUFFER_CHUNK_COUNT)];
+    GLuint m_light_UBOs[static_cast<int>(BUFFER_CHUNK_COUNT)];
     LightContainer m_dummyLights;
     GLuint m_active_light_UBO_index;
 };

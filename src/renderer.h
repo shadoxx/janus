@@ -136,7 +136,7 @@ public:
     QVector<uint64_t> & GetCPUTimeQueryResults();
 
     int64_t GetFrameCounter();
-    size_t GetNumTextures() const;
+    int GetNumTextures() const;
     QString GetRendererName();
 
     std::shared_ptr<MeshHandle> GetSkyboxCubeVAO();
@@ -186,8 +186,8 @@ public:
 
 private:
 
-    void PreRender(QHash<size_t, QVector<AbstractRenderCommand> > & p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> & p_scoped_light_containers);
-    void PostRender(QHash<size_t, QVector<AbstractRenderCommand> > & p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> & p_scoped_light_containers);
+    void PreRender(QHash<int, QVector<AbstractRenderCommand> > & p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> & p_scoped_light_containers);
+    void PostRender(QHash<int, QVector<AbstractRenderCommand> > & p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> & p_scoped_light_containers);
 
     RENDERER::RENDER_SCOPE m_current_scope;
     std::unique_ptr<AbstractRenderer> m_abstractRenderer;
@@ -208,8 +208,8 @@ private:
     QVector<AbstractRenderCommand_sort> m_sorted_command_indices;
     void SortRenderCommandsByDistance(QVector<AbstractRenderCommand>& render_command_vector, const bool p_is_transparent);
     void EnableRenderCommandInstancing(const RENDERER::RENDER_SCOPE p_scope);
-    size_t m_collapsed_draws;
-    size_t m_collapsable_draws;
+    int m_collapsed_draws;
+    int m_collapsable_draws;
 };
 
 #endif // RENDERER_H

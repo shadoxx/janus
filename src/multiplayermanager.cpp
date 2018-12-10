@@ -141,69 +141,14 @@ void MultiPlayerManager::Clear()
     connection_list.clear();
 }
 
-void MultiPlayerManager::DoSessionStart()
-{
-    //send tracking statistics to EASEVR
-    //http://api.easevr.com/v1/client/{guid}/session_start
-//    api_key (API key; string)
-//    sid (session id; string)
-//    ts (timestamp; utc time)
-//    udid (unique identifier; string)
-//    hmd (HMD name; string)
-//    ver (experience version; string)
-//    os (operating system; string)
-//    os_ver (os version; string)
-//    mem (memory total; double)
-//    proc (processor name; string)
-
-//    qDebug() << "MultiPlayerManager::DoSessionStart() - Sending session_start packet";
-//    session_data["api_key"] = "0123456789abcdef";
-//    session_data["sid"] = QString::number(QDateTime::currentMSecsSinceEpoch()); //use ts as session id
-//    session_data["ts"] = QString::number(QDateTime::currentMSecsSinceEpoch());
-//    session_data["udid"] = (player ? player->GetUserID() : "");
-//    session_data["hmd"] = (player ? player->GetHMDString() : "");
-//    session_data["ver"] = version;
-//    session_data["os"] = QSysInfo::kernelType();
-//    session_data["os_ver"] = QSysInfo::kernelVersion();
-//    session_data["mem"] = "0"; //mem must be a number
-//    session_data["proc"] = QSysInfo::currentCpuArchitecture();
-//    session_start_webasset.DoHTTPPost(QUrl("http://api.easevr.com/v1/client/janusvr/session_start"), session_data);
-}
-
-void MultiPlayerManager::DoSessionEnd()
-{
-    //send tracking statistics to EASEVR
-    //http://api.easevr.com/v1/client/{guid}/session_end
-//    api_key (API key; string)
-//    sid (session id; string)
-//    ts (timestamp; utc time)
-
-//    qDebug() << "MultiPlayerManager::DoSessionEnd() - Sending session_end packet";
-//    session_data["ts"] = QString::number(QDateTime::currentMSecsSinceEpoch()); //update timestamp
-//    session_data.remove("udid");
-//    session_data.remove("hmd");
-//    session_data.remove("ver");
-//    session_data.remove("os");
-//    session_data.remove("os_ver");
-//    session_data.remove("mem");
-//    session_data.remove("proc");
-//    session_end_webasset.DoHTTPPost(QUrl("http://api.easevr.com/v1/client/janusvr/session_end"), session_data);
-}
-
 void MultiPlayerManager::SocketConnected()
 {
     qDebug() << "MultiPlayerManager::SocketConnected()";
-    if (session_tracking_enabled) {
-        DoSessionStart();
-    }
 }
 
 void MultiPlayerManager::SocketDisconnected()
 {
     qDebug() << "MultiPlayerManager::SocketDisconnected()";
-    if (session_tracking_enabled) {
-        DoSessionEnd();
-    }
 
     for (int i=0; i<connection_list.size(); ++i) {
         ServerConnection & s = connection_list[i];
@@ -1762,19 +1707,6 @@ void MultiPlayerManager::SetResetPlayer(const bool b)
 bool MultiPlayerManager::GetResetPlayer()
 {
     return reset_player;
-}
-
-void MultiPlayerManager::SetSessionTrackingEnabled(const bool b)
-{
-    if (session_tracking_enabled != b) {
-        b ? DoSessionStart() : DoSessionEnd();
-    }
-    session_tracking_enabled = b;
-}
-
-bool MultiPlayerManager::GetSessionTrackingEnabled() const
-{
-    return session_tracking_enabled;
 }
 
 void MultiPlayerManager::SetPartyMode(const bool b)

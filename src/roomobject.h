@@ -346,6 +346,12 @@ public:
 
     static float GetSpacing();
 
+    void SetSwallowState(const int i);
+    int GetSwallowState() const;
+
+    void SetSwallowTime(const int i);
+    int GetSwallowTime() const;
+
     static QPointer <AssetObject> cursor_arrow_obj;
     static QPointer <AssetObject> cursor_crosshair_obj;
     static QPointer <AssetObject> cursor_hand_obj;
@@ -443,6 +449,9 @@ protected:
     QPointer <TextGeom> textgeom_title;
 
     QPointer <AssetImage> portal_thumb_img;
+
+    int swallow_time;
+    int swallow_state;
 
     //collider internal tracking related
     QSet <QString> collision_set;

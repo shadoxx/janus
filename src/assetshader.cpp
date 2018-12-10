@@ -322,14 +322,14 @@ void AssetShader::SetUseSkelAnim(const bool b)
 
 void AssetShader::SetSkelAnimJoints(const QVector <QMatrix4x4> & m)
 {
-    size_t const matrix_count = m.size();
+    const int matrix_count = m.size();
     mObject.iSkelAnimJoints.clear();
     mObject.iSkelAnimJoints.resize(matrix_count * 16);
 
     // Annoyingly QMatrix4x4 has flags in it's data members which means
     // we can't just copy the entire array, we need to pick out only the matrix
     // floats from each QMatrix4x4
-    for (size_t i = 0; i < matrix_count; i++)
+    for (int i = 0; i < matrix_count; i++)
     {
         memcpy(&(mObject.iSkelAnimJoints[i*16]), m[i].constData(), 16 * sizeof(float));
     }

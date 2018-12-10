@@ -108,7 +108,7 @@ AbstractRenderCommand::AbstractRenderCommand(const AbstractRenderCommand& p_copy
 
     // Only copy the textures from the provided TextureSet for the valid iUseTexture indices
     // Making copies of std::shared_ptr is expensive so this loop saves us a lot of time
-    for (size_t i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
+    for (int i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
     {
         if (m_material_uniforms.iUseTexture[i] != 0.0)
         {
@@ -190,7 +190,7 @@ AbstractRenderCommand& AbstractRenderCommand::operator=(const AbstractRenderComm
 	m_material_uniforms = p_copy.m_material_uniforms;
     // Only copy the textures from the provided TextureSet for the valid iUseTexture indices
     // Making copies of std::shared_ptr is expensive so this loop saves us a lot of time
-    for (size_t i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
+    for (int i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
     {
         if (m_material_uniforms.iUseTexture[i] != 0.0)
         {
@@ -265,7 +265,7 @@ bool AbstractRenderCommand::IsInstancableWith(const AbstractRenderCommand& p_cop
 		);
 
     // For each texture slot
-    for (size_t i = 0; i < 16; ++i)
+    for (int i = 0; i < 16; ++i)
     {
         // If these materials use this texture slot
         if (m_material_uniforms.iUseTexture[i] != 0.0f
@@ -461,7 +461,7 @@ VirtualCamera::~VirtualCamera()
 
 void VirtualCamera::Initialize()
 {
-	for (size_t scope_enum = 0; scope_enum < static_cast<size_t>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++scope_enum)
+    for (int scope_enum = 0; scope_enum < static_cast<int>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++scope_enum)
 	{
 		m_scope_mask[scope_enum] = true;
 	}
@@ -567,21 +567,21 @@ const QMatrix4x4& VirtualCamera::GetProjectionMatrix() const
 
 bool VirtualCamera::GetScopeMask(RENDERER::RENDER_SCOPE const p_scope) const
 {
-	return m_scope_mask[static_cast<size_t>(p_scope)];
+    return m_scope_mask[static_cast<int>(p_scope)];
 }
 
 void VirtualCamera::SetScopeMask(RENDERER::RENDER_SCOPE const p_scope, bool const p_mask)
 {
 	if (p_scope == RENDERER::RENDER_SCOPE::ALL)
 	{
-        for (size_t i = 0; i < static_cast<size_t>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++i)
+        for (int i = 0; i < static_cast<int>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++i)
         {
 			m_scope_mask[i] = p_mask;
 		}
 	}
 	else
 	{
-		m_scope_mask[static_cast<size_t>(p_scope)] = p_mask;
+        m_scope_mask[static_cast<int>(p_scope)] = p_mask;
 	}
 }
 
@@ -644,7 +644,7 @@ void VirtualCamera::RecomputeProjectionMatrix()
 
 bool TextureSet::operator==(const TextureSet &rhs) const
 {
-    for (size_t i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
+    for (int i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
     {
         if (m_texture_handles_left[i] != rhs.m_texture_handles_left[i])
         {
@@ -652,7 +652,7 @@ bool TextureSet::operator==(const TextureSet &rhs) const
         }
     }
 
-    for (size_t i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
+    for (int i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
     {
         if (m_texture_handles_right[i] != rhs.m_texture_handles_right[i])
         {
@@ -668,7 +668,7 @@ bool TextureSet::operator!=(const TextureSet &rhs) const
     return !(*this == rhs);
 }
 
-void TextureSet::SetTextureHandle(size_t p_index, TextureHandle *p_id, uint p_is_stereo_image)
+void TextureSet::SetTextureHandle(int p_index, TextureHandle *p_id, uint p_is_stereo_image)
 {
     if (p_is_stereo_image == 0)
     {
@@ -688,22 +688,22 @@ void TextureSet::SetTextureHandle(size_t p_index, TextureHandle *p_id, uint p_is
     }
 }
 
-TextureHandle::ALPHA_TYPE TextureSet::GetAlphaType(size_t p_index) const
+TextureHandle::ALPHA_TYPE TextureSet::GetAlphaType(int p_index) const
 {
     return (m_texture_handles_left[p_index]) ? m_texture_handles_left[p_index]->GetAlphaType() : TextureHandle::ALPHA_TYPE::NONE;
 }
 
-bool TextureSet::GetHasAlpha(size_t p_index) const
+bool TextureSet::GetHasAlpha(int p_index) const
 {
     return (m_texture_handles_left[p_index]) ? (m_texture_handles_left[p_index]->GetAlphaType() != TextureHandle::ALPHA_TYPE::NONE) : false;
 }
 
-TextureHandle * TextureSet::GetTextureHandle(size_t p_index, bool p_is_left_texture) const
+TextureHandle * TextureSet::GetTextureHandle(int p_index, bool p_is_left_texture) const
 {
     return (p_is_left_texture) ? m_texture_handles_left[p_index] : m_texture_handles_right[p_index];
 }
 
-TextureHandle * TextureSet::GetTextureHandleRef(size_t p_index, bool p_is_left_texture) const
+TextureHandle * TextureSet::GetTextureHandleRef(int p_index, bool p_is_left_texture) const
 {
     return (p_is_left_texture) ? m_texture_handles_left[p_index] : m_texture_handles_right[p_index];
 }
@@ -779,7 +779,7 @@ AssetShader_Material::AssetShader_Material() :
     iTiling(1.0f, 1.0f, 0.0f, 0.0f),
     iLightmapScale(1.0f, 1.0f, 0.0f, 0.0f)
 {
-    for (size_t i = 0; i < 16; ++i)
+    for (int i = 0; i < 16; ++i)
     {
         iUseTexture[i] = 0.0f;
     }
@@ -796,7 +796,7 @@ AssetShader_Room::AssetShader_Room() :
     iFogEnd(1, 1, 1, 1),
     iFogCol(0, 0, 0, 1)
 {
-	for (size_t i = 0; i < 16; ++i)
+    for (int i = 0; i < 16; ++i)
 	{
 		iRoomMatrix[i] = 0.0f;
 		iMiscRoomData[i] = 0.0f;

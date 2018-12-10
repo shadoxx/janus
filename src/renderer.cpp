@@ -30,21 +30,21 @@ inline void Renderer::InitializeScopes()
 
     for (int cache_index = 0; cache_index < cache_size; ++cache_index)
     {
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_STENCILS].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CHILD_ROOM_SKYBOX].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_OPAQUE].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_CUTOUT].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_BLENDED].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CHILD_ROOM_SKYBOX].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_OPAQUE].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_CUTOUT].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_BLENDED].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_DEPTH_REFRESH].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_DECORATIONS].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::MENU].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::AVATARS].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::CURSOR].reserve(1024);
-        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(size_t)RENDERER::RENDER_SCOPE::OVERLAYS].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_STENCILS].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CHILD_ROOM_SKYBOX].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_OPAQUE].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_CUTOUT].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_BLENDED].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CHILD_ROOM_SKYBOX].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_OPAQUE].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_CUTOUT].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_BLENDED].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_DEPTH_REFRESH].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_DECORATIONS].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::MENU].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::AVATARS].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::CURSOR].reserve(1024);
+        m_abstractRenderer->m_scoped_render_commands_cache[cache_index][(int)RENDERER::RENDER_SCOPE::OVERLAYS].reserve(1024);
     }
 
     m_abstractRenderer->m_scoped_light_containers_cache.resize(3);
@@ -353,12 +353,12 @@ int Renderer::GetTextureHeight(TextureHandle* p_handle)
 	return m_abstractRenderer->GetTextureHeight(p_handle);
 }
 
-void Renderer::PreRender(QHash<size_t, QVector<AbstractRenderCommand> > & , QHash<StencilReferenceValue, LightContainer> & )
+void Renderer::PreRender(QHash<int, QVector<AbstractRenderCommand> > & , QHash<StencilReferenceValue, LightContainer> & )
 {
     //m_abstractRenderer->PreRender(p_scoped_render_commands, p_scoped_light_containers);
 }
 
-void Renderer::PostRender(QHash<size_t, QVector<AbstractRenderCommand> > & , QHash<StencilReferenceValue, LightContainer> & )
+void Renderer::PostRender(QHash<int, QVector<AbstractRenderCommand> > & , QHash<StencilReferenceValue, LightContainer> & )
 {
     //m_abstractRenderer->PostRender(p_scoped_render_commands, p_scoped_light_containers);
 }
@@ -370,12 +370,12 @@ void Renderer::BindTextureHandle(uint32_t p_slot_index, TextureHandle* p_id)
 
 void Renderer::EnableRenderCommandInstancing(RENDERER::RENDER_SCOPE const p_scope)
 {
-    QVector<AbstractRenderCommand>& render_command_vector = m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(p_scope)];
+    QVector<AbstractRenderCommand>& render_command_vector = m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(p_scope)];
     AbstractRenderCommand * previous_unique_command = nullptr;
 
-    size_t const command_count = render_command_vector.size();
-    size_t const camera_count = m_abstractRenderer->m_scoped_cameras_cache[m_abstractRenderer->m_rendering_index][static_cast<size_t>(p_scope)].size();
-    for (size_t command_index = 0; command_index < command_count; command_index += camera_count)
+    const int command_count = render_command_vector.size();
+    const int camera_count = m_abstractRenderer->m_scoped_cameras_cache[m_abstractRenderer->m_rendering_index][static_cast<int>(p_scope)].size();
+    for (int command_index = 0; command_index < command_count; command_index += camera_count)
     {
         AbstractRenderCommand & base_render_command = render_command_vector[command_index];
 
@@ -404,13 +404,13 @@ uint64_t Renderer::GetLastSubmittedFrameID()
 void Renderer::SubmitFrame()
 {
     // Sort commands on the main-thread to avoid stutters or frametime impact on the render-thread
-    //SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_OPAQUE)], false);
-    //SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_CUTOUT)], false);
-    SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_BLENDED)], true);
-    SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_DECORATIONS)], true);
-    //SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_OPAQUE)], false);
-    //SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_CUTOUT)], false);
-    SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_BLENDED)], true);
+    //SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_OPAQUE)], false);
+    //SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_CUTOUT)], false);
+    SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(RENDERER::RENDER_SCOPE::CURRENT_ROOM_OBJECTS_BLENDED)], true);
+    SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_DECORATIONS)], true);
+    //SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_OPAQUE)], false);
+    //SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_CUTOUT)], false);
+    SortRenderCommandsByDistance(m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(RENDERER::RENDER_SCOPE::CHILD_ROOM_OBJECTS_BLENDED)], true);
 
     // If we are on GL 4.4 collapse instancable draws into single draws
     if (m_abstractRenderer->GetRendererName().contains("4.4"))
@@ -438,9 +438,9 @@ void Renderer::SubmitFrame()
     // which is what we want as allocating/deallocating every frame would be costly.
     for (const RENDERER::RENDER_SCOPE scope :m_abstractRenderer->m_scopes)
     {
-        m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(scope)].erase(
-                    m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(scope)].begin(),
-                    m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<size_t>(scope)].end()
+        m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(scope)].erase(
+                    m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(scope)].begin(),
+                    m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][static_cast<int>(scope)].end()
                 );
     }
 }
@@ -458,12 +458,12 @@ void Renderer::Render()
 
 void Renderer::SortRenderCommandsByDistance(QVector<AbstractRenderCommand>& render_command_vector, bool const p_is_transparent)
 {
-    size_t command_count = render_command_vector.size();
+    int command_count = render_command_vector.size();
     m_sorted_command_indices.clear();
     m_sorted_command_indices.reserve(command_count);
 
     // Build compacted data structure for cheaper sorting
-    for (size_t index = 0; index < command_count; ++index)
+    for (int index = 0; index < command_count; ++index)
     {
         m_sorted_command_indices.push_back(AbstractRenderCommand_sort(render_command_vector[index], index));
     }
@@ -536,7 +536,7 @@ void Renderer::SortRenderCommandsByDistance(QVector<AbstractRenderCommand>& rend
     // This ensures the minimal number of moves of the expensive shared pointers and is likely to cause no moves
     // in the subsequent frames that re-use this same command vector
     {
-        size_t i_sort, j_sort, k_sort;
+        int i_sort, j_sort, k_sort;
         AbstractRenderCommand t;
         for (i_sort = 0; i_sort < command_count; i_sort++)
         {
@@ -651,13 +651,13 @@ void Renderer::PushAbstractRenderCommand(AbstractRenderCommand& p_object_render_
             }
 
 
-            auto & command_vector = m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][(size_t)command_vector_scope];
+            auto & command_vector = m_abstractRenderer->m_scoped_render_commands_cache[m_abstractRenderer->m_current_submission_index][(int)command_vector_scope];
 
-            size_t const camera_count = m_abstractRenderer->m_scoped_cameras_cache[m_abstractRenderer->m_current_submission_index][(size_t)command_vector_scope].size();
+            const int camera_count = m_abstractRenderer->m_scoped_cameras_cache[m_abstractRenderer->m_current_submission_index][(int)command_vector_scope].size();
 
             p_object_render_command.m_draw_id = m_abstractRenderer->m_draw_id;
 
-            for (size_t camera_index = 0; camera_index < camera_count; ++camera_index)
+            for (int camera_index = 0; camera_index < camera_count; ++camera_index)
             {
                 p_object_render_command.m_camera_id = static_cast<uint32_t>(camera_index);
                 if (camera_index != camera_count - 1)
@@ -718,7 +718,7 @@ void Renderer::ClearObjectRenderQueue()
     // It's extremely likely that the next frame will require the same number of entries so
     // there is no point deallocating the memory to reallocate it next frame.
     //m_scoped_render_commands[m_current_scope].clear();
-    //m_scoped_render_commands_cache[m_rendering_index][(size_t)m_current_scope].erase(m_scoped_render_commands_cache[m_rendering_index][(size_t)m_current_scope].begin(), m_scoped_render_commands_cache[m_rendering_index][(size_t)m_current_scope].end());
+    //m_scoped_render_commands_cache[m_rendering_index][(int)m_current_scope].erase(m_scoped_render_commands_cache[m_rendering_index][(int)m_current_scope].begin(), m_scoped_render_commands_cache[m_rendering_index][(int)m_current_scope].end());
 }
 
 void Renderer::PushLightContainer(LightContainer const * p_light_container, StencilReferenceValue p_room_stencil_ref)
@@ -788,7 +788,7 @@ int64_t Renderer::GetFrameCounter()
     return (m_abstractRenderer ? m_abstractRenderer->GetFrameCounter() : 0);
 }
 
-size_t Renderer::GetNumTextures() const
+int Renderer::GetNumTextures() const
 {
     return (m_abstractRenderer ? m_abstractRenderer->GetNumTextures() : 0);
 }

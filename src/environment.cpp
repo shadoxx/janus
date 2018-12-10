@@ -518,12 +518,14 @@ void Environment::Update_CrossPortals(QPointer <Player> player)
         const QHash <QString, QPointer <RoomObject> > & envobjects = curnode->GetRoomObjects();
         for (auto & each_portal : envobjects) {
             if (each_portal && each_portal->GetType() == TYPE_LINK) {
+
+                QPointer <Room> r = curnode->GetConnectedRoom(each_portal);
+                QPointer <RoomObject> p2 = curnode->GetConnectedPortal(each_portal);
+
                 //only consider if portal is non null, open, active, visible
                 if (each_portal->GetProperties()->GetOpen() && each_portal->GetProperties()->GetActive() && each_portal->GetProperties()->GetVisible()) {
 
                     //only go through if the room is ready, and the portal is open
-                    QPointer <Room> r = curnode->GetConnectedRoom(each_portal);
-                    QPointer <RoomObject> p2 = curnode->GetConnectedPortal(each_portal);
                     if (r.isNull() || !r->GetProcessed() || p2.isNull()) {
                         continue;
                     }
@@ -532,6 +534,93 @@ void Environment::Update_CrossPortals(QPointer <Player> player)
                     if (each_portal->GetPlayerCrossed(player->GetProperties()->GetEyePoint(), player_lasteyepoint)) {
                         MovePlayer(each_portal, player, false);
                         break;
+                    }
+                }
+
+                //update swallow portals
+                const int cur_time_ms = QTime::currentTime().msecsSinceStartOfDay();
+                const float dt = float(cur_time_ms - each_portal->GetSwallowTime()) / 1000.0f * 5.0f;
+                if (each_portal->GetProperties()->GetSwallow() && each_portal->GetProperties()->GetVisible()) {
+
+                    const float dist_len = QVector3D::dotProduct(player->GetProperties()->GetPos()->toQVector3D() - (each_portal->GetPos() + each_portal->GetZDir()*RoomObject::GetSpacing()), each_portal->GetZDir());
+                    const QVector3D v = each_portal->GetZDir() * dt;
+                    const int swallow_state = each_portal->GetSwallowState();
+
+                    each_portal->GetProperties()->SetDrawText(false);
+
+                    if (swallow_state >= 2) {
+                        //bring portal to user
+                        each_portal->GetProperties()->SetPos(each_portal->GetPos() + v);
+                    }
+
+                    //update swallow behaviour
+                    if (swallow_state == 0) {
+                        if (r && r->GetLoaded()) {
+                            each_portal->SetSwallowState(1);
+                        }
+                    }
+                    else if (swallow_state == 1) {
+                        //Set y value of portal equal to player
+                        QVector3D p = each_portal->GetPos();
+                        p.setY(player->GetProperties()->GetPos()->GetY());
+                        each_portal->GetProperties()->SetPos(p);
+
+                        //Increase x scale
+                        QVector3D s = each_portal->GetScale();
+                        s.setX(qMin(10.0f, s.x() + dt * 2.0f));
+                        s.setY(3.0f);
+                        each_portal->GetProperties()->SetScale(s);
+
+                        if (p2) {
+                            p2->GetProperties()->SetScale(s);
+                        }
+
+                        if (r && r->GetReady() && s.x() >= 10.0f) {
+                            each_portal->SetSwallowState(2);
+                        }
+                    }
+                    else if (swallow_state == 2) {
+                        if (dist_len < 0.0f) {
+                            each_portal->SetSwallowState(3);
+                            each_portal->GetProperties()->SetVisible(false);
+                            MovePlayer(each_portal, player, false);
+                            player_lasteyepoint = player->GetProperties()->GetEyePoint();
+                            return;
+                        }
+                    }
+
+                    each_portal->SetSwallowTime(cur_time_ms);
+
+                    //adjust position of portal p2 so that as the swallow portal translates, the geometry in the next room appears fixed in space
+                    if (swallow_state < 3) {
+                        if (r) {
+                            const float x = QVector3D::dotProduct(player->GetProperties()->GetPos()->toQVector3D() - each_portal->GetPos(), each_portal->GetXDir());
+                            const float z = QVector3D::dotProduct(player->GetProperties()->GetPos()->toQVector3D() - each_portal->GetPos(), each_portal->GetZDir());
+                            if (p2) {
+                                p2->GetProperties()->SetPos(r->GetProperties()->GetPos()->toQVector3D() + r->GetProperties()->GetXDir()->toQVector3D() * x + r->GetProperties()->GetZDir()->toQVector3D() * z);
+                            }
+                        }
+                    }
+                }
+                else if (p2 && p2->GetProperties()->GetSwallow()) {
+                    const float dt = float(cur_time_ms - p2->GetSwallowTime()) / 1000.0f  * 5.0f;
+                    p2->SetSwallowTime(cur_time_ms);
+
+                    //update swallow behaviour
+                    QVector3D s = p2->GetScale();
+                    s.setX(qMax(0.0f, s.x() - dt));
+                    each_portal->GetProperties()->SetScale(s);
+                    p2->GetProperties()->SetScale(s);
+
+                    each_portal->GetProperties()->SetPos(each_portal->GetPos() - each_portal->GetZDir() * dt);
+
+                    if (each_portal->GetScale().x() <= 0.01f) {
+                        each_portal->GetProperties()->SetVisible(false);
+                        each_portal->GetProperties()->SetActive(false);
+                        each_portal->GetProperties()->SetOpen(false);
+                        p2->GetProperties()->SetVisible(false);
+                        p2->GetProperties()->SetActive(false);
+                        p2->GetProperties()->SetOpen(false);
                     }
                 }
             }

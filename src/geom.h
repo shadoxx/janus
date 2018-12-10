@@ -109,7 +109,7 @@ struct GeomMaterial
     // appending to the one mesh.
     QVector <QVector<GeomTriangle>> triangles;
     QVector <GeomVBOData> vbo_data;
-    QVector <QPair<uint32_t, size_t>> mesh_keys;
+    QVector <QPair<uint32_t, int>> mesh_keys;
 
     int material_index; //hack to fix some broken texture references
 };

@@ -10,8 +10,7 @@ SettingsManager::SettingsManager()
 
 void SettingsManager::LoadSettings()
 {
-    settings["multiplayer"] = true;
-    settings["sessiontracking"] = true;
+    settings["multiplayer"] = true;    
     settings["selfavatar"] = false;
     settings["maxmemory"] = 2048;
     settings["comfortmode"] = true;
@@ -143,11 +142,6 @@ void SettingsManager::SaveSettings() {
 bool SettingsManager::GetMultiplayerEnabled()
 {
     return settings["multiplayer"].toString().toLower() == "true";
-}
-
-bool SettingsManager::GetSessionTrackingEnabled()
-{
-    return settings["sessiontracking"].toString().toLower() == "true";
 }
 
 bool SettingsManager::GetPartyModeEnabled()

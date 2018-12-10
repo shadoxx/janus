@@ -1,5 +1,5 @@
-#ifndef RENDERERGL33_LOADINGTHREAD_H
-#define RENDERERGL33_LOADINGTHREAD_H
+#ifndef RENDERERGL33
+#define RENDERERGL33
 
 #include <QObject>
 #include <QImage>
@@ -18,11 +18,11 @@ public:
     RendererGL33();
     virtual ~RendererGL33();
     virtual void Initialize();
-    virtual void Render(QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
+    virtual void Render(QHash<int, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
                         QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
-    virtual void PreRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands,
+    virtual void PreRender(QHash<int, QVector<AbstractRenderCommand> > * p_scoped_render_commands,
                            QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
-    virtual void PostRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands,
+    virtual void PostRender(QHash<int, QVector<AbstractRenderCommand> > * p_scoped_render_commands,
                             QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers);
     virtual void UpgradeShaderSource(QByteArray & p_shader_source, bool p_is_vertex_shader);
     virtual std::shared_ptr<ProgramHandle> CompileAndLinkShaderProgram(QByteArray * p_vertex_shader, QString p_vertex_shader_path,
@@ -46,7 +46,7 @@ public slots:
 private:
 
     //renderthread
-    void UpdatePerObjectData(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands);
+    void UpdatePerObjectData(QHash<int, QVector<AbstractRenderCommand> > * p_scoped_render_commands);
 
     void RenderEqui();
 
@@ -72,4 +72,4 @@ private:
     QVector<AbstractRenderCommand_sort> m_sorted_command_indices;    
 };
 
-#endif // RENDERERGL33_LOADINGTHREAD_H
+#endif // RENDERERGL33

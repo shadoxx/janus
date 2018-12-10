@@ -379,16 +379,8 @@ void MediaPlayer::UpdateLeftRightTextures(MediaContext * ctx)
                 }
                 else
                 {
-#ifdef __ANDROID__
                     RendererInterface::m_pimpl->UpdateTextureHandleData(ctx->m_texture_handles[i].get(),0 ,0, 0,
                             ctx->img[i]->width(), ctx->img[i]->height(), GL_RGBA, GL_UNSIGNED_BYTE, (void *)ctx->img[i]->constBits(), ctx->img[i]->width() * ctx->img[i]->height() * 4);
-#elif __linux__
-                RendererInterface::m_pimpl->UpdateTextureHandleData(ctx->m_texture_handles[0].get(), 0 ,0, 0,
-                                        ctx->img[0]->width(), ctx->img[0]->height(), GL_RGBA, GL_UNSIGNED_BYTE, (void *)ctx->img[0]->constBits(), ctx->img[0]->width() * ctx->img[0]->height() * 4);
-#else
-                    RendererInterface::m_pimpl->UpdateTextureHandleData(ctx->m_texture_handles[i].get(),0 ,0, 0,
-                            ctx->img[i]->width(), ctx->img[i]->height(), GL_BGRA, GL_UNSIGNED_BYTE, (void *)ctx->img[i]->constBits(), ctx->img[i]->width() * ctx->img[i]->height() * 4);
-#endif
                     RendererInterface::m_pimpl->GenerateTextureHandleMipMap(ctx->m_texture_handles[i].get());
                 }
             }
@@ -419,22 +411,34 @@ TextureHandle* MediaPlayer::GetRightTextureHandle(MediaContext * ctx)
 
 float MediaPlayer::GetAspectRatio(MediaContext * ctx) const
 {
+    float aspect = 0.7f;
     if (ctx->audio_only || !ctx->img[0] || ctx->img[0]->isNull() || ctx->video_width == 0 || ctx->video_height == 0) {
-        return 0.7f;
+        aspect = 0.7f;
     }
     else {
+        aspect = (float(ctx->video_height) / float(ctx->video_width));
         if (ctx->sbs3d){
-            return (float(ctx->video_height) / float(ctx->video_width / 2.0));
-
+            aspect *= 2.0f;
         }
         else if (ctx->ou3d){
-            return (float(ctx->video_height / 2.0) / float(ctx->video_width));
-
+            aspect *= 0.5f;
         }
-        else{
-            return (float(ctx->video_height) / float(ctx->video_width));
+    }    
+
+    //62.0 - detect rotated videos, and alter aspect ratio accordingly
+    libvlc_video_orient_t orient = libvlc_video_orient_top_left;
+    libvlc_media_track_t **mediatracks;
+    unsigned trackcount = libvlc_media_tracks_get(ctx->media, &mediatracks);
+    for (uint t = 0; t < trackcount; ++t) {
+        if (mediatracks[t]->i_type == libvlc_track_video) {
+            orient = (*mediatracks)->video->i_orientation;
         }
     }
+    if (orient == libvlc_video_orient_left_bottom || orient == libvlc_video_orient_right_top) {
+        aspect = 1.0f / aspect;
+    }
+
+    return aspect;
 }
 
 

@@ -188,6 +188,7 @@ TextureHandle* AssetVideo::GetTextureHandle(MediaContext * ctx, const bool left_
 float AssetVideo::GetAspectRatio(MediaContext * ctx) const
 {
     const float v = media_player.GetAspectRatio(ctx);
+//    qDebug() << "AssetVideo::GetAspectRatio" << v;
     return v;
 }
 

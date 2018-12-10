@@ -156,8 +156,7 @@ void Game::Initialize()
     }
     else {
         multi_players->SetEnabled(SettingsManager::GetMultiplayerEnabled());
-    }
-    multi_players->SetSessionTrackingEnabled(SettingsManager::GetSessionTrackingEnabled());
+    }    
 
     const float s = 0.02f * 2.5f;
     info_text_geom.SetFixedSize(true, s);
@@ -954,9 +953,9 @@ void Game::DrawGL(const float ipd, const QMatrix4x4 head_xform, const bool set_m
         frames.push_back(frame1);
         player_avatar->GetAssetGhost()->SetFromFrames(frames, 1000);
 
-        // ghost needs to be processed
-        player_avatar->Update(player->GetDeltaTime());
-        player_avatar->DrawGL(shader, true, player->GetProperties()->GetPos()->toQVector3D());
+        // ghost needs to be processed        
+        player_avatar->Update(player->GetDeltaTime());        
+        player_avatar->DrawGL(shader, true, player->GetProperties()->GetPos()->toQVector3D());        
 
         r->UnbindShader(shader);
     }
@@ -2203,27 +2202,37 @@ void Game::keyPressEvent(QKeyEvent * e)
 
         case JVR_STATE_UNIT_COLLISIONID:
         {
+            QList <QString> col_id_list;
+            col_id_list.push_back("");            
+            col_id_list.push_back("capsule");
+            col_id_list.push_back("cone");
+            col_id_list.push_back("cube");
+            col_id_list.push_back("cylinder");
+            col_id_list.push_back("pipe");
+            col_id_list.push_back("plane");
+            col_id_list.push_back("pyramid");
+            col_id_list.push_back("sphere");
+            col_id_list.push_back("torus");
+            if (!col_id_list.contains(obj->GetProperties()->GetID())) {
+                col_id_list.push_back(obj->GetProperties()->GetID());
+            }
+
+            int cur_index = qMax(col_id_list.indexOf(obj->GetProperties()->GetCollisionID()), 0);
+
             switch (e->key()) {
             case Qt::Key_W:
+            case Qt::Key_Q:
             case Qt::Key_Up:
             case Qt::Key_A:
             case Qt::Key_Left:
+                cur_index = ((cur_index + col_id_list.size() - 1) % col_id_list.size());
+                break;
             case Qt::Key_D:
             case Qt::Key_Right:
             case Qt::Key_S:
             case Qt::Key_Down:
-            case Qt::Key_Q:
-            case Qt::Key_E:
-
-                if (obj->GetProperties()->GetCollisionID().length() > 0) {
-                    obj->GetProperties()->SetCollisionID("");
-                }
-                else {
-                    obj->GetProperties()->SetCollisionID(obj->GetProperties()->GetID());
-                }
-                r->SelectCollisionAssetForObject(sel, obj->GetProperties()->GetCollisionID());
-                obj->GetProperties()->SetSync(true);
-
+            case Qt::Key_E:                
+                cur_index = ((cur_index+1) % col_id_list.size());
                 break;
             case Qt::Key_Backtab:
                 state = JVR_STATE_UNIT_COLOUR;
@@ -2231,7 +2240,13 @@ void Game::keyPressEvent(QKeyEvent * e)
             case Qt::Key_Tab:
                 state = JVR_STATE_UNIT_COLLISIONSCALE;
                 break;
+            default:
+                break;
             }
+
+            obj->GetProperties()->SetCollisionID(col_id_list[cur_index]);
+            r->SelectCollisionAssetForObject(sel, col_id_list[cur_index]);
+            obj->GetProperties()->SetSync(true);
         }
 
             break;
@@ -3007,7 +3022,7 @@ void Game::UpdateOverlays()
             info_text_geom.Clear();
 
             const ElementType t = obj->GetType();
-            QString type_str = DOMNode::ElementTypeToTagName(t) + " js_id=\"" + obj->GetProperties()->GetJSID();
+            QString type_str = DOMNode::ElementTypeToTagName(t) + " js_id=\"" + obj->GetProperties()->GetJSID() + "\"";
             if (t == TYPE_LINK) {
                 type_str += " url=\"" + obj->GetProperties()->GetURL().left(15)+ "...";
             }
@@ -5215,8 +5230,7 @@ void Game::DragAndDrop(const QString url_str, const QString drop_or_pin, const i
             r->AddAssetVideo(dynamic_cast<AssetVideo *>(new_asset.data()));
             new_object->SetAssetVideo(dynamic_cast<AssetVideo *>(new_asset.data()));
             new_object->SetType(TYPE_VIDEO);
-            new_object->GetProperties()->SetID(asset_id);
-            new_object->GetProperties()->SetCullFace("none");
+            new_object->GetProperties()->SetID(asset_id);            
             new_object->GetProperties()->SetLighting(false);
         }
         else if (t == TYPE_ASSETSOUND) {
@@ -5482,8 +5496,7 @@ void Game::UpdateAudio()
 
 void Game::UpdateMultiplayer()
 {
-    multi_players->SetEnabled(SettingsManager::GetMultiplayerEnabled() && !do_exit);
-    multi_players->SetSessionTrackingEnabled(SettingsManager::GetSessionTrackingEnabled());
+    multi_players->SetEnabled(SettingsManager::GetMultiplayerEnabled() && !do_exit);    
     multi_players->SetPartyMode(SettingsManager::GetPartyModeEnabled());
 
     QPointer <Room> r = env->GetCurRoom();

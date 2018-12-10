@@ -88,13 +88,13 @@ void RendererGL33::Initialize()
                                                           &default_equi_fragment_shader_bytes, default_equi_fragment_shader_path);
 }
 
-void RendererGL33::PreRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL33::PreRender(QHash<int, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     Q_UNUSED(p_scoped_light_containers)
     UpdatePerObjectData(p_scoped_render_commands);
 }
 
-void RendererGL33::PostRender(QHash<size_t, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
+void RendererGL33::PostRender(QHash<int, QVector<AbstractRenderCommand> > * p_scoped_render_commands, QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     Q_UNUSED(p_scoped_render_commands)
     Q_UNUSED(p_scoped_light_containers)
@@ -214,7 +214,7 @@ void RendererGL33::CompileAndLinkShaderProgram2(std::shared_ptr<ProgramHandle> *
     else
     {
         fragment_empty = true;
-        QString default_object_fragment_shader_path("assets/shaders/default_no_alpha.txt");
+        QString default_object_fragment_shader_path("assets/shaders/default_linear_alpha.txt");
         QByteArray default_object_fragment_shader_bytes = MathUtil::LoadAssetFile(default_object_fragment_shader_path);
 
         UpgradeShaderSource(default_object_fragment_shader_bytes, false);
@@ -391,7 +391,7 @@ void RendererGL33::InitializeGLObjects()
     AbstractRenderer::InitializeGLObjects();
 }
 
-void RendererGL33::Render(QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
+void RendererGL33::Render(QHash<int, QVector<AbstractRenderCommand>> * p_scoped_render_commands,
                           QHash<StencilReferenceValue, LightContainer> * p_scoped_light_containers)
 {
     Q_UNUSED(p_scoped_render_commands);
@@ -442,7 +442,7 @@ void RendererGL33::UpgradeShaderSource(QByteArray & p_shader_source, bool p_is_v
     }  
 }
 
-void RendererGL33::UpdatePerObjectData(QHash<size_t, QVector<AbstractRenderCommand>> * p_scoped_render_commands)
+void RendererGL33::UpdatePerObjectData(QHash<int, QVector<AbstractRenderCommand>> * p_scoped_render_commands)
 {
     QMatrix4x4 temp_matrix;
     QMatrix4x4 model_matrix;
@@ -454,9 +454,9 @@ void RendererGL33::UpdatePerObjectData(QHash<size_t, QVector<AbstractRenderComma
     // Resize to this frame's camera vectors to fit the current frame's cameras for each scope
     for (const RENDERER::RENDER_SCOPE scope : m_scopes)
     {
-        size_t const camera_count_this_scope = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(scope)].size();
-        m_per_frame_scoped_cameras_view_matrix[static_cast<size_t>(scope)].resize(camera_count_this_scope);
-        m_per_frame_scoped_cameras_is_left_eye[static_cast<size_t>(scope)].resize(camera_count_this_scope);
+        int const camera_count_this_scope = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(scope)].size();
+        m_per_frame_scoped_cameras_view_matrix[static_cast<int>(scope)].resize(camera_count_this_scope);
+        m_per_frame_scoped_cameras_is_left_eye[static_cast<int>(scope)].resize(camera_count_this_scope);
     }
 
     // Generate the view matrices and is_left_eye data for this frame's cameras
@@ -467,17 +467,17 @@ void RendererGL33::UpdatePerObjectData(QHash<size_t, QVector<AbstractRenderComma
 
         for (const RENDERER::RENDER_SCOPE scope : m_scopes)
         {
-            size_t const camera_count_this_scope = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(scope)].size();
-            for (size_t camera_index = 0; camera_index < camera_count_this_scope; ++camera_index)
+            const int camera_count_this_scope = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(scope)].size();
+            for (int camera_index = 0; camera_index < camera_count_this_scope; ++camera_index)
             {
-                QMatrix4x4 composited_view_matrix = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(scope)][camera_index].GetViewMatrix();
-                m_per_frame_scoped_cameras_is_left_eye[static_cast<size_t>(scope)][camera_index] = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(scope)][camera_index].GetLeftEye();
-                composited_view_matrix = ((m_per_frame_scoped_cameras_is_left_eye[static_cast<size_t>(scope)][camera_index]) ? eye_view_matrix_L : eye_view_matrix_R) * composited_view_matrix;
-                m_per_frame_scoped_cameras_view_matrix[static_cast<size_t>(scope)][camera_index] = composited_view_matrix;
+                QMatrix4x4 composited_view_matrix = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(scope)][camera_index].GetViewMatrix();
+                m_per_frame_scoped_cameras_is_left_eye[static_cast<int>(scope)][camera_index] = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(scope)][camera_index].GetLeftEye();
+                composited_view_matrix = ((m_per_frame_scoped_cameras_is_left_eye[static_cast<int>(scope)][camera_index]) ? eye_view_matrix_L : eye_view_matrix_R) * composited_view_matrix;
+                m_per_frame_scoped_cameras_view_matrix[static_cast<int>(scope)][camera_index] = composited_view_matrix;
 
                 // Update camera viewports, this takes into account things like dynamic resolution scaling
-                m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(scope)][camera_index].SetViewport(
-                            (m_per_frame_scoped_cameras_is_left_eye[static_cast<size_t>(scope)][camera_index] == true)
+                m_scoped_cameras_cache[m_rendering_index][static_cast<int>(scope)][camera_index].SetViewport(
+                            (m_per_frame_scoped_cameras_is_left_eye[static_cast<int>(scope)][camera_index] == true)
                         ? m_hmd_manager->m_eye_viewports[0]
                         : m_hmd_manager->m_eye_viewports[1]);
             }
@@ -487,21 +487,21 @@ void RendererGL33::UpdatePerObjectData(QHash<size_t, QVector<AbstractRenderComma
     {
         for (const RENDERER::RENDER_SCOPE scope : m_scopes)
         {
-            const int camera_count_this_scope = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(scope)].size();
+            const int camera_count_this_scope = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(scope)].size();
             for (int camera_index = 0; camera_index < camera_count_this_scope; ++camera_index)
             {
-                m_per_frame_scoped_cameras_view_matrix[static_cast<size_t>(scope)][camera_index] = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(scope)][camera_index].GetViewMatrix();
-                m_per_frame_scoped_cameras_is_left_eye[static_cast<size_t>(scope)][camera_index] = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(scope)][camera_index].GetLeftEye();
+                m_per_frame_scoped_cameras_view_matrix[static_cast<int>(scope)][camera_index] = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(scope)][camera_index].GetViewMatrix();
+                m_per_frame_scoped_cameras_is_left_eye[static_cast<int>(scope)][camera_index] = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(scope)][camera_index].GetLeftEye();
             }
         }
     }
 
     for (const RENDERER::RENDER_SCOPE scope : m_scopes)
     {
-        QVector<AbstractRenderCommand> & render_command_vector = (*p_scoped_render_commands)[static_cast<size_t>(scope)];
+        QVector<AbstractRenderCommand> & render_command_vector = (*p_scoped_render_commands)[static_cast<int>(scope)];
 
         const int command_count(render_command_vector.size());
-        const int camera_count_this_scope(m_per_frame_scoped_cameras_view_matrix[static_cast<size_t>(scope)].size());
+        const int camera_count_this_scope(m_per_frame_scoped_cameras_view_matrix[static_cast<int>(scope)].size());
 
         // For each command
         for (int command_index = 0; command_index < command_count; command_index += camera_count_this_scope)
@@ -509,7 +509,7 @@ void RendererGL33::UpdatePerObjectData(QHash<size_t, QVector<AbstractRenderComma
             // Recompute matrices for each camera affecting each command in this scope
             for (int camera_index = 0; camera_index < camera_count_this_scope; ++camera_index)
             {
-                const VirtualCamera& camera = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(scope)][camera_index];
+                const VirtualCamera& camera = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(scope)][camera_index];
 
                 AbstractRenderCommand & render_command = render_command_vector[command_index + camera_index];
                 AssetShader_Object & new_object_uniforms = render_command.GetObjectUniformsReference();
@@ -517,7 +517,7 @@ void RendererGL33::UpdatePerObjectData(QHash<size_t, QVector<AbstractRenderComma
                 memcpy((char*)model_matrix.constData(), new_object_uniforms.iModelMatrix, 16 * sizeof(float));
                 model_matrix.optimize(); //56.0 - call optimize so internal type is not identity and inverse does nothing
 
-                QMatrix4x4 const & view_matrix = m_per_frame_scoped_cameras_view_matrix[static_cast<size_t>(scope)][camera_index];
+                const QMatrix4x4 & view_matrix = m_per_frame_scoped_cameras_view_matrix[static_cast<int>(scope)][camera_index];
                 memcpy(new_object_uniforms.iViewMatrix, view_matrix.constData(), 16 * sizeof(float));
 
                 memcpy(new_object_uniforms.iProjectionMatrix, camera.GetProjectionMatrix().constData(), 16 * sizeof(float));
@@ -682,7 +682,7 @@ void RendererGL33::DecoupledRender()
             m_hmd_manager->BeginRenderEye(1);
         }
 
-        for (size_t scope = 0; scope < (size_t)RENDERER::RENDER_SCOPE::SCOPE_COUNT; ++scope)
+        for (int scope = 0; scope < int(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++scope)
         {
             auto current_scope  = static_cast<RENDERER::RENDER_SCOPE>(scope);
             RenderObjectsNaiveDecoupled(current_scope,
@@ -859,7 +859,7 @@ void RendererGL33::RenderEqui()
 
     // Cache existing cameras then set the cameras to our one camera needed for cubemap to equi rendering
     auto camera_cache = m_scoped_cameras_cache[m_rendering_index];
-    for (size_t scope_enum = 0; scope_enum < static_cast<size_t>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++scope_enum)
+    for (int scope_enum = 0; scope_enum < static_cast<int>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++scope_enum)
     {
         m_scoped_cameras_cache[m_rendering_index][scope_enum].clear();
         for (VirtualCamera& camera : overlay_camera)
@@ -872,7 +872,7 @@ void RendererGL33::RenderEqui()
     }
 
     // Cache then erase any existing commands in the overlay scope
-    QHash<size_t, QVector<AbstractRenderCommand>> post_process_commands;
+    QHash<int, QVector<AbstractRenderCommand>> post_process_commands;
 
     // Push the AbstractRenderCommand needed to convert the cubemap into an equi to the OVERLAYS scope
     AbstractRenderComandShaderData shader_data(m_default_equi_shader.get(),
@@ -886,7 +886,7 @@ void RendererGL33::RenderEqui()
     ident.setToIdentity();
     memcpy(shader_data.m_object.iModelMatrix, ident.constData(), 16 * sizeof(float));
 
-    post_process_commands[(size_t)RENDERER::RENDER_SCOPE::POST_PROCESS].push_back(
+    post_process_commands[(int)RENDERER::RENDER_SCOPE::POST_PROCESS].push_back(
                 AbstractRenderCommand(PrimitiveType::TRIANGLES,
                                        6,
                                        1,
@@ -911,11 +911,11 @@ void RendererGL33::RenderEqui()
     // Do the second pass of rendering to convert cubemap to equi
     PreRender(&post_process_commands, &(m_scoped_light_containers_cache[m_rendering_index]));
     // This is just to trigger the clearing of the FBO
-    //RenderObjectsNaiveDecoupled(m_main_thread_renderer, RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_STENCILS, post_process_commands[(size_t)RENDERER::RENDER_SCOPE::POST_PROCESS], (m_scoped_light_containers));
+    //RenderObjectsNaiveDecoupled(m_main_thread_renderer, RENDERER::RENDER_SCOPE::CURRENT_ROOM_PORTAL_STENCILS, post_process_commands[(int)RENDERER::RENDER_SCOPE::POST_PROCESS], (m_scoped_light_containers));
     // This draws our full-screen quad with the cubemap-to-equi fragment shader
     BindFBOToRead(FBO_TEXTURE_BITFIELD::NONE, false);
     BindFBOToDraw(FBO_TEXTURE_BITFIELD::COLOR, false);
-    RenderObjectsNaiveDecoupled(RENDERER::RENDER_SCOPE::POST_PROCESS, post_process_commands[(size_t)RENDERER::RENDER_SCOPE::POST_PROCESS], m_scoped_light_containers_cache[m_rendering_index]);
+    RenderObjectsNaiveDecoupled(RENDERER::RENDER_SCOPE::POST_PROCESS, post_process_commands[(int)RENDERER::RENDER_SCOPE::POST_PROCESS], m_scoped_light_containers_cache[m_rendering_index]);
 
     // Restore the cameras
     m_scoped_cameras_cache[m_rendering_index] = camera_cache;

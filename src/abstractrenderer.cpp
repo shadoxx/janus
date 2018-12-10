@@ -63,10 +63,10 @@ void AbstractRenderer::PostConstructorInitialize()
     m_bound_texture_handles = QVector<TextureHandle *>(ASSETSHADER_MAX_TEXTURE_UNITS, nullptr);
     m_bound_texture_handles_render = QVector<TextureHandle *>(ASSETSHADER_MAX_TEXTURE_UNITS, nullptr);
 
-    for (size_t i = 0; i <BUFFER_TYPE_COUNT; ++i) {
+    for (int i = 0; i <BUFFER_TYPE_COUNT; ++i) {
         m_bound_buffers[i] = 0;
     }
-    for (size_t i = 0; i <BUFFER_CHUNK_COUNT; ++i) {
+    for (int i = 0; i <BUFFER_CHUNK_COUNT; ++i) {
         m_light_UBOs[i] = 0;
     }
 
@@ -88,8 +88,8 @@ void AbstractRenderer::PostConstructorInitialize()
 
     MathUtil::glFuncs->glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &m_max_anisotropy);
 
-    m_scopes.reserve(static_cast<size_t>(RENDERER::RENDER_SCOPE::SCOPE_COUNT));
-    for (size_t scope_enum = 0; scope_enum < static_cast<size_t>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++scope_enum)
+    m_scopes.reserve(static_cast<int>(RENDERER::RENDER_SCOPE::SCOPE_COUNT));
+    for (int scope_enum = 0; scope_enum < static_cast<int>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++scope_enum)
     {
          m_scopes.push_back(static_cast<RENDERER::RENDER_SCOPE>(scope_enum));
     }
@@ -1197,7 +1197,7 @@ TextureSet AbstractRenderer::GetCurrentlyBoundTextures()
 {
     TextureSet texture_set;
 
-    for (size_t i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
+    for (int i = 0; i < ASSETSHADER_NUM_COMBINED_TEXURES; ++i)
     {
         texture_set.SetTextureHandle(i, m_bound_texture_handles[i]);
     }
@@ -1403,13 +1403,13 @@ ColorMask AbstractRenderer::GetColorMask() const
     return m_color_mask;
 }
 
-void AbstractRenderer::GetViewportsAndCameraCount(QVector<float> & viewports, RENDERER::RENDER_SCOPE const p_scope, uint32_t & camera_count)
+void AbstractRenderer::GetViewportsAndCameraCount(QVector<float> & viewports, RENDERER::RENDER_SCOPE const p_scope, int & camera_count)
 {
     QVector4D viewport;
-    camera_count = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(p_scope)].size();
-    for (size_t camera_index = 0; camera_index < camera_count; camera_index++)
+    camera_count = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(p_scope)].size();
+    for (int camera_index = 0; camera_index < camera_count; camera_index++)
     {
-        VirtualCamera& camera = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(p_scope)][camera_index];
+        VirtualCamera& camera = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(p_scope)][camera_index];
         viewport = camera.GetViewport();
         viewports.push_back(viewport.x());
         viewports.push_back(viewport.y());
@@ -1451,12 +1451,12 @@ void AbstractRenderer::GenerateEnvMapsFromCubemapTextureHandle(Cubemaps& p_cubem
     MathUtil::glFuncs->glGetTexLevelParameteriv(GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_mip_level, GL_TEXTURE_ALPHA_SIZE, &gl_tex_alpha_size);
 
     // Allocate memory for holding raw face data
-    size_t const pixel_data_size = (gl_tex_red_size / 8 * ((gl_tex_red_size == 8) ? 3 : 4));
+    int const pixel_data_size = (gl_tex_red_size / 8 * ((gl_tex_red_size == 8) ? 3 : 4));
     QVector<uint8_t> pixel_data(pixel_data_size * gl_tex_width * gl_tex_width, 0);
     // For each face
     gli::format format = (gl_tex_red_size == 8) ? gli::FORMAT_BGR8_UNORM_PACK8 : gli::FORMAT_RGBA16_SFLOAT_PACK16;
     gli::extent2d extent = { gl_tex_width, gl_tex_width };
-    size_t const levels = 1;
+    int const levels = 1;
     // Allocate Texture
     gli::texture2d texture2d(format, extent, levels);
     for (int face_index = 0; face_index < 6; ++face_index)
@@ -1498,15 +1498,15 @@ void AbstractRenderer::RenderObjectsStereoViewportInstanced(const RENDERER::REND
                                                             const QHash<StencilReferenceValue, LightContainer> &p_scoped_light_containers)
 {
 #ifndef __ANDROID__
-    const size_t camera_count_this_scope = m_per_frame_scoped_cameras_view_matrix[static_cast<size_t>(p_scope)].size();
+    const int camera_count_this_scope = m_per_frame_scoped_cameras_view_matrix[static_cast<int>(p_scope)].size();
 
     QVector<float> viewports;
     viewports.reserve(camera_count_this_scope * 4);
 
     QVector4D viewport;
-    for (size_t camera_index = 0; camera_index < camera_count_this_scope; camera_index++)
+    for (int camera_index = 0; camera_index < camera_count_this_scope; camera_index++)
     {
-        VirtualCamera& camera = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(p_scope)][camera_index];
+        VirtualCamera& camera = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(p_scope)][camera_index];
         viewport = camera.GetViewport();
         viewports.push_back(viewport.x());
         viewports.push_back(viewport.y());
@@ -1514,13 +1514,13 @@ void AbstractRenderer::RenderObjectsStereoViewportInstanced(const RENDERER::REND
         viewports.push_back(viewport.w());
     }
 
-    const size_t cmd_array_limit = p_object_render_commands.size();
-    const size_t cmd_count = cmd_array_limit;
+    const int cmd_array_limit = p_object_render_commands.size();
+    const int cmd_count = cmd_array_limit;
     const float viewport_count_float = camera_count_this_scope;
     const float viewport_count = camera_count_this_scope;
 
     float encompassing_viewport[4] = { 0.0, 0.0, 0.0, 0.0};
-    for (size_t viewport_index = 0; viewport_index < viewport_count; ++ viewport_index)
+    for (int viewport_index = 0; viewport_index < viewport_count; ++ viewport_index)
     {
         encompassing_viewport[0] = (viewports[viewport_index * 4 + 0] < encompassing_viewport[0]) ? viewports[viewport_index * 4 + 0] : encompassing_viewport[0];
         encompassing_viewport[1] = (viewports[viewport_index * 4 + 1] < encompassing_viewport[1]) ? viewports[viewport_index * 4 + 1] : encompassing_viewport[1];
@@ -1585,8 +1585,8 @@ void AbstractRenderer::RenderObjectsStereoViewportInstanced(const RENDERER::REND
     if (cmd_count != 0)
     {
         // For each command in this scope
-        size_t cmd_stride = 0;
-        for (size_t cmd_index = 0; cmd_index < cmd_count;)
+        int cmd_stride = 0;
+        for (int cmd_index = 0; cmd_index < cmd_count;)
         {
             cmd_stride = camera_count_this_scope;
             MathUtil::glFuncs->glViewportArrayv(0, camera_count_this_scope, viewports.data());
@@ -1639,7 +1639,7 @@ void AbstractRenderer::RenderObjectsStereoViewportInstanced(const RENDERER::REND
 
                 // Special case for textures that vary per-viewport
                 base_viewport = cmd_index % camera_count_this_scope;
-                is_left_eye = m_per_frame_scoped_cameras_is_left_eye[static_cast<size_t>(p_scope)][base_viewport];
+                is_left_eye = m_per_frame_scoped_cameras_is_left_eye[static_cast<int>(p_scope)][base_viewport];
                 bool is3DTexture = current_render_command.m_texture_set.GetIs3DTexture();
 
                 // Push new frame uniforms if necessary
@@ -1757,14 +1757,14 @@ void AbstractRenderer::RenderObjectsNaive(RENDERER::RENDER_SCOPE const , QVector
         return;
     }
 
-    const size_t cmd_array_limit = p_object_render_commands.size();
-    const size_t cmd_count = cmd_array_limit;
+    const int cmd_array_limit = p_object_render_commands.size();
+    const int cmd_count = cmd_array_limit;
     const float viewport_count_float = 1.0f;
     const float viewport_count = 1.0f;
     const float instancing_SSBO_stride = static_cast<float>(camera_count);
 
     float encompassing_viewport[4] = { 0.0, 0.0, 0.0, 0.0};
-    for (size_t viewport_index = 0; viewport_index < viewport_count; ++ viewport_index)
+    for (int viewport_index = 0; viewport_index < viewport_count; ++ viewport_index)
     {
         encompassing_viewport[0] = (viewports[viewport_index * 4 + 0] < encompassing_viewport[0]) ? viewports[viewport_index * 4 + 0] : encompassing_viewport[0];
         encompassing_viewport[1] = (viewports[viewport_index * 4 + 1] < encompassing_viewport[1]) ? viewports[viewport_index * 4 + 1] : encompassing_viewport[1];
@@ -2057,15 +2057,15 @@ void AbstractRenderer::RenderObjectsNaiveDecoupled(const RENDERER::RENDER_SCOPE 
                                                    const QVector<AbstractRenderCommand> &p_object_render_commands,
                                                    const QHash<StencilReferenceValue, LightContainer> &p_scoped_light_containers)
 {
-    const size_t camera_count_this_scope = m_per_frame_scoped_cameras_view_matrix[static_cast<size_t>(p_scope)].size();
+    const int camera_count_this_scope = m_per_frame_scoped_cameras_view_matrix[static_cast<int>(p_scope)].size();
 
     QVector<float> viewports;
     viewports.reserve(camera_count_this_scope);
 
     QVector4D viewport;
-    for (size_t camera_index = 0; camera_index < camera_count_this_scope; camera_index++)
+    for (int camera_index = 0; camera_index < camera_count_this_scope; camera_index++)
     {
-        VirtualCamera& camera = m_scoped_cameras_cache[m_rendering_index][static_cast<size_t>(p_scope)][camera_index];
+        VirtualCamera& camera = m_scoped_cameras_cache[m_rendering_index][static_cast<int>(p_scope)][camera_index];
         viewport = camera.GetViewport();
         viewports.push_back(viewport.x());
         viewports.push_back(viewport.y());
@@ -2073,14 +2073,14 @@ void AbstractRenderer::RenderObjectsNaiveDecoupled(const RENDERER::RENDER_SCOPE 
         viewports.push_back(viewport.w());
     }
 
-    const size_t cmd_array_limit = p_object_render_commands.size();
-    const size_t cmd_count = cmd_array_limit;
+    const int cmd_array_limit = p_object_render_commands.size();
+    const int cmd_count = cmd_array_limit;
     const float viewport_count_float = 1.0f;
     const float viewport_count = 1.0f;
     const float instancing_SSBO_stride = static_cast<float>(camera_count_this_scope);
 
     float encompassing_viewport[4] = { 0.0, 0.0, 0.0, 0.0};
-    for (size_t viewport_index = 0; viewport_index < viewport_count; ++ viewport_index)
+    for (int viewport_index = 0; viewport_index < viewport_count; ++ viewport_index)
     {
         encompassing_viewport[0] = (viewports[viewport_index * 4 + 0] < encompassing_viewport[0]) ? viewports[viewport_index * 4 + 0] : encompassing_viewport[0];
         encompassing_viewport[1] = (viewports[viewport_index * 4 + 1] < encompassing_viewport[1]) ? viewports[viewport_index * 4 + 1] : encompassing_viewport[1];
@@ -2167,13 +2167,13 @@ void AbstractRenderer::RenderObjectsNaiveDecoupled(const RENDERER::RENDER_SCOPE 
     if (cmd_count != 0)
     {
         // For each command in this scope
-        for (size_t cmd_index = 0; cmd_index < cmd_count; cmd_index += camera_count_this_scope)
+        for (int cmd_index = 0; cmd_index < cmd_count; cmd_index += camera_count_this_scope)
         {
             // For each camera that affects this scope
-            for (size_t camera_index = 0; camera_index < camera_count_this_scope; camera_index++)
+            for (int camera_index = 0; camera_index < camera_count_this_scope; camera_index++)
             {
                 MathUtil::glFuncs->glViewport(viewports[camera_index * 4], viewports[camera_index * 4 + 1], viewports[camera_index * 4 + 2], viewports[camera_index * 4 + 3]);
-                is_left_eye = m_per_frame_scoped_cameras_is_left_eye[static_cast<size_t>(p_scope)][camera_index];
+                is_left_eye = m_per_frame_scoped_cameras_is_left_eye[static_cast<int>(p_scope)][camera_index];
 
                 AbstractRenderCommand const & current_render_command = p_object_render_commands[cmd_index + camera_index];
 
@@ -2383,7 +2383,7 @@ void AbstractRenderer::CreateShadowFBO(GLuint p_FBO, QVector<GLuint> p_texture_i
 }
 
 #if !defined(__APPLE__) && !defined(__ANDROID__)
-void AbstractRenderer::CreateMatrixSSBO(std::size_t p_ssbo_size, GLuint* p_ssbo_handle, GLintptr& p_ssbo_GPU_ptr, std::size_t* p_aligned_size)
+void AbstractRenderer::CreateMatrixSSBO(int p_ssbo_size, GLuint* p_ssbo_handle, GLintptr& p_ssbo_GPU_ptr, int* p_aligned_size)
 {
     // Create the ssbo handle
     MathUtil::glFuncs->glGenBuffers(1, p_ssbo_handle);
@@ -2407,7 +2407,7 @@ void AbstractRenderer::CreateMatrixSSBO(std::size_t p_ssbo_size, GLuint* p_ssbo_
     }
 
     // Compute the size needed for one chink of triple buffered SSBO with each chunk aligned as expected
-    *p_aligned_size = static_cast<std::size_t>(ceil((double)p_ssbo_size / (double)bufferAlignment) * bufferAlignment); // This is to ensure that the buffer is aligned correctly
+    *p_aligned_size = static_cast<int>(ceil((double)p_ssbo_size / (double)bufferAlignment) * bufferAlignment); // This is to ensure that the buffer is aligned correctly
 
     // Allocate enough immutable GPU storage for 3 aligned chunks
     MathUtil::glFuncs->glBufferStorage(GL_SHADER_STORAGE_BUFFER, *p_aligned_size * 3, 0, createFlags);
@@ -2491,7 +2491,7 @@ int64_t AbstractRenderer::GetFrameCounter()
     return m_frame_counter;
 }
 
-size_t AbstractRenderer::GetNumTextures() const
+int AbstractRenderer::GetNumTextures() const
 {
     return m_texture_handle_to_GL_ID.size() - m_num_deleted_textures;
 }
@@ -2508,13 +2508,13 @@ QVector<uint64_t> & AbstractRenderer::GetCPUTimeQueryResults()
 
 void AbstractRenderer::SetCameras(QVector<VirtualCamera> *p_cameras)
 {
-    for (size_t scope_enum = 0; scope_enum < static_cast<size_t>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++scope_enum)
+    for (int scope_enum = 0; scope_enum < static_cast<int>(RENDERER::RENDER_SCOPE::SCOPE_COUNT); ++scope_enum)
     {
-        size_t const cam_count = p_cameras->size();
+        int const cam_count = p_cameras->size();
         m_scoped_cameras_cache[m_current_submission_index][scope_enum].clear();
         m_scoped_cameras_cache[m_current_submission_index][scope_enum].reserve(cam_count);
 
-        for (size_t cam_index = 0; cam_index < cam_count; ++cam_index)
+        for (int cam_index = 0; cam_index < cam_count; ++cam_index)
         {
             if ((*p_cameras)[cam_index].GetScopeMask(static_cast<RENDERER::RENDER_SCOPE>(scope_enum)) == true)
             {
@@ -2541,7 +2541,7 @@ TextureHandle* AbstractRenderer::GetDefaultFontGlyphAtlas()
 
 uint32_t AbstractRenderer::GetCamerasPerScope(const RENDERER::RENDER_SCOPE p_scope) const
 {
-    return m_cameras_per_scope_cache[m_rendering_index][static_cast<size_t>(p_scope)];
+    return m_cameras_per_scope_cache[m_rendering_index][static_cast<int>(p_scope)];
 }*/
 
 std::shared_ptr<ProgramHandle> AbstractRenderer::CompileAndLinkShaderProgram(QByteArray *p_vertex_shader, QString p_vertex_shader_path,
@@ -2774,8 +2774,8 @@ void AbstractRenderer::RemoveTextureHandleFromMap(TextureHandle* p_handle)
     }
 
     // We keep handles in the vector but clear their contents and add the address to a free list so that it can be reused by a later creation call;
-    const size_t texture_count = m_texture_handle_to_GL_ID.size();
-    for (size_t itr = 0; itr < texture_count; ++itr)
+    const int texture_count = m_texture_handle_to_GL_ID.size();
+    for (int itr = 0; itr < texture_count; ++itr)
     {
         if (m_texture_handle_to_GL_ID[itr].first == p_handle && m_texture_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID)
         {
@@ -2799,10 +2799,10 @@ void AbstractRenderer::RemoveTextureHandleFromMap(TextureHandle* p_handle)
 void AbstractRenderer::FreeTextureHandles()
 {
     m_texture_deletion_guard.lock();
-    const size_t texture_count = m_textures_pending_deletion.size();
-    for (size_t i = 0; i < texture_count; ++i)
+    const int texture_count = m_textures_pending_deletion.size();
+    for (int i = 0; i < texture_count; ++i)
     {
-        size_t const last_index = m_textures_pending_deletion[i]->m_last_known_index;
+        int const last_index = m_textures_pending_deletion[i]->m_last_known_index;
         QPair<TextureHandle*, GLuint>& texture_pair = m_texture_handle_to_GL_ID[last_index];
 
 #ifdef QT_DEBUG
@@ -2829,8 +2829,8 @@ void AbstractRenderer::FreeTextureHandles()
 
 QVector<std::shared_ptr<BufferHandle>>* AbstractRenderer::GetBufferHandlesForMeshHandle(MeshHandle * p_mesh_handle)
 {
-    const size_t mesh_count = m_mesh_handle_to_buffers.size();
-    for (size_t itr = 0; itr < mesh_count; ++itr)
+    const int mesh_count = m_mesh_handle_to_buffers.size();
+    for (int itr = 0; itr < mesh_count; ++itr)
 	{
         if (m_mesh_handle_to_buffers[itr].first == p_mesh_handle)
 		{
@@ -3056,10 +3056,10 @@ std::shared_ptr<MeshHandle> AbstractRenderer::CreateMeshHandle(VertexAttributeLa
 void AbstractRenderer::FreeMeshHandles()
 {
     m_mesh_deletion_guard.lock();
-    size_t const mesh_count = m_meshes_pending_deletion.size();
-    for (size_t i = 0; i < mesh_count; ++i)
+    int const mesh_count = m_meshes_pending_deletion.size();
+    for (int i = 0; i < mesh_count; ++i)
     {
-        size_t const last_index = m_meshes_pending_deletion[i]->m_last_known_index;
+        int const last_index = m_meshes_pending_deletion[i]->m_last_known_index;
         QPair<MeshHandle*, GLuint>& mesh_pair = m_mesh_handle_to_GL_ID[last_index];
 
 #ifdef QT_DEBUG
@@ -3096,8 +3096,8 @@ void AbstractRenderer::RemoveMeshHandleFromMap(MeshHandle* p_handle)
     }
 
     // We keep handles in the vector but clear their contents and add the address to a free list so that it can be reused by a later creation call;
-    const size_t mesh_count = m_mesh_handle_to_GL_ID.size();
-    for (size_t itr = 0; itr < mesh_count; ++itr)
+    const int mesh_count = m_mesh_handle_to_GL_ID.size();
+    for (int itr = 0; itr < mesh_count; ++itr)
     {
         if (m_mesh_handle_to_GL_ID[itr].first == p_handle && m_mesh_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID)
         {
@@ -3122,10 +3122,10 @@ void AbstractRenderer::RemoveMeshHandleFromMap(MeshHandle* p_handle)
 void AbstractRenderer::FreeProgramHandles()
 {
     m_program_deletion_guard.lock();
-    const size_t program_count = m_programs_pending_deletion.size();
-    for (size_t i = 0; i < program_count; ++i)
+    const int program_count = m_programs_pending_deletion.size();
+    for (int i = 0; i < program_count; ++i)
     {
-        size_t const last_index = m_programs_pending_deletion[i]->m_last_known_index;
+        const int last_index = m_programs_pending_deletion[i]->m_last_known_index;
         QPair<ProgramHandle*, GLuint>& program_pair = m_program_handle_to_GL_ID[last_index];
 
         // Null m_mesh_handle_to_GL_ID ptr
@@ -3148,8 +3148,8 @@ void AbstractRenderer::FreeProgramHandles()
 void AbstractRenderer::RemoveProgramHandleFromMap(ProgramHandle* p_handle)
 {    
     // We keep handles in the vector but clear their contents and add the address to a free list so that it can be reused by a later creation call;
-    const size_t program_count = m_program_handle_to_GL_ID.size();
-    for (size_t itr = 0; itr < program_count; ++itr)
+    const int program_count = m_program_handle_to_GL_ID.size();
+    for (int itr = 0; itr < program_count; ++itr)
     {
         if (m_program_handle_to_GL_ID[itr].first == p_handle && m_program_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID)
         {
@@ -3169,8 +3169,8 @@ int AbstractRenderer::GetTextureWidth(TextureHandle* p_handle)
 	int width = 0;
 
     TextureHandle* tex_handle = p_handle;
-    const size_t tex_count = m_texture_handle_to_width.size();
-    for (size_t itr = 0; itr < tex_count; ++itr)
+    const int tex_count = m_texture_handle_to_width.size();
+    for (int itr = 0; itr < tex_count; ++itr)
 	{
         if (tex_handle == m_texture_handle_to_width[itr].first)
 		{
@@ -3184,8 +3184,8 @@ int AbstractRenderer::GetTextureHeight(TextureHandle* p_handle)
 {
 	int height = 0;
     TextureHandle* tex_handle = p_handle;
-    const size_t tex_count = m_texture_handle_to_height.size();
-    for (size_t itr = 0; itr < tex_count; ++itr)
+    const int tex_count = m_texture_handle_to_height.size();
+    for (int itr = 0; itr < tex_count; ++itr)
 	{
         if (tex_handle == m_texture_handle_to_height[itr].first)
 		{
@@ -3778,13 +3778,14 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureFromAssetImageData
     int const width_in_pixels = data->GetWidth();
     if (data_has_alpha && alpha_type == TextureHandle::ALPHA_TYPE::UNDEFINED)
 	{
+        //62.0 - inefficient
         QByteArray data_ptr = (is_left)
                 ? data->GetLeftFrameData(data->GetUploadedTextures())
                 : data->GetRightFrameData(data->GetUploadedTextures());
 
         if (!data_ptr.isEmpty()) {
             int const width = width_in_pixels * pixelSize;
-			int const height = data->GetHeight();
+            int const height = data->GetHeight();
             //int const first_red_offset = (external_format == GL_RGBA) ? 0 : 2;
             //int const first_green_offset = (external_format == GL_RGBA) ? 1 : 1;
             //int const first_blue_offset = (external_format == GL_RGBA) ? 2 : 0;
@@ -3793,10 +3794,10 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureFromAssetImageData
             bool found_one = false;
             bool found_blended = false;
 
-            for (int row = 0; row < height; row++)
-			{
-                for (int column = 0; column < width; column += pixelSize)
-				{
+            for (int row = 0; row < height; row+=8)
+            {
+                for (int column = 0; column < width; column += pixelSize*8)
+                {
                     //uchar this_red = data_ptr[row * width + column + first_red_offset];
                     //uchar this_green = data_ptr[row * width + column + first_green_offset];
                     //uchar this_blue = data_ptr[row * width + column + first_blue_offset];
@@ -3804,8 +3805,8 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureFromAssetImageData
                     found_zero = (found_zero) ? found_zero : (this_alpha == 0x00);
                     found_one = (found_one) ? found_one : (this_alpha == 0xff);
                     found_blended = (found_blended) ? found_blended : ((this_alpha != 0xff) && (this_alpha != 0x00));
-				}
-			}
+                }
+            }
 
             if (!found_zero && !found_blended)
             {
@@ -3823,7 +3824,7 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureFromAssetImageData
             {
                 alpha_type = TextureHandle::ALPHA_TYPE::BLENDED;
             }
-		}
+        }
 	}
 
     GLuint texture_id = 0;
@@ -4087,11 +4088,11 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureFromGLIData(const 
     }
 
     // Populate Data
-    for (std::size_t Layer = 0; Layer < Texture.layers(); ++Layer)
+    for (int Layer = 0; Layer < Texture.layers(); ++Layer)
     {
-		for (std::size_t Face = 0; Face < Texture.faces(); ++Face)
+        for (int Face = 0; Face < Texture.faces(); ++Face)
 		{
-			for (std::size_t Level = 0; Level < Texture.levels(); ++Level)
+            for (int Level = 0; Level < Texture.levels(); ++Level)
 			{
 				// If we've disabled mipmaps skip over any in the file.
 				if (tex_mipmap == false && Level != 0)
@@ -4426,7 +4427,7 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureQImage(const QImag
     TextureHandle::COLOR_SPACE color_space = TextureHandle::COLOR_SPACE::LINEAR;
     TextureHandle::ALPHA_TYPE alpha_type = tex_alpha;
 
-    uchar const * img_data = img.constBits();
+    const unsigned char * img_data = img.constBits();
 
     if (alpha_type == TextureHandle::ALPHA_TYPE::UNDEFINED)
     {
@@ -4446,9 +4447,9 @@ std::shared_ptr<TextureHandle> AbstractRenderer::CreateTextureQImage(const QImag
                 bool found_one = false;
                 bool found_blended = false;
 
-                for (int row = 0; row < height; row++)
+                for (int row = 0; row < height; row+=8)
                 {
-                    for (int column = first_alpha_offset; column < width; column += pixel_offset)
+                    for (int column = first_alpha_offset; column < width; column += pixel_offset*8)
                     {
                         uchar const * this_alpha_ptr = &(img_data[row * width + column]);
                         if (this_alpha_ptr != nullptr)
@@ -4540,8 +4541,8 @@ void AbstractRenderer::CopyTextureHandleDataToTextureHandle(TextureHandle* p_src
     TextureHandle * p_dst_pointer = p_dst_handle;
     TextureHandle * itr_pointer = nullptr;
 
-    const size_t tex_count = m_texture_handle_to_GL_ID.size();
-    for (size_t itr = 0; itr < tex_count; ++itr)
+    const int tex_count = m_texture_handle_to_GL_ID.size();
+    for (int itr = 0; itr < tex_count; ++itr)
     {
         QPair<TextureHandle*, GLuint>& pair_ref = m_texture_handle_to_GL_ID[itr];
         itr_pointer = pair_ref.first;
@@ -4619,10 +4620,10 @@ std::shared_ptr<BufferHandle> AbstractRenderer::CreateBufferHandle(
 void AbstractRenderer::FreeBufferHandles()
 {
     m_buffer_deletion_guard.lock();
-    size_t const buffer_count = m_buffers_pending_deletion.size();
-    for (size_t i = 0; i < buffer_count; ++i)
+    int const buffer_count = m_buffers_pending_deletion.size();
+    for (int i = 0; i < buffer_count; ++i)
     {
-        size_t const last_index = m_buffers_pending_deletion[i]->m_last_known_index;
+        int const last_index = m_buffers_pending_deletion[i]->m_last_known_index;
         QPair<BufferHandle*, GLuint>& buffer_pair = m_buffer_handle_to_GL_ID[last_index];
 
 #ifdef QT_DEBUG
@@ -4655,8 +4656,8 @@ void AbstractRenderer::RemoveBufferHandleFromMap(BufferHandle* p_handle)
     }
 
     // We keep handles in the vector but clear their contents and add the address to a free list so that it can be reused by a later creation call;
-    const size_t buffer_count = m_buffer_handle_to_GL_ID.size();
-    for (size_t itr = 0; itr < buffer_count; ++itr)
+    const int buffer_count = m_buffer_handle_to_GL_ID.size();
+    for (int itr = 0; itr < buffer_count; ++itr)
 	{
         if (m_buffer_handle_to_GL_ID[itr].first == p_handle && m_buffer_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID)
 		{
@@ -4713,8 +4714,8 @@ std::shared_ptr<ProgramHandle> AbstractRenderer::CreateProgramHandle(uint32_t *p
 
 GLuint AbstractRenderer::GetProgramHandleID(ProgramHandle * p_handle)
 {
-    const size_t program_count = m_program_handle_to_GL_ID.size();
-    for (size_t itr = 0; itr < program_count; ++itr) {
+    const int program_count = m_program_handle_to_GL_ID.size();
+    for (int itr = 0; itr < program_count; ++itr) {
         if (m_program_handle_to_GL_ID[itr].first == p_handle && m_program_handle_to_GL_ID[itr].first->m_UUID.m_UUID == p_handle->m_UUID.m_UUID) {
             return m_program_handle_to_GL_ID[itr].second;
         }
@@ -4852,14 +4853,14 @@ void AbstractRenderer::UpdateFramebuffer()
     {
         MathUtil::glFuncs->glActiveTexture(GL_TEXTURE15);
         m_active_texture_slot = 15;
-        bool const do_multi_fbos = (m_msaa_count > 0);
-        size_t const fbo_count = (do_multi_fbos ? 2 : 1);
+        const bool do_multi_fbos = (m_msaa_count > 0);
+        const int fbo_count = (do_multi_fbos ? 2 : 1);
         m_FBOs.resize(fbo_count);
         m_textures.resize(fbo_count * FBO_TEXTURE::COUNT);
         m_texture_handles = QVector<std::shared_ptr<TextureHandle>>(fbo_count * FBO_TEXTURE::COUNT, std::make_shared<TextureHandle>());
 
         // For each fbo
-        for (uint32_t fbo_index = 0; fbo_index < fbo_count; ++fbo_index)
+        for (int fbo_index = 0; fbo_index < fbo_count; ++fbo_index)
         {
             GLenum const texture_type = (fbo_index == 0) ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
 
@@ -5037,12 +5038,12 @@ void AbstractRenderer::ConfigureSamples(const uint32_t p_msaa_count)
 
 uint32_t AbstractRenderer::GetTextureID(const FBO_TEXTURE_ENUM p_texture_index, const bool p_multisampled) const
 {
-    size_t const offset = (p_multisampled) ? FBO_TEXTURE::COUNT : 0;
+    int const offset = (p_multisampled) ? FBO_TEXTURE::COUNT : 0;
     uint32_t texture_id = m_textures[p_texture_index + offset];
     return texture_id;
 }
 
-void AbstractRenderer::BindFBOAndTextures(QVector<uint32_t> &p_bound_buffers, const uint32_t p_texture_type, const uint32_t p_framebuffer_target, const uint32_t p_fbo, const size_t p_texture_offset, const FBO_TEXTURE_BITFIELD_ENUM p_textures_bitmask) const
+void AbstractRenderer::BindFBOAndTextures(QVector<uint32_t> &p_bound_buffers, const uint32_t p_texture_type, const uint32_t p_framebuffer_target, const uint32_t p_fbo, const int p_texture_offset, const FBO_TEXTURE_BITFIELD_ENUM p_textures_bitmask) const
 {
     MathUtil::glFuncs->glBindFramebuffer((GLenum)p_framebuffer_target, (GLuint)p_fbo);
 
@@ -5126,8 +5127,8 @@ void AbstractRenderer::BlitMultisampledFramebuffer(const FBO_TEXTURE_BITFIELD_EN
             QVector<GLenum> read_buffers = BindFBOToRead(p_textures_bitmask, true);
             BindFBOToDraw(p_textures_bitmask, false);
 
-            size_t const read_buffers_size = read_buffers.size();
-            for (size_t read_buffer_index = 0; read_buffer_index < read_buffers_size; ++read_buffer_index)
+            int const read_buffers_size = read_buffers.size();
+            for (int read_buffer_index = 0; read_buffer_index < read_buffers_size; ++read_buffer_index)
             {
                 MathUtil::glFuncs->glReadBuffer(read_buffers[read_buffer_index]);
                 MathUtil::glFuncs->glDrawBuffers(1, &read_buffers[read_buffer_index]);
@@ -5167,7 +5168,7 @@ QVector<uint32_t> AbstractRenderer::BindFBOToRead(FBO_TEXTURE_BITFIELD_ENUM cons
             read_buffers.reserve(FBO_TEXTURE::COUNT);
             GLenum const texture_type = (is_multisampled) ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
             GLenum const framebuffer_target = GL_READ_FRAMEBUFFER;
-            size_t const texture_offset = (is_multisampled) ? FBO_TEXTURE::COUNT : 0;
+            int const texture_offset = (is_multisampled) ? FBO_TEXTURE::COUNT : 0;
 
             BindFBOAndTextures(read_buffers, texture_type, framebuffer_target, fbo, texture_offset, p_textures_bitmask);
 
@@ -5196,11 +5197,11 @@ QVector<uint32_t> AbstractRenderer::BindFBOToDraw(FBO_TEXTURE_BITFIELD_ENUM cons
             draw_buffers.reserve(FBO_TEXTURE::COUNT);
             GLenum const texture_type = (is_multisampled) ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
             GLenum const framebuffer_target = GL_DRAW_FRAMEBUFFER;
-            size_t const texture_offset = (is_multisampled) ? FBO_TEXTURE::COUNT : 0;
+            int const texture_offset = (is_multisampled) ? FBO_TEXTURE::COUNT : 0;
 
             BindFBOAndTextures(draw_buffers, texture_type, framebuffer_target, fbo, texture_offset, p_textures_bitmask);
 
-            size_t const draw_buffers_size = draw_buffers.size();
+            int const draw_buffers_size = draw_buffers.size();
             if (draw_buffers_size == 0)
             {
                 GLenum buf = GL_NONE;

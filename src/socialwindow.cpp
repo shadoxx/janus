@@ -16,7 +16,6 @@ SocialWindow::SocialWindow(Game * g) :
     QStringList s;
     s.push_back("userid");
     s.push_back("url");
-    s.push_back("");
 
     table_partymode = new QTableWidget();
     table_partymode->setColumnCount(s.size());
@@ -31,7 +30,6 @@ SocialWindow::SocialWindow(Game * g) :
 
     QStringList s2;
     s2.push_back("userid");
-    //s.push_back("url");
 
     table_roomusers = new QTableWidget();
     table_roomusers->setColumnCount(s2.size());
@@ -146,10 +144,7 @@ void SocialWindow::PartyModeListSelection()
         const QString id = table_partymode->item(sel.first().row(), 0)->text();
         const QString url = table_partymode->item(sel.first().row(), 1)->text();
 
-        if (sel.first().column() < 2) {            
-            game->CreatePortal(url, true);
-        }
-        else {
+        if (sel.first().column() == 0) { //clicked player (follow directly)
             QPointer <Player> player = game->GetPlayer();
 
             if (player->GetFollowMode() && player->GetFollowModeUserID() == id) {
@@ -165,6 +160,10 @@ void SocialWindow::PartyModeListSelection()
             }
 //            qDebug() << "  " << player->GetS("follow_mode_userid");
             UpdatePartyModeTable();
+        }
+        else {
+            //clicked URL - create a portal to it
+            game->CreatePortal(url, true);
         }
     }
 }
@@ -243,19 +242,6 @@ void SocialWindow::UpdatePartyModeTable()
         const QString url = m.contains("url") ? m["url"].toString() : QString();
         table_partymode->setItem(i, 0, new QTableWidgetItem(userid));
         table_partymode->setItem(i, 1, new QTableWidgetItem(url));
-
-        //59.6 - Allow follow capabilities if party mode URL is non-empty/publicly known
-        if (url.length() > 0) {
-            if (follow_mode && userid == follow_mode_userid) {
-                table_partymode->setItem(i, 2, new QTableWidgetItem(QString("Unfollow")));
-            }
-            else {
-                table_partymode->setItem(i, 2, new QTableWidgetItem(QString("Follow")));
-            }
-        }
-        else {
-            table_partymode->setItem(i, 2, new QTableWidgetItem(QString()));
-        }
     }
     table_partymode->setSortingEnabled(true);
 

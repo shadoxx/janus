@@ -87,6 +87,9 @@ RoomObject::RoomObject() :
     rescale_on_load_done = false;
 
     sound_buffers_sample_rate = 44100;
+
+    swallow_time = 0;
+    swallow_state = 0;
 }
 
 RoomObject::~RoomObject()
@@ -457,8 +460,8 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
                     GeomMaterial & material = obj->GetGeom()->GetData().GetMaterial(materials[k]);
                     QVector<QVector<GeomTriangle>>& triangles_map = material.triangles;
                     QVector<GeomVBOData>& vbo_map = material.vbo_data;
-                    QVector<QPair<uint32_t, size_t>>& mesh_keys = material.mesh_keys;
-                    size_t const mesh_count = mesh_keys.size();
+                    QVector<QPair<uint32_t, int>>& mesh_keys = material.mesh_keys;
+                    const int mesh_count = mesh_keys.size();
 
                     // For each mesh that uses this material of this AssetObject
                     for (unsigned int mesh_index = 0; mesh_index < mesh_count; ++mesh_index)
@@ -474,8 +477,8 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
                         QMatrix4x4 instance_normal_transform;
                         QMatrix4x4 inv_instance_normal_transform;
 
-                        size_t const instance_count = mesh_instance_transforms.size();
-                        for (size_t instance_index = 0; instance_index < instance_count; ++instance_index)
+                        const int instance_count = mesh_instance_transforms.size();
+                        for (int instance_index = 0; instance_index < instance_count; ++instance_index)
                         {
                             // Transform ray into instance-local space
                             inv_instance_position_transform = mesh_instance_transforms[instance_index].inverted();
@@ -486,8 +489,8 @@ bool RoomObject::GetRaycastIntersection(const QMatrix4x4 transform, QList <QVect
                             ray_dir_instance_space.normalize();
 
                             // Raycast against the first 16k triangles of a mesh
-                            const size_t triangle_loop_count = qMin(triangles.size(), 16384);
-                            for (size_t i = 0; i < triangle_loop_count; ++i)
+                            const int triangle_loop_count = qMin(triangles.size(), 16384);
+                            for (int i = 0; i < triangle_loop_count; ++i)
                             {
                                 // per-triangle test
                                 QVector3D p0 = QVector3D(triangles[i].p[0][0],
@@ -987,7 +990,7 @@ void RoomObject::Update(const double dt_sec)
                 SetChatMessage(ghost_frame.chat_message);
 
                 //change the ghost's avatar
-                if (SettingsManager::GetUpdateCustomAvatars()) {
+//                if (SettingsManager::GetUpdateCustomAvatars()) {
                     if (!ghost_frame.avatar_data.isEmpty()
                             && QString::compare(ghost_frame.avatar_data.left(13), "<FireBoxRoom>") == 0
                             && QString::compare(GetAvatarCode(), ghost_frame.avatar_data) != 0) {
@@ -1003,7 +1006,7 @@ void RoomObject::Update(const double dt_sec)
                         props->SetJSID(js_id);
                         props->SetLoop(loop);
                     }
-                }
+//                }
 
                 //room edits/deletes
                 if (!ghost_frame.room_edits.isEmpty()) {
@@ -1279,19 +1282,19 @@ void RoomObject::UpdateMedia()
         alGenSources(1, &openal_stream_source);
     }
 
-    const ElementType obj_type = GetType();
+//    const ElementType obj_type = GetType();
 
     const bool positional_env = SettingsManager::GetPositionalEnvEnabled();
     const bool positional_voip = SettingsManager::GetPositionalVOIPEnabled();
     const float gain_env = SettingsManager::GetVolumeEnv()/100.0f;
-    const float gain_voip = SettingsManager::GetVolumeVOIP()/100.0f;
+//    const float gain_voip = SettingsManager::GetVolumeVOIP()/100.0f;
 
     if (openal_stream_source > 0) {
         const QVector3D pos = GetPos() + QVector3D(0, 1.6f, 0);
         const QVector3D vel = GetVel();
         const QVector3D dir = GetZDir();
         const QVector3D scale = GetScale();
-        const float dist = qMax(scale.x(), qMax(scale.y(), scale.z()));
+//        const float dist = qMax(scale.x(), qMax(scale.y(), scale.z()));
 
         if (positional_voip) {
             alSourcei(openal_stream_source, AL_SOURCE_RELATIVE, AL_FALSE);
@@ -1894,11 +1897,15 @@ void RoomObject::UpdateMatrices()
             assetghost->GetGhostFrame(time_elapsed, frame);
         }
 
+        const QString body_id = props->GetBodyID();
+        const QString head_id = props->GetHeadID();
+        const bool custom_avatar = (SettingsManager::GetUpdateCustomAvatars() && (!body_id.isEmpty() || !head_id.isEmpty()));
+
         const float angle = MathUtil::RadToDeg(MathUtil::_PI_OVER_2 - atan2f(frame.dir.z(), frame.dir.x()));
         model_matrix_local.setToIdentity();
         model_matrix_local.translate(p);
         model_matrix_local.rotate(angle, 0, 1, 0);
-        model_matrix_local.scale(s);
+        model_matrix_local.scale(custom_avatar ? s : QVector3D(1.4f,1.4f,1.4f));
     }
     else if (t == TYPE_TEXT || t == TYPE_PARAGRAPH || t == TYPE_IMAGE || t == TYPE_VIDEO) {
         model_matrix_local.setColumn(0, xd);
@@ -2208,28 +2215,27 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
             }
 
             if (scale_fac > 0.0f) {
-
-                MathUtil::PushModelMatrix();
-                MathUtil::MultModelMatrix(model_matrix_local);
-                MathUtil::ModelMatrix().scale(scale_fac, scale_fac, scale_fac);
+                //draw body
+                const bool custom_avatar = (SettingsManager::GetUpdateCustomAvatars() && (!body_id.isEmpty() || !head_id.isEmpty()));
 
                 const QVector3D z = GetZDir();
                 const QVector3D s = GetScale();
                 const float angle = 90.0f - atan2f(z.z(), z.x()) * MathUtil::_180_OVER_PI;
 
-                //draw body
-                bool custom_avatar_body = false;
-                if (SettingsManager::GetUpdateCustomAvatars() && !body_id.isEmpty() && ghost_assetobjs.contains(body_id) && ghost_assetobjs[body_id]) {
-                    ghost_assetobjs[body_id]->Update();
-                    ghost_assetobjs[body_id]->UpdateGL();
+                MathUtil::PushModelMatrix();
+                MathUtil::MultModelMatrix(model_matrix_local);
+                MathUtil::ModelMatrix().scale(scale_fac, scale_fac, scale_fac);
 
-                    if (ghost_assetobjs[body_id]->GetFinished()) {
-                        custom_avatar_body = true;
-                        ghost_assetobjs[body_id]->DrawGL(shader, col);
+                if (custom_avatar) {
+                    if (ghost_assetobjs.contains(body_id) && ghost_assetobjs[body_id]) {
+                        ghost_assetobjs[body_id]->Update();
+                        ghost_assetobjs[body_id]->UpdateGL();
+                        if (ghost_assetobjs[body_id]->GetFinished()) {
+                            ghost_assetobjs[body_id]->DrawGL(shader, col);
+                        }
                     }
                 }
-
-                if (!custom_avatar_body && body_id.isEmpty() && head_id.isEmpty() && avatar_obj && avatar_obj->GetFinished()) {
+                else if (avatar_obj && avatar_obj->GetFinished()) {
                     avatar_obj->DrawGL(shader, col);
                 }
 
@@ -2242,17 +2248,17 @@ void RoomObject::DrawGL(QPointer <AssetShader> shader, const bool left_eye, cons
                 MathUtil::MultModelMatrix(m);
                 MathUtil::ModelMatrix().translate(-head_avatar_pos.x(), -head_avatar_pos.y(), -head_avatar_pos.z());
 
-                bool custom_avatar_head = false;
-                if (SettingsManager::GetUpdateCustomAvatars() && !head_id.isEmpty() && ghost_assetobjs.contains(head_id) && ghost_assetobjs[head_id]) {
-                    ghost_assetobjs[head_id]->Update();
-                    ghost_assetobjs[head_id]->UpdateGL();
+                if (custom_avatar) {
+                    if (ghost_assetobjs.contains(head_id) && ghost_assetobjs[head_id]) {
+                        ghost_assetobjs[head_id]->Update();
+                        ghost_assetobjs[head_id]->UpdateGL();
 
-                    if (ghost_assetobjs[head_id]->GetFinished()) {
-                        custom_avatar_head = true;
-                        ghost_assetobjs[head_id]->DrawGL(shader, col);
+                        if (ghost_assetobjs[head_id]->GetFinished()) {
+                            ghost_assetobjs[head_id]->DrawGL(shader, col);
+                        }
                     }
                 }
-                if (!custom_avatar_head && body_id.isEmpty() && head_id.isEmpty() && avatar_head_obj && avatar_head_obj->GetFinished()) {
+                else if (avatar_head_obj && avatar_head_obj->GetFinished()) {
                     avatar_head_obj->DrawGL(shader, col);
                 }
                 MathUtil::PopModelMatrix();
@@ -2845,6 +2851,9 @@ void RoomObject::ReadXMLCode(const QString & str)
                 if (attributes.hasAttribute("cull_face")) {
                     props->SetCullFace(attributes.value("cull_face").toString());
                 }
+                if (attributes.hasAttribute("swallow")) {
+                    props->SetSwallow(MathUtil::GetStringAsBool(attributes.value("swallow").toString()));
+                }
 
                 props->SetType(DOMNode::StringToElementType(tag_name));
 
@@ -3135,6 +3144,9 @@ QString RoomObject::GetXMLCode(const bool show_defaults) const
     if (t == TYPE_OBJECT && ((show_defaults) || props->GetDrawLayer() != 0)) {
         code_str += " draw_layer=" + MathUtil::GetIntAsString(props->GetDrawLayer());
     }
+    if (t == TYPE_LINK && ((show_defaults) || props->GetSwallow())) {
+        code_str += " swallow=" + MathUtil::GetBoolAsString(props->GetSwallow());
+    }
 
     //add text stuff if there is any in the middle
     switch (t) {
@@ -3169,10 +3181,14 @@ QString RoomObject::GetXMLCode(const bool show_defaults) const
     else {
         code_str += " >\n";
         //Add in all my child's tags recursively
-        for (int i=0; i<child_objects.size(); ++i) {
-            if (child_objects[i]) {
-                code_str += child_objects[i]->GetXMLCode(show_defaults) + "\n";
+        QMap <ElementType, QString> code;
+        for (const QPointer <RoomObject> & obj : child_objects) {
+            if (obj && obj->GetSaveToMarkup()) {
+                code[obj->GetType()] += obj->GetXMLCode(show_defaults) + "\n";
             }
+        }
+        for (const QString & s : code) {
+            code_str += s;
         }
 
         //closing tag
@@ -4667,7 +4683,11 @@ void RoomObject::DrawGhostUserIDChat(QPointer <AssetShader> shader)
     }
 
     //draw chat messages
-    const QVector3D s = GetScale();
+    const QString body_id = props->GetBodyID();
+    const QString head_id = props->GetHeadID();
+    const bool custom_avatar = (SettingsManager::GetUpdateCustomAvatars() && (!body_id.isEmpty() || !head_id.isEmpty()));
+
+    const QVector3D s = custom_avatar ? GetScale() : QVector3D(1.4f, 1.4f, 1.4f);
     MathUtil::PushModelMatrix();
     MathUtil::ModelMatrix().scale(1.0f/s.x(), 1.0f/s.y(), 1.0f/s.z());
     MathUtil::ModelMatrix().translate(userid_pos + QVector3D(0,2.0f,0));
@@ -4678,9 +4698,6 @@ void RoomObject::DrawGhostUserIDChat(QPointer <AssetShader> shader)
     m.setColumn(3, QVector4D(p, 1));
     m.setRow(3, QVector4D(0,0,0,1));
     MathUtil::LoadModelMatrix(m);
-
-    //disable active textures
-//    shader->SetUseTextureAll(false);
 
     //draw grey box
     MathUtil::PushModelMatrix();
@@ -4910,4 +4927,24 @@ bool RoomObject::GetDrawBack() const
 void RoomObject::SetDrawBack(bool value)
 {
     draw_back = value;
+}
+
+void RoomObject::SetSwallowState(const int i)
+{
+    swallow_state = i;
+}
+
+int RoomObject::GetSwallowState() const
+{
+    return swallow_state;
+}
+
+void RoomObject::SetSwallowTime(const int i)
+{
+    swallow_time = i;
+}
+
+int RoomObject::GetSwallowTime() const
+{
+    return swallow_time;
 }

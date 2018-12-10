@@ -94,6 +94,7 @@ DOMNode::DOMNode(QObject *parent) : QObject(parent)
     reloaded = false;
     cur_mount = 0;
     url_changed = false;
+    swallow = false;
 
     //assets
     tex_alpha = "undefined";
@@ -164,7 +165,7 @@ DOMNode::DOMNode(QObject *parent) : QObject(parent)
     hand1_xdir = new ScriptableVector(1,0,0,this);
     hand1_ydir = new ScriptableVector(0,1,0,this);
     hand1_zdir = new ScriptableVector(0,0,1,this);
-    hmd_type = "2d";
+    hmd_type = "2d";    
 }
 
 DOMNode::~DOMNode()
@@ -591,6 +592,9 @@ void DOMNode::SetProperties(const QVariantMap & d)
     }
     if (d.contains("text") || d.contains("innertext")) {
         SetTextChanged(true);
+    }
+    if (d.contains("swallow")) {
+        SetSwallow(d["swallow"].toBool());
     }
 }
 
@@ -1823,6 +1827,11 @@ void DOMNode::SetURL(const QString & s)
 void DOMNode::SetURLChanged(const bool b)
 {
     url_changed = b;
+}
+
+void DOMNode::SetSwallow(const bool b)
+{
+    swallow = b;
 }
 
 void DOMNode::SetBaseURL(const QString & s)

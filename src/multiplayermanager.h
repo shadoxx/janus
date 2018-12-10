@@ -149,10 +149,7 @@ public:
     bool GetResetPlayer();
 
     void SetResetPlayerReason(const QString & s);
-    QString GetResetPlayerReason();
-
-    void SetSessionTrackingEnabled(const bool b);
-    bool GetSessionTrackingEnabled() const;
+    QString GetResetPlayerReason();   
 
     void SetPartyMode(const bool b);
     bool GetPartyMode() const;
@@ -191,9 +188,6 @@ private:
 
     QString GenerateUserID();
     QColor GenerateColour();   
-
-    void DoSessionStart();
-    void DoSessionEnd();
 
     QString GetLogonPacket(const QString & userId, const QString & password, const QString & url_id);
     QString GetSubscribePacket(const QString & url_id);
@@ -272,13 +266,7 @@ private:
     QTextStream ghost_ofs;
     QList <AssetRecordingPacket> ghost_packets;
     QTime ghost_recording_start_time;
-    QList <QByteArray> ghost_recording_mic_buffers;
-
-    //tracking/analytics with EASEVR
-    bool session_tracking_enabled;
-    QHash <QString, QString> session_data;
-    WebAsset session_start_webasset;
-    WebAsset session_end_webasset;
+    QList <QByteArray> ghost_recording_mic_buffers;        
 
     //assetrecordings (emulate server activity)
     QList <QPointer <AssetRecording> > assetrecording_list;

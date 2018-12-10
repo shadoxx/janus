@@ -29,8 +29,7 @@ public slots:
     void SlotSetCrosshair();
     void SlotSetFOV();
     void SlotSetSelfAvatar();
-    void SlotSetPartyMode();
-    void SlotSetSessionTracking();
+    void SlotSetPartyMode();    
     void SlotSetMultiplayer();
     void SlotSetHomeURL();
     void SlotSetWebsurfaceURL();
@@ -98,8 +97,7 @@ private:
     QCheckBox * checkbox_positionalvoip;
     QCheckBox * checkbox_invertpitch;
     QCheckBox * checkbox_partymode;
-    QCheckBox * checkbox_selfavatar;
-    QCheckBox * checkbox_sessiontracking;
+    QCheckBox * checkbox_selfavatar;    
     QCheckBox * checkbox_multiplayer;
     QCheckBox * checkbox_downloadcache;
     QCheckBox * checkbox_comfortmode;
