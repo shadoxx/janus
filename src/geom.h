@@ -334,7 +334,7 @@ protected:
 private:
 
     void CalculateFinalPoses();
-    void DoLocalTransformation(aiNodeAnim * a, QMatrix4x4 & mat);
+    void DoLocalTransformation(aiNodeAnim * a, QMatrix4x4 & mat, bool translate=false);
     void CalcInterpolatedPosition(QVector3D & p, const double t, aiNodeAnim * a);
     void CalcInterpolatedRotation(aiQuaternion & r, const double t, aiNodeAnim * a);
     void CalcInterpolatedScaling(QVector3D & s, const double t, aiNodeAnim * a);

@@ -1968,17 +1968,20 @@ void Geom::CalcInterpolatedPosition(QVector3D & p, const double t, aiNodeAnim * 
     }
 }
 
-void Geom::DoLocalTransformation(aiNodeAnim * a, QMatrix4x4 & mat)
+void Geom::DoLocalTransformation(aiNodeAnim * a, QMatrix4x4 & mat, bool translate)
 {
     aiQuaternion q;
     QVector3D p, s;
 
-    CalcInterpolatedPosition(p, cur_time, a);
-    CalcInterpolatedRotation(q, cur_time, a);
-    CalcInterpolatedScaling(s, cur_time, a);
+    if (translate) {
+        CalcInterpolatedPosition(p, cur_time, a);
+        mat.translate(p.x(), p.y(), p.z());
+    }
 
-    mat.translate(p.x(), p.y(), p.z());
+    CalcInterpolatedRotation(q, cur_time, a);
     mat.rotate(QQuaternion(q.w, q.x, q.y, q.z));
+
+    CalcInterpolatedScaling(s, cur_time, a);
     mat.scale(s);
 }
 
@@ -2015,6 +2018,11 @@ void Geom::CalculateFinalPoses()
         return;
     }
 
+    QMatrix4x4 git = m_globalInverseTransform;
+    if (geom != this) {
+        git = git * geom->m_globalInverseTransform;
+    }
+
     /* draw all meshes assigned to this node */
     //iterate through everything
     nodes_to_process.clear();
@@ -2030,6 +2038,7 @@ void Geom::CalculateFinalPoses()
     }
 
     //on first pass, set up node hierarchy and node indexes for whole scene
+    bool first = true;
     while (nodes_to_process.size() != 0)
     {
         aiNode * nd = nodes_to_process.back();
@@ -2042,12 +2051,8 @@ void Geom::CalculateFinalPoses()
         QMatrix4x4 globalTransform;
         QMatrix4x4 nodeTransform; // = aiToQMatrix4x4(nd->mTransformation);
 
-        if (bone_to_boneid.contains(node_name))
-        { //its a bone
+        if (bone_to_boneid.contains(node_name)) { //its a bone
 
-//            qDebug() << "animating" << node_name << bone_to_boneid.contains(node_name);
-
-//            QMatrix4x4 m = aiToQMatrix4x4(nd->mTransformation);
             const unsigned int bone_id = bone_to_boneid[node_name];
 //            if we can't find the animation, just multiply by the base transform
 //            anim associated with the bone can be either (call bone name X):
@@ -2062,35 +2067,34 @@ void Geom::CalculateFinalPoses()
             bool xform_anim = false;
             if (geom->anims.contains(node_name+"_$assimpfbx$_translation"))
             {
-                DoLocalTransformation(geom->anims[node_name+"_$assimpfbx$_translation"], nodeTransform);
+                DoLocalTransformation(geom->anims[node_name+"_$assimpfbx$_translation"], nodeTransform, first);
                 xform_anim = true;
             }
             if (geom->anims.contains(node_name+"_$assimpfbx$_prerotation"))
             {
-                DoLocalTransformation(geom->anims[node_name+"_$assimpfbx$_prerotation"], nodeTransform);
+                DoLocalTransformation(geom->anims[node_name+"_$assimpfbx$_prerotation"], nodeTransform, first);
                 xform_anim = true;
             }
             if (geom->anims.contains(node_name+"_$assimpfbx$_rotation"))
             {
-                DoLocalTransformation(geom->anims[node_name+"_$assimpfbx$_rotation"], nodeTransform);
+                DoLocalTransformation(geom->anims[node_name+"_$assimpfbx$_rotation"], nodeTransform, first);
                 xform_anim = true;
             }
             if (geom->anims.contains(node_name))
             {               
-                DoLocalTransformation(geom->anims[node_name], nodeTransform);
-//                nodeTransform.setColumn(3, QVector4D(0,0,0,1));
-//                qDebug() << "node_name1" << node_name << nodeTransform;
+                DoLocalTransformation(geom->anims[node_name], nodeTransform, first);
                 xform_anim = true;
             }
 
-            if (!xform_anim)
-            {
-//                qDebug() << "node_name2" << node_name;
-                nodeTransform = aiToQMatrix4x4(nd->mTransformation);
-            }           
+            if (!xform_anim) {
+                nodeTransform *= aiToQMatrix4x4(nd->mTransformation);
+            }
 
+            globalTransform = parentTransform * nodeTransform;           
 
-            globalTransform = parentTransform * nodeTransform;
+            if (first) {
+                first = false;
+            }
 
             if (extra_global_transforms.contains(bone_id))
             {
@@ -2109,18 +2113,15 @@ void Geom::CalculateFinalPoses()
                 globalTransform *= extra_relative_transforms[bone_id];
             }
 
-//            60.0 - HACK - default avatar animates right on assimp 4.1.0
-            QMatrix4x4 m = m_globalInverseTransform * globalTransform;
+            QMatrix4x4 m = git * globalTransform;
 #ifdef WIN32
             QVector4D c = m.column(3);
-            c *= 0.5f;
             c.setW(1.0f);
             m.setColumn(3, c);
 #endif
 
             final_poses[bone_to_boneid[node_name]] = m;
             skin_joints[bone_to_boneid[node_name]] = m * bone_offset_matrix[node_name];
-//            qDebug() << "node_name" << node_name << skin_joints[bone_to_boneid[node_name]];
         }
         else {
             globalTransform = parentTransform * aiToQMatrix4x4(nd->mTransformation);
